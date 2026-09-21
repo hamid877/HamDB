@@ -1,0 +1,40 @@
+{
+  // ── Editor behaviour ────────────────────────────────────────────────────────
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true,
+  "editor.rulers": [100],
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.eol": "\n",
+
+  // ── clangd (C++ language server) ───────────────────────────────────────────
+  "clangd.arguments": [
+    "--background-index",
+    "--clang-tidy",
+    "--clang-tidy-checks=bugprone-*,modernize-*,performance-*,portability-*,clang-analyzer-*,cppcoreguidelines-*,readability-*,-modernize-use-trailing-return-type,-modernize-return-braced-init-list,-readability-identifier-length",
+    "--completion-style=detailed",
+    "--header-insertion=iwyu",
+    "--compile-commands-dir=${workspaceFolder}/build"
+  ],
+  "clangd.path": "clangd",
+
+  // ── CMake Tools ───────────────────────────────────────────────────────────
+  "cmake.configureOnOpen": true,
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+  "cmake.generator": "Ninja",
+  "cmake.buildType": "Debug",
+  "cmake.exportCompileCommandsFile": true,
+
+  // ── File associations ──────────────────────────────────────────────────────
+  "[cpp]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+  },
+  "[c]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+  },
+
+  // ── Test Explorer (optional) ───────────────────────────────────────────────
+  "testMate.cpp.test.executables": "${workspaceFolder}/build/**/*_tests"
+}

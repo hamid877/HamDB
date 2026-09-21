@@ -1,0 +1,29 @@
+BasedOnStyle: LLVM
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+ColumnLimit: 100
+
+BreakBeforeBraces: Allman
+
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+SortIncludes: true
+
+NamespaceIndentation: All
+
+AccessModifierOffset: -4
+
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+
+SpacesInParentheses: false
+SpaceBeforeParens: ControlStatements
+
+Standard: c++20

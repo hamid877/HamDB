@@ -1,7 +1,5 @@
 add_library(hamdb_common STATIC
-    types.cpp
-    serializer.cpp
-    deserializer.cpp
+    enums.cpp
 )
 
 target_include_directories(hamdb_common PUBLIC

@@ -12,7 +12,8 @@ execution.
 
 | Milestone | Description | Status |
 |-----------|-------------|--------|
-| 1 | Project scaffolding | 🔨 In progress |
+| 1 | Project scaffolding | ✅ Done |
+| 1.1 | Structure refactor | ✅ Done |
 | 2 | Page & disk storage | ⏳ Planned |
 | 3 | Buffer pool manager | ⏳ Planned |
 | 4 | Catalog & schema | ⏳ Planned |
@@ -27,17 +28,54 @@ execution.
 ## Architecture
 
 ```
-HamDB
+HamDB/
 ├── include/
-│   ├── common/          # Shared utilities (types, status, serialization)
-│   └── storage/         # Page layout, disk I/O
+│   ├── common/
+│   │   ├── constants.hpp       # Compile-time constants (page size, magic, version)
+│   │   ├── enums.hpp           # Shared enumerations (PageType, Status)
+│   │   ├── config.hpp          # Runtime Config aggregate
+│   │   ├── logger.hpp          # Logging facade
+│   │   └── exception.hpp       # HamDB exception hierarchy
+│   ├── storage/
+│   │   ├── page_header.hpp     # PageHeader struct
+│   │   ├── page.hpp            # Page class (4 KiB buffer)
+│   │   └── disk_manager.hpp    # DiskManager class
+│   ├── utils/
+│   │   ├── serializer.hpp      # Serializer class
+│   │   └── deserializer.hpp    # Deserializer class
+│   └── database/
+│       └── database.hpp        # Database façade (entry point)
+│
 ├── src/
-│   ├── common/          # Implementations of common utilities
-│   └── storage/         # Implementations of storage classes
+│   ├── common/
+│   │   ├── CMakeLists.txt
+│   │   └── enums.cpp
+│   ├── storage/
+│   │   ├── CMakeLists.txt
+│   │   ├── page_header.cpp
+│   │   ├── page.cpp
+│   │   └── disk_manager.cpp
+│   ├── utils/
+│   │   ├── CMakeLists.txt
+│   │   ├── serializer.cpp
+│   │   └── deserializer.cpp
+│   └── database/
+│       ├── CMakeLists.txt
+│       └── database.cpp
+│
 ├── tests/
-│   └── storage/         # GoogleTest suites per module
-├── examples/            # Standalone usage examples
-└── docs/                # Doxygen-generated API docs
+│   └── storage/
+│       ├── CMakeLists.txt
+│       ├── page_header_test.cpp
+│       ├── page_test.cpp
+│       └── disk_manager_test.cpp
+│
+├── examples/
+│   ├── CMakeLists.txt
+│   └── create_database.cpp
+│
+└── docs/
+    └── architecture.md
 ```
 
 ---
@@ -75,7 +113,7 @@ cmake --build build --target docs
 
 * C++20 only — no external database libraries.
 * RAII everywhere; smart pointers for owned resources.
-* Header / source separation.
+* Header / source separation (`.hpp` / `.cpp`).
 * One responsibility per class.
 * Every public symbol has a Doxygen comment.
 * Namespace: `hamdb::*`

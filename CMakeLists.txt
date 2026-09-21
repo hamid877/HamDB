@@ -21,9 +21,9 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 include(FetchContent)
 FetchContent_Declare(
     googletest
-    URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+    URL https://github.com/google/googletest/archive/refs/tags/v1.16.0.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
-# Prevent overriding parent project's compiler/linker settings on Windows
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
@@ -32,12 +32,16 @@ enable_testing()
 # ── Library targets ────────────────────────────────────────────────────────────
 add_subdirectory(src/common)
 add_subdirectory(src/storage)
+add_subdirectory(src/utils)
+add_subdirectory(src/database)
 
 # ── hamdb_core convenience interface ──────────────────────────────────────────
 add_library(hamdb_core INTERFACE)
 target_link_libraries(hamdb_core INTERFACE
     hamdb_common
     hamdb_storage
+    hamdb_utils
+    hamdb_database
 )
 target_include_directories(hamdb_core INTERFACE
     ${PROJECT_SOURCE_DIR}/include

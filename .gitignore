@@ -3,10 +3,10 @@ build/
 cmake-build-*/
 out/
 
-# CMake generated files
+# CMake generated files (scoped to build dirs — root Makefile is tracked)
 CMakeCache.txt
 CMakeFiles/
-Makefile
+build/Makefile
 cmake_install.cmake
 compile_commands.json
 
@@ -18,8 +18,8 @@ compile_commands.json
 *.dll
 *.exe
 
-# IDE
-.vscode/
+# IDE — track .vscode/settings.json (shared config); ignore personal overrides
+.vscode/*.json.user
 .idea/
 
 # OS
