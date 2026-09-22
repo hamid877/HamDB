@@ -23,6 +23,8 @@ namespace hamdb
             return "NotSupported";
         case Status::AlreadyExists:
             return "AlreadyExists";
+        case Status::BufferPoolFull:
+            return "BufferPoolFull";
         case Status::Unknown:
         default:
             return "Unknown";

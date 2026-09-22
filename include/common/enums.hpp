@@ -49,6 +49,7 @@ namespace hamdb
         Corruption,    ///< On-disk data is corrupt or inconsistent.
         NotSupported,  ///< Operation is not yet implemented.
         AlreadyExists, ///< Resource already exists and cannot be created again.
+        BufferPoolFull,///< Buffer pool has no free frames available.
         Unknown,       ///< An unclassified internal error occurred.
     };
 

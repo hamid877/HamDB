@@ -34,12 +34,14 @@ add_subdirectory(src/common)
 add_subdirectory(src/storage)
 add_subdirectory(src/utils)
 add_subdirectory(src/database)
+add_subdirectory(src/buffer)
 
 # ── hamdb_core convenience interface ──────────────────────────────────────────
 add_library(hamdb_core INTERFACE)
 target_link_libraries(hamdb_core INTERFACE
     hamdb_common
     hamdb_storage
+    hamdb_buffer
     hamdb_utils
     hamdb_database
 )
@@ -50,6 +52,7 @@ target_include_directories(hamdb_core INTERFACE
 # ── Tests ──────────────────────────────────────────────────────────────────────
 add_subdirectory(tests/storage)
 add_subdirectory(tests/utils)
+add_subdirectory(tests/buffer)
 
 # ── Examples ──────────────────────────────────────────────────────────────────
 add_subdirectory(examples)
