@@ -49,6 +49,7 @@ target_include_directories(hamdb_core INTERFACE
 
 # ── Tests ──────────────────────────────────────────────────────────────────────
 add_subdirectory(tests/storage)
+add_subdirectory(tests/utils)
 
 # ── Examples ──────────────────────────────────────────────────────────────────
 add_subdirectory(examples)
