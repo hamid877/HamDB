@@ -45,8 +45,10 @@ namespace hamdb
         // Move-only
         TableHeap(const TableHeap&) = delete;
         TableHeap& operator=(const TableHeap&) = delete;
+
+// TableHeap owns no movable resources because DiskManager is a reference.
         TableHeap(TableHeap&&) noexcept = default;
-        TableHeap& operator=(TableHeap&&) noexcept = default;
+        TableHeap& operator=(TableHeap&&) noexcept = delete;
 
         // ── Tuple Operations ──────────────────────────────────────────────────────
 
