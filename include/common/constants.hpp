@@ -18,8 +18,11 @@ namespace hamdb
 
     // ── Magic & versioning ────────────────────────────────────────────────────────
 
-    /// Four-byte magic string written at byte 0 of every HamDB database file.
-    /// Used to identify the file format and reject unrelated files on open.
+    /// Eight-byte ASCII magic written at offset 0 of every .hamdb file.
+    /// Must be exactly 8 characters — no NUL terminator is stored on disk.
+    inline constexpr std::string_view kDbMagic = "HAMDB001";
+
+    /// Short human-readable identifier (4 chars) used in log/display output.
     inline constexpr std::string_view kMagic = "HMDB";
 
     /// On-disk format version.  Increment when the page layout changes

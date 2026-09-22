@@ -7,6 +7,7 @@
 #include "common/enums.hpp"
 #include "storage/page.hpp"
 #include <filesystem>
+#include <fstream>
 #include <string>
 
 namespace hamdb
@@ -20,90 +21,125 @@ namespace hamdb
      * addresses are expressed in logical @c PageId values; the manager translates
      * them to byte offsets internally.
      *
-     * Responsibilities:
-     *  - Open / create / close a database file.
-     *  - Read a single page from disk into a @c Page object.
-     *  - Write a single @c Page from memory to disk.
-     *  - Allocate a new page at the end of the file.
-     *  - Report the current page count.
+     * Lifecycle:
+     *  - Construct with a filesystem path (no I/O performed yet).
+     *  - Call @c createDatabase() to initialise a new file, or
+     *    @c openDatabase() to attach to an existing one.
+     *  - Call @c closeDatabase() (or let the destructor run) to flush and close.
      *
-     * @c DiskManager is not thread-safe.  The buffer pool manager (a future
-     * milestone) is expected to hold an exclusive latch before calling into it.
-     *
-     * @note DiskManager follows RAII: the file is closed when the object is
-     *       destroyed.
+     * @note DiskManager is not thread-safe.  Callers must serialise access.
+     * @note DiskManager follows RAII: the destructor calls @c closeDatabase().
      */
     class DiskManager
     {
     public:
-        // ── Construction / Destruction ────────────────────────────────────────────
+        // ── Construction / Destruction ────────────────────────────────────────
 
         /**
-         * @brief Open or create a database file.
+         * @brief Construct a DiskManager bound to @p path.
          *
-         * If the file does not exist it is created and initialised with zero pages.
-         * If the file exists it is opened in read/write mode.
+         * No file I/O is performed here.  Call @c createDatabase() or
+         * @c openDatabase() after construction.
          *
-         * @param path Path to the database file.
-         * @throws std::runtime_error if the file cannot be opened or created.
+         * @param path Filesystem path for the @c .hamdb file.
          */
         explicit DiskManager(const std::filesystem::path& path);
 
+        /// Destructor — calls @c closeDatabase() if the file is open.
         ~DiskManager();
 
-        // DiskManager manages an OS file handle — non-copyable, movable.
+        // Non-copyable, movable.
         DiskManager(const DiskManager&) = delete;
         DiskManager& operator=(const DiskManager&) = delete;
         DiskManager(DiskManager&&) = default;
         DiskManager& operator=(DiskManager&&) = default;
 
-        // ── Core I/O ──────────────────────────────────────────────────────────────
+        // ── Lifecycle ─────────────────────────────────────────────────────────
 
         /**
-         * @brief Read one page from disk.
+         * @brief Create a new database file at the configured path.
          *
-         * @param page_id  The logical ID of the page to read.
-         * @param[out] page Target page object to populate.
-         * @return @c Status::Ok on success, @c Status::IoError on failure,
-         *         @c Status::NotFound if @p page_id is out of range.
+         * - Returns @c Status::AlreadyExists if the file already exists.
+         * - Writes one 4096-byte page initialised to zero.
+         * - Encodes @c DatabaseMetadata into the first 64 bytes of that page.
+         * - Flushes and closes the file before returning.
+         *
+         * @return @c Status::Ok on success, @c Status::AlreadyExists if the file
+         *         exists, @c Status::IoError on any other I/O failure.
+         */
+        [[nodiscard]] Status createDatabase();
+
+        /**
+         * @brief Open an existing database file at the configured path.
+         *
+         * - Verifies the file exists and is at least @c kPageSize bytes.
+         * - Reads page 0 and validates the magic number and version.
+         * - Caches the page count from the @c DatabaseMetadata.
+         *
+         * @return @c Status::Ok on success,
+         *         @c Status::NotFound if the file does not exist,
+         *         @c Status::Corruption if magic/version check fails,
+         *         @c Status::IoError on read failure.
+         */
+        [[nodiscard]] Status openDatabase();
+
+        /**
+         * @brief Flush and close the database file.
+         *
+         * Safe to call even when the file is not open (no-op in that case).
+         * Resets @c is_open_ and @c page_count_ to their initial values.
+         *
+         * @return @c Status::Ok on success, @c Status::IoError on flush failure.
+         */
+        [[nodiscard]] Status closeDatabase();
+
+        // ── Core I/O ─────────────────────────────────────────────────────────
+
+        /**
+         * @brief Read one page from disk into @p page.
+         *
+         * @param page_id  Logical page number.
+         * @param[out] page Destination page object.
+         * @return @c Status::Ok, @c Status::NotFound, or @c Status::IoError.
          */
         [[nodiscard]] Status readPage(PageId page_id, Page& page);
 
         /**
-         * @brief Write one page to disk.
+         * @brief Write @p page to disk at the position of @p page_id.
          *
-         * @param page_id The logical ID that determines the file offset.
-         * @param page    The page whose contents will be flushed.
-         * @return @c Status::Ok on success, @c Status::IoError on failure.
+         * @param page_id Logical page number.
+         * @param page    Source page object.
+         * @return @c Status::Ok or @c Status::IoError.
          */
         [[nodiscard]] Status writePage(PageId page_id, const Page& page);
 
         /**
-         * @brief Allocate a new page at the end of the database file.
+         * @brief Extend the file by one page and return the new page's ID.
          *
-         * Extends the file by @c kPageSize bytes and returns the ID of the
-         * newly allocated page.  The page contents are undefined until written.
-         *
-         * @param[out] new_page_id Receives the ID of the allocated page.
-         * @return @c Status::Ok on success, @c Status::IoError on failure.
+         * @param[out] new_page_id Receives the allocated page ID.
+         * @return @c Status::Ok or @c Status::IoError.
          */
         [[nodiscard]] Status allocatePage(PageId& new_page_id);
 
-        // ── Metadata ──────────────────────────────────────────────────────────────
+        // ── Metadata ─────────────────────────────────────────────────────────
 
-        /// Return the total number of pages currently in the database file.
+        /// Return the total number of pages in the database file.
         [[nodiscard]] std::size_t pageCount() const;
 
         /// Return the filesystem path of the managed database file.
         [[nodiscard]] const std::filesystem::path& filePath() const;
 
-        /// Force outstanding OS buffers to disk (fsync).
+        /// Return true if a database file is currently open.
+        [[nodiscard]] bool isOpen() const;
+
+        /// Flush outstanding OS buffers to disk.
         [[nodiscard]] Status sync();
 
     private:
-        std::filesystem::path path_; ///< Path to the open database file.
-        int fd_;                     ///< POSIX file descriptor.
-        std::size_t page_count_;     ///< Cached number of pages on disk.
+        std::filesystem::path path_;       ///< Path to the .hamdb file.
+        std::fstream          stream_;     ///< Binary file stream.
+        std::size_t           page_count_; ///< Cached page count from metadata.
+        bool                  is_open_;    ///< True when a file is open.
     };
 
 } // namespace hamdb

@@ -1,16 +1,14 @@
 /**
  * @file create_database.cpp
- * @brief Minimal example demonstrating the HamDB Milestone 1.1 structure.
+ * @brief Example: create a HamDB database file called `users.hamdb`.
  *
- * Exercises the public API surface after the refactor:
- *  - constants.hpp (page geometry, magic)
- *  - enums.hpp (Status, PageType)
- *  - storage/page_header.hpp
- *  - storage/page.hpp
- *  - storage/disk_manager.hpp
- *  - database/database.hpp
+ * Demonstrates the Milestone 1.3 lifecycle API:
+ *   1. Construct a DiskManager with the target path.
+ *   2. Call createDatabase() to write the initial page.
+ *   3. Call openDatabase() to verify the file and read its metadata.
+ *   4. Print status to stdout and exit.
  *
- * Compile (from the build directory):
+ * Compile & run (from the build directory):
  * @code
  *   cmake --build . --target hamdb_example_create_database
  *   ./examples/hamdb_example_create_database
@@ -19,54 +17,60 @@
 
 #include "common/constants.hpp"
 #include "common/enums.hpp"
-#include "database/database.hpp"
 #include "storage/disk_manager.hpp"
-#include "storage/page.hpp"
-#include "storage/page_header.hpp"
 
 #include <filesystem>
 #include <iostream>
 
 int main()
 {
-    std::cout << "=== HamDB — Milestone 1.1 refactor demo ===\n\n";
+    std::cout << "=== HamDB — Milestone 1.3: create_database ===\n\n";
 
-    // ── 1. Constants ───────────────────────────────────────────────────────────
-    std::cout << "Magic        : " << hamdb::kMagic << "\n";
-    std::cout << "Version      : " << hamdb::kFormatVersion << "\n";
-    std::cout << "Page size    : " << hamdb::kPageSize << " bytes\n";
-    std::cout << "Header size  : " << hamdb::kPageHeaderSize << " bytes\n";
-    std::cout << "Body size    : " << hamdb::kPageBodySize << " bytes\n";
-    std::cout << "Invalid page : " << hamdb::kInvalidPageId << "\n\n";
+    // Target file in the current working directory
+    const std::filesystem::path db_path = "users.hamdb";
 
-    // ── 2. PageType enum ───────────────────────────────────────────────────────
-    std::cout << "PageType::Table    = " << static_cast<int>(hamdb::PageType::Table) << "\n";
-    std::cout << "PageType::Metadata = " << static_cast<int>(hamdb::PageType::Metadata) << "\n\n";
+    // ── 1. Create the database ────────────────────────────────────────────────
+    {
+        hamdb::DiskManager dm(db_path);
+        const hamdb::Status status = dm.createDatabase();
 
-    // ── 3. PageHeader ──────────────────────────────────────────────────────────
-    hamdb::PageHeader hdr(0, hamdb::PageType::Table);
-    std::cout << "PageHeader constructed: page_id=" << hdr.page_id << "\n";
+        if (status == hamdb::Status::AlreadyExists)
+        {
+            std::cout << "[WARN] users.hamdb already exists — skipping creation.\n";
+        }
+        else if (status != hamdb::Status::Ok)
+        {
+            std::cerr << "[ERROR] createDatabase() failed: "
+                      << hamdb::statusToString(status) << "\n";
+            return 1;
+        }
+        else
+        {
+            std::cout << "[OK]   users.hamdb created successfully.\n";
+        }
+    }
 
-    // ── 4. Page ────────────────────────────────────────────────────────────────
-    hamdb::Page page(hdr);
-    std::cout << "Page constructed      : id=" << page.id()
-              << ", data span size=" << page.data().size() << "\n";
+    // ── 2. Open and inspect the database ─────────────────────────────────────
+    {
+        hamdb::DiskManager dm(db_path);
+        const hamdb::Status status = dm.openDatabase();
 
-    // ── 5. DiskManager (stub) ─────────────────────────────────────────────────
-    auto db_path = std::filesystem::temp_directory_path() / "example.hamdb";
-    hamdb::DiskManager dm(db_path);
-    std::cout << "DiskManager           : path=" << dm.filePath() << ", pages=" << dm.pageCount()
-              << "\n";
+        if (status != hamdb::Status::Ok)
+        {
+            std::cerr << "[ERROR] openDatabase() failed: "
+                      << hamdb::statusToString(status) << "\n";
+            return 1;
+        }
 
-    // ── 6. Database (stub) ────────────────────────────────────────────────────
-    hamdb::Database db(db_path);
-    std::cout << "Database constructed  : OK\n\n";
+        std::cout << "[OK]   users.hamdb opened successfully.\n";
+        std::cout << "       Path       : " << dm.filePath().string() << "\n";
+        std::cout << "       Page count : " << dm.pageCount() << "\n";
+        std::cout << "       File size  : "
+                  << std::filesystem::file_size(db_path) << " bytes\n";
 
-    // ── 7. Status helper ───────────────────────────────────────────────────────
-    std::cout << "Status::Ok           -> " << hamdb::statusToString(hamdb::Status::Ok) << "\n";
-    std::cout << "Status::NotSupported -> " << hamdb::statusToString(hamdb::Status::NotSupported)
-              << "\n";
+        // closeDatabase() is called automatically by the destructor
+    }
 
-    std::cout << "\nMilestone 1.1 refactor OK.\n";
+    std::cout << "\nDone.\n";
     return 0;
 }

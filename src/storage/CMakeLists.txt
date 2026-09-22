@@ -1,4 +1,5 @@
 add_library(hamdb_storage STATIC
+    database_metadata.cpp
     page_header.cpp
     page.cpp
     disk_manager.cpp
