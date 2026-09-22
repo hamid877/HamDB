@@ -58,25 +58,25 @@ namespace hamdb
         EXPECT_EQ(dm.filePath(), path);
     }
 
-    TEST(DiskManagerTest, ReadPageReturnsNotSupported)
+    TEST(DiskManagerTest, ReadPageReturnsIoErrorWhenClosed)
     {
         DiskManager dm(tmpPath("hamdb_test4.db"));
         Page p;
-        EXPECT_EQ(dm.readPage(0, p), Status::NotSupported);
+        EXPECT_EQ(dm.readPage(0, p), Status::IoError);
     }
 
-    TEST(DiskManagerTest, WritePageReturnsNotSupported)
+    TEST(DiskManagerTest, WritePageReturnsIoErrorWhenClosed)
     {
         DiskManager dm(tmpPath("hamdb_test5.db"));
         Page p;
-        EXPECT_EQ(dm.writePage(0, p), Status::NotSupported);
+        EXPECT_EQ(dm.writePage(0, p), Status::IoError);
     }
 
-    TEST(DiskManagerTest, AllocatePageReturnsNotSupported)
+    TEST(DiskManagerTest, AllocatePageReturnsIoErrorWhenClosed)
     {
         DiskManager dm(tmpPath("hamdb_test6.db"));
         PageId id{};
-        EXPECT_EQ(dm.allocatePage(id), Status::NotSupported);
+        EXPECT_EQ(dm.allocatePage(id), Status::IoError);
     }
 
     TEST(DiskManagerTest, SyncReturnsOkWhenClosed)

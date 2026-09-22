@@ -1,6 +1,8 @@
 #include "storage/disk_manager.hpp"
 #include "storage/database_metadata.hpp"
 #include "common/constants.hpp"
+#include "utils/deserializer.hpp"
+#include "utils/serializer.hpp"
 
 #include <array>
 #include <chrono>
@@ -196,24 +198,102 @@ namespace hamdb
 
     // ── Core I/O ─────────────────────────────────────────────────────────────
 
-    Status DiskManager::readPage([[maybe_unused]] PageId page_id,
-                                 [[maybe_unused]] Page& page)
+    Status DiskManager::readPage(PageId page_id, Page& page)
     {
-        // TODO (Milestone 2): implement with stream_.seekg / stream_.read
-        return Status::NotSupported;
+        if (!is_open_)
+        {
+            return Status::IoError;
+        }
+        if (page_id >= page_count_)
+        {
+            return Status::InvalidArg;
+        }
+
+        stream_.seekg(page_id * kPageSize);
+        stream_.read(reinterpret_cast<char*>(page.data().data()), kPageSize);
+        if (stream_.fail())
+        {
+            stream_.clear();
+            return Status::IoError;
+        }
+
+        Deserializer des(page.data().first(PageHeader::kSize));
+        std::uint8_t type_tmp = 0;
+        static_cast<void>(des.readUInt32(page.header().page_id));
+        static_cast<void>(des.readUInt8(type_tmp));
+        page.header().page_type = static_cast<PageType>(type_tmp);
+        static_cast<void>(des.readUInt16(page.header().free_space_ptr));
+        static_cast<void>(des.readUInt16(page.header().slot_count));
+        static_cast<void>(des.readUInt32(page.header().checksum));
+
+        return Status::Ok;
     }
 
-    Status DiskManager::writePage([[maybe_unused]] PageId page_id,
-                                  [[maybe_unused]] const Page& page)
+    Status DiskManager::writePage(PageId page_id, const Page& page)
     {
-        // TODO (Milestone 2): implement with stream_.seekp / stream_.write
-        return Status::NotSupported;
+        if (!is_open_)
+        {
+            return Status::IoError;
+        }
+        if (page_id >= page_count_)
+        {
+            return Status::InvalidArg;
+        }
+
+        Serializer ser(const_cast<Page&>(page).data().first(PageHeader::kSize));
+        static_cast<void>(ser.writeUInt32(page.header().page_id));
+        static_cast<void>(ser.writeUInt8(static_cast<std::uint8_t>(page.header().page_type)));
+        static_cast<void>(ser.writeUInt16(page.header().free_space_ptr));
+        static_cast<void>(ser.writeUInt16(page.header().slot_count));
+        static_cast<void>(ser.writeUInt32(page.header().checksum));
+
+        stream_.seekp(page_id * kPageSize);
+        stream_.write(reinterpret_cast<const char*>(page.data().data()), kPageSize);
+        if (stream_.fail())
+        {
+            stream_.clear();
+            return Status::IoError;
+        }
+
+        return Status::Ok;
     }
 
-    Status DiskManager::allocatePage([[maybe_unused]] PageId& new_page_id)
+    Status DiskManager::allocatePage(PageId& new_page_id)
     {
-        // TODO (Milestone 2): extend file by kPageSize bytes
-        return Status::NotSupported;
+        if (!is_open_)
+        {
+            return Status::IoError;
+        }
+
+        new_page_id = static_cast<PageId>(page_count_);
+        page_count_++;
+
+        Page empty_page;
+        stream_.seekp(new_page_id * kPageSize);
+        stream_.write(reinterpret_cast<const char*>(empty_page.data().data()), kPageSize);
+        if (!stream_.good())
+        {
+            stream_.clear();
+            return Status::IoError;
+        }
+
+        // Update metadata with new page count
+        std::array<std::uint8_t, DatabaseMetadata::kSize> meta_buf{};
+        stream_.seekg(0);
+        stream_.read(reinterpret_cast<char*>(meta_buf.data()), DatabaseMetadata::kSize);
+        if (stream_.good())
+        {
+            DatabaseMetadata meta;
+            meta.deserialize(meta_buf);
+            meta.page_count = static_cast<std::uint32_t>(page_count_);
+            meta.serialize(meta_buf);
+            
+            stream_.seekp(0);
+            stream_.write(reinterpret_cast<const char*>(meta_buf.data()), DatabaseMetadata::kSize);
+        }
+        stream_.clear();
+
+        return Status::Ok;
     }
 
     // ── Metadata ─────────────────────────────────────────────────────────────

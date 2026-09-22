@@ -3,6 +3,7 @@
 #include "storage/page_header.hpp"
 #include "storage/slotted_page.hpp"
 #include "storage/tuple_slot.hpp"
+#include "storage/tuple.hpp"
 #include <array>
 #include <cstddef>
 #include <gtest/gtest.h>
@@ -17,15 +18,17 @@ namespace hamdb
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
-    /// Convert a string_view to a span of bytes (safe, no UB — char is aliasable).
-    static std::span<const std::byte> toBytes(std::string_view sv) noexcept
+    /// Convert a string_view to a Tuple (safe, no UB — char is aliasable).
+    static Tuple toTuple(std::string_view sv) noexcept
     {
-        return {reinterpret_cast<const std::byte*>(sv.data()), sv.size()}; // NOLINT
+        std::span<const std::byte> span{reinterpret_cast<const std::byte*>(sv.data()), sv.size()}; // NOLINT
+        return Tuple(span);
     }
 
-    /// Convert bytes back to string_view for easy comparison in tests.
-    static std::string_view fromBytes(std::span<const std::byte> s) noexcept
+    /// Convert Tuple bytes back to string_view for easy comparison in tests.
+    static std::string_view fromTuple(const Tuple& t) noexcept
     {
+        auto s = t.data();
         return {reinterpret_cast<const char*>(s.data()), s.size()}; // NOLINT
     }
 
@@ -102,7 +105,7 @@ namespace hamdb
 
     TEST_F(SlottedPageTest, InitialFreeSpaceIsBodyMinusHeader)
     {
-        // Free space = body (4080) - SlottedPageHeader (8)
+        // Free space = body (4080) - SlottedPageHeader (16)
         const std::size_t expected = Page::kBodySize - SlottedPageHeader::kSize;
         EXPECT_EQ(sp_->freeSpace(), expected);
     }
@@ -119,21 +122,21 @@ namespace hamdb
     TEST_F(SlottedPageTest, InsertSingleTupleReturnsOkAndSlotZero)
     {
         SlotId id = kInvalidSlotId;
-        EXPECT_EQ(sp_->insertTuple(toBytes("hello"), id), Status::Ok);
+        EXPECT_EQ(sp_->insertTuple(toTuple("hello"), id), Status::Ok);
         EXPECT_EQ(id, 0u);
     }
 
     TEST_F(SlottedPageTest, InsertIncreasesSlotCount)
     {
         SlotId id = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("data"), id), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("data"), id), Status::Ok);
         EXPECT_EQ(sp_->slotCount(), 1u);
     }
 
     TEST_F(SlottedPageTest, InsertIncreasesTupleCount)
     {
         SlotId id = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("data"), id), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("data"), id), Status::Ok);
         EXPECT_EQ(sp_->tupleCount(), 1u);
     }
 
@@ -141,7 +144,7 @@ namespace hamdb
     {
         const std::size_t before = sp_->freeSpace();
         SlotId id = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("hello"), id), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("hello"), id), Status::Ok);
         const std::size_t after = sp_->freeSpace();
         // consumed: 5 bytes payload + 8 bytes slot
         EXPECT_EQ(before - after, 5u + TupleSlot::kSize);
@@ -154,16 +157,16 @@ namespace hamdb
     TEST_F(SlottedPageTest, ReadTupleMatchesInserted)
     {
         SlotId id = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("hamdb"), id), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("hamdb"), id), Status::Ok);
 
-        std::span<const std::byte> out;
+        Tuple out;
         ASSERT_EQ(sp_->readTuple(id, out), Status::Ok);
-        EXPECT_EQ(fromBytes(out), "hamdb");
+        EXPECT_EQ(fromTuple(out), "hamdb");
     }
 
     TEST_F(SlottedPageTest, ReadInvalidSlotReturnsNotFound)
     {
-        std::span<const std::byte> out;
+        Tuple out;
         EXPECT_EQ(sp_->readTuple(99u, out), Status::NotFound);
     }
 
@@ -177,7 +180,7 @@ namespace hamdb
         for (std::size_t i = 0; i < tuples.size(); ++i)
         {
             SlotId id = kInvalidSlotId;
-            ASSERT_EQ(sp_->insertTuple(toBytes(tuples[i]), id), Status::Ok);
+            ASSERT_EQ(sp_->insertTuple(toTuple(tuples[i]), id), Status::Ok);
             EXPECT_EQ(id, static_cast<SlotId>(i));
         }
         EXPECT_EQ(sp_->slotCount(),  4u);
@@ -190,13 +193,13 @@ namespace hamdb
         std::vector<SlotId> ids(tuples.size());
         for (std::size_t i = 0; i < tuples.size(); ++i)
         {
-            ASSERT_EQ(sp_->insertTuple(toBytes(tuples[i]), ids[i]), Status::Ok);
+            ASSERT_EQ(sp_->insertTuple(toTuple(tuples[i]), ids[i]), Status::Ok);
         }
         for (std::size_t i = 0; i < tuples.size(); ++i)
         {
-            std::span<const std::byte> out;
+            Tuple out;
             ASSERT_EQ(sp_->readTuple(ids[i], out), Status::Ok);
-            EXPECT_EQ(fromBytes(out), tuples[i]);
+            EXPECT_EQ(fromTuple(out), tuples[i]);
         }
     }
 
@@ -207,14 +210,14 @@ namespace hamdb
     TEST_F(SlottedPageTest, DeleteTupleReturnsOk)
     {
         SlotId id = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("to_delete"), id), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("to_delete"), id), Status::Ok);
         EXPECT_EQ(sp_->deleteTuple(id), Status::Ok);
     }
 
     TEST_F(SlottedPageTest, DeleteDecreasesTupleCountNotSlotCount)
     {
         SlotId id = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("x"), id), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("x"), id), Status::Ok);
         ASSERT_EQ(sp_->deleteTuple(id), Status::Ok);
         EXPECT_EQ(sp_->slotCount(),  1u); // slot dir entry remains
         EXPECT_EQ(sp_->tupleCount(), 0u); // live tuple count drops
@@ -223,17 +226,17 @@ namespace hamdb
     TEST_F(SlottedPageTest, ReadDeletedSlotReturnsInvalidArg)
     {
         SlotId id = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("gone"), id), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("gone"), id), Status::Ok);
         ASSERT_EQ(sp_->deleteTuple(id), Status::Ok);
 
-        std::span<const std::byte> out;
+        Tuple out;
         EXPECT_EQ(sp_->readTuple(id, out), Status::InvalidArg);
     }
 
     TEST_F(SlottedPageTest, DeleteAlreadyDeletedReturnsInvalidArg)
     {
         SlotId id = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("once"), id), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("once"), id), Status::Ok);
         ASSERT_EQ(sp_->deleteTuple(id), Status::Ok);
         EXPECT_EQ(sp_->deleteTuple(id), Status::InvalidArg);
     }
@@ -250,11 +253,11 @@ namespace hamdb
     TEST_F(SlottedPageTest, InsertAfterDeleteReusesSlot)
     {
         SlotId id0 = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("first"), id0), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("first"), id0), Status::Ok);
         ASSERT_EQ(sp_->deleteTuple(id0), Status::Ok);
 
         SlotId id1 = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("second"), id1), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("second"), id1), Status::Ok);
 
         // Reused slot: slot count stays at 1, not 2
         EXPECT_EQ(id1, id0);
@@ -265,15 +268,15 @@ namespace hamdb
     TEST_F(SlottedPageTest, ReuseSlotPreservesReadability)
     {
         SlotId id0 = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("old"), id0), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("old"), id0), Status::Ok);
         ASSERT_EQ(sp_->deleteTuple(id0), Status::Ok);
 
         SlotId id1 = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("new"), id1), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("new"), id1), Status::Ok);
 
-        std::span<const std::byte> out;
+        Tuple out;
         ASSERT_EQ(sp_->readTuple(id1, out), Status::Ok);
-        EXPECT_EQ(fromBytes(out), "new");
+        EXPECT_EQ(fromTuple(out), "new");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -284,8 +287,9 @@ namespace hamdb
     {
         // Fill the page with as many small tuples as will fit
         std::array<std::byte, 1> tiny{std::byte{0xFF}};
+        Tuple tuple(tiny);
         SlotId id = kInvalidSlotId;
-        while (sp_->insertTuple(tiny, id) == Status::Ok)
+        while (sp_->insertTuple(tuple, id) == Status::Ok)
         {
         }
         EXPECT_TRUE(sp_->isFull(1));
@@ -294,17 +298,18 @@ namespace hamdb
     TEST_F(SlottedPageTest, InsertOnFullPageReturnsIoError)
     {
         std::array<std::byte, 1> tiny{std::byte{0}};
+        Tuple tuple(tiny);
         SlotId id = kInvalidSlotId;
-        while (sp_->insertTuple(tiny, id) == Status::Ok)
+        while (sp_->insertTuple(tuple, id) == Status::Ok)
         {
         }
-        EXPECT_EQ(sp_->insertTuple(tiny, id), Status::IoError);
+        EXPECT_EQ(sp_->insertTuple(tuple, id), Status::IoError);
     }
 
     TEST_F(SlottedPageTest, EmptyTupleReturnsInvalidArg)
     {
         SlotId id = kInvalidSlotId;
-        std::span<const std::byte> empty;
+        Tuple empty;
         EXPECT_EQ(sp_->insertTuple(empty, id), Status::InvalidArg);
     }
 
@@ -323,8 +328,8 @@ namespace hamdb
     {
         SlotId id0 = kInvalidSlotId;
         SlotId id1 = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("AAAAAAAAAA"), id0), Status::Ok); // 10 bytes
-        ASSERT_EQ(sp_->insertTuple(toBytes("BBBBBBBBBB"), id1), Status::Ok); // 10 bytes
+        ASSERT_EQ(sp_->insertTuple(toTuple("AAAAAAAAAA"), id0), Status::Ok); // 10 bytes
+        ASSERT_EQ(sp_->insertTuple(toTuple("BBBBBBBBBB"), id1), Status::Ok); // 10 bytes
         ASSERT_EQ(sp_->deleteTuple(id0), Status::Ok);
 
         const std::size_t free_before = sp_->freeSpace();
@@ -341,37 +346,37 @@ namespace hamdb
         SlotId id0 = kInvalidSlotId;
         SlotId id1 = kInvalidSlotId;
         SlotId id2 = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("keep_a"),  id0), Status::Ok);
-        ASSERT_EQ(sp_->insertTuple(toBytes("delete_b"), id1), Status::Ok);
-        ASSERT_EQ(sp_->insertTuple(toBytes("keep_c"),  id2), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("keep_a"),  id0), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("delete_b"), id1), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("keep_c"),  id2), Status::Ok);
         ASSERT_EQ(sp_->deleteTuple(id1), Status::Ok);
 
         std::size_t reclaimed = 0;
         ASSERT_EQ(sp_->compact(reclaimed), Status::Ok);
 
-        std::span<const std::byte> out;
+        Tuple out;
         ASSERT_EQ(sp_->readTuple(id0, out), Status::Ok);
-        EXPECT_EQ(fromBytes(out), "keep_a");
+        EXPECT_EQ(fromTuple(out), "keep_a");
 
         ASSERT_EQ(sp_->readTuple(id2, out), Status::Ok);
-        EXPECT_EQ(fromBytes(out), "keep_c");
+        EXPECT_EQ(fromTuple(out), "keep_c");
     }
 
     TEST_F(SlottedPageTest, CompactPreservesSlotIndices)
     {
         SlotId id0 = kInvalidSlotId;
         SlotId id1 = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("X"), id0), Status::Ok); // slot 0
-        ASSERT_EQ(sp_->insertTuple(toBytes("Y"), id1), Status::Ok); // slot 1
+        ASSERT_EQ(sp_->insertTuple(toTuple("X"), id0), Status::Ok); // slot 0
+        ASSERT_EQ(sp_->insertTuple(toTuple("Y"), id1), Status::Ok); // slot 1
         ASSERT_EQ(sp_->deleteTuple(id0), Status::Ok);
 
         std::size_t reclaimed = 0;
         ASSERT_EQ(sp_->compact(reclaimed), Status::Ok);
 
         // slot 1 still readable at the same slot id
-        std::span<const std::byte> out;
+        Tuple out;
         ASSERT_EQ(sp_->readTuple(id1, out), Status::Ok);
-        EXPECT_EQ(fromBytes(out), "Y");
+        EXPECT_EQ(fromTuple(out), "Y");
 
         // slot 0 still reports deleted
         EXPECT_EQ(sp_->readTuple(id0, out), Status::InvalidArg);
@@ -381,9 +386,10 @@ namespace hamdb
     {
         // Fill to near capacity with medium tuples
         std::array<std::byte, 64> chunk{};
+        Tuple tuple(chunk);
         std::vector<SlotId> ids;
         SlotId id = kInvalidSlotId;
-        while (sp_->insertTuple(chunk, id) == Status::Ok)
+        while (sp_->insertTuple(tuple, id) == Status::Ok)
         {
             ids.push_back(id);
         }
@@ -401,7 +407,7 @@ namespace hamdb
 
         // After compact we should have enough contiguous space for a new chunk
         SlotId new_id = kInvalidSlotId;
-        EXPECT_EQ(sp_->insertTuple(chunk, new_id), Status::Ok);
+        EXPECT_EQ(sp_->insertTuple(tuple, new_id), Status::Ok);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -411,8 +417,8 @@ namespace hamdb
     TEST_F(SlottedPageTest, SlotCountNeverDecreasesOnDelete)
     {
         SlotId id = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toBytes("a"), id), Status::Ok);
-        ASSERT_EQ(sp_->insertTuple(toBytes("b"), id), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("a"), id), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("b"), id), Status::Ok);
         ASSERT_EQ(sp_->deleteTuple(0u), Status::Ok);
         EXPECT_EQ(sp_->slotCount(), 2u); // dir entries stay
         EXPECT_EQ(sp_->tupleCount(), 1u);
@@ -424,7 +430,7 @@ namespace hamdb
         for (int i = 0; i < 5; ++i)
         {
             SlotId id = kInvalidSlotId;
-            ASSERT_EQ(sp_->insertTuple(toBytes("x"), id), Status::Ok);
+            ASSERT_EQ(sp_->insertTuple(toTuple("x"), id), Status::Ok);
             ids.push_back(id);
         }
         EXPECT_EQ(sp_->tupleCount(), 5u);

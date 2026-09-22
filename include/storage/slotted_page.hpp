@@ -26,6 +26,7 @@
 #include "common/enums.hpp"
 #include "storage/page.hpp"
 #include "storage/tuple_slot.hpp"
+#include "storage/tuple.hpp"
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -42,7 +43,7 @@ namespace hamdb
     // ── SlottedPageHeader ─────────────────────────────────────────────────────
 
     /**
-     * @brief 8-byte bookkeeping record stored at the very start of the page body.
+     * @brief 16-byte bookkeeping record stored at the very start of the page body.
      *
      * This header is written and read via @c Serializer / @c Deserializer so
      * there is no unsafe pointer aliasing.
@@ -54,11 +55,13 @@ namespace hamdb
      * |      2 |    2 | freeSpaceStart  |
      * |      4 |    2 | freeSpaceEnd    |
      * |      6 |    2 | reserved        |
+     * |      8 |    4 | prev_page_id    |
+     * |     12 |    4 | next_page_id    |
      */
     struct SlottedPageHeader
     {
         /// Serialised size in bytes.
-        static constexpr std::size_t kSize = 8;
+        static constexpr std::size_t kSize = 16;
 
         /// Number of live (non-deleted) tuples.
         std::uint16_t tuple_count = 0;
@@ -72,6 +75,12 @@ namespace hamdb
 
         /// Reserved; must be zero.
         std::uint16_t reserved = 0;
+
+        /// Previous page ID in the table heap.
+        PageId prev_page_id = kInvalidPageId;
+
+        /// Next page ID in the table heap.
+        PageId next_page_id = kInvalidPageId;
     };
 
     // ── SlottedPage ───────────────────────────────────────────────────────────
@@ -134,11 +143,11 @@ namespace hamdb
          * body.  A slot entry is created (or a deleted slot is reused) in the
          * slot directory at the low end.
          *
-         * @param tuple   Raw tuple bytes to store.
+         * @param tuple   The tuple to store.
          * @param[out] slot_id  Receives the assigned slot ID on success.
          * @return @c Status::Ok, or @c Status::IoError if the page is full.
          */
-        [[nodiscard]] Status insertTuple(std::span<const std::byte> tuple,
+        [[nodiscard]] Status insertTuple(const Tuple& tuple,
                                          SlotId& slot_id) noexcept;
 
         /**
@@ -166,18 +175,17 @@ namespace hamdb
         // ── Queries ───────────────────────────────────────────────────────────
 
         /**
-         * @brief Read the raw bytes of the tuple in slot @p slot_id.
+         * @brief Read the tuple in slot @p slot_id.
          *
-         * Returns a non-owning view into the backing page body.  Valid only
-         * while the @c Page lives and is not compacted.
+         * Returns a strong Tuple wrapper containing an owning copy of the data.
          *
          * @param slot_id     Slot to read.
-         * @param[out] tuple  Set to a span over the tuple bytes on success.
+         * @param[out] tuple  Set to the retrieved tuple on success.
          * @return @c Status::Ok, @c Status::NotFound if the slot is out of range,
          *         @c Status::InvalidArg if the slot is deleted.
          */
         [[nodiscard]] Status readTuple(SlotId slot_id,
-                                       std::span<const std::byte>& tuple) const noexcept;
+                                       Tuple& tuple) const noexcept;
 
         /// Return the number of free bytes currently available for new data.
         [[nodiscard]] std::size_t freeSpace() const noexcept;
@@ -194,6 +202,14 @@ namespace hamdb
          * Accounts for the slot directory entry as well as the tuple payload.
          */
         [[nodiscard]] bool isFull(std::size_t tuple_size) const noexcept;
+
+        // ── Links ─────────────────────────────────────────────────────────────
+
+        [[nodiscard]] PageId getPrevPageId() const noexcept;
+        void setPrevPageId(PageId page_id) noexcept;
+
+        [[nodiscard]] PageId getNextPageId() const noexcept;
+        void setNextPageId(PageId page_id) noexcept;
 
     private:
         Page& page_; ///< Reference to the backing page (non-owning).

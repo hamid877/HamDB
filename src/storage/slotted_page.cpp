@@ -30,6 +30,10 @@ namespace hamdb
         static_cast<void>(des.readUInt16(tmp)); h.free_space_start = tmp;
         static_cast<void>(des.readUInt16(tmp)); h.free_space_end   = tmp;
         static_cast<void>(des.readUInt16(tmp)); h.reserved         = tmp;
+        
+        std::uint32_t page_id_tmp = 0;
+        static_cast<void>(des.readUInt32(page_id_tmp)); h.prev_page_id = page_id_tmp;
+        static_cast<void>(des.readUInt32(page_id_tmp)); h.next_page_id = page_id_tmp;
 
         return h;
     }
@@ -44,6 +48,8 @@ namespace hamdb
         static_cast<void>(ser.writeUInt16(h.free_space_start));
         static_cast<void>(ser.writeUInt16(h.free_space_end));
         static_cast<void>(ser.writeUInt16(h.reserved));
+        static_cast<void>(ser.writeUInt32(h.prev_page_id));
+        static_cast<void>(ser.writeUInt32(h.next_page_id));
     }
 
     // ── Internal: TupleSlot I/O ───────────────────────────────────────────────
@@ -97,6 +103,8 @@ namespace hamdb
         h.free_space_start = static_cast<std::uint16_t>(SlottedPageHeader::kSize);
         h.free_space_end   = static_cast<std::uint16_t>(kBodySize);
         h.reserved         = 0;
+        h.prev_page_id     = kInvalidPageId;
+        h.next_page_id     = kInvalidPageId;
         writeSpHeader(h);
 
         // Sync PageHeader fields
@@ -108,7 +116,7 @@ namespace hamdb
 
     // ── Mutation ──────────────────────────────────────────────────────────────
 
-    Status SlottedPage::insertTuple(std::span<const std::byte> tuple,
+    Status SlottedPage::insertTuple(const Tuple& tuple,
                                     SlotId& slot_id) noexcept
     {
         if (tuple.empty())
@@ -136,7 +144,8 @@ namespace hamdb
 
         // Bytes needed: tuple payload + (a new slot entry if we cannot reuse)
         const std::size_t needed_slot = reuse ? 0u : TupleSlot::kSize;
-        const std::size_t needed_total = tuple.size() + needed_slot;
+        const std::size_t tuple_size = tuple.size();
+        const std::size_t needed_total = tuple_size + needed_slot;
         const std::size_t available    = h.free_space_end - h.free_space_start;
 
         if (needed_total > available)
@@ -152,7 +161,7 @@ namespace hamdb
         auto body = page_.body();
         std::span<std::byte> dest(body.data() + new_free_end, tuple_len);
         Serializer ser(dest);
-        static_cast<void>(ser.writeBytes(tuple));
+        static_cast<void>(ser.writeBytes(tuple.data()));
 
         // Create or update the slot entry
         const TupleSlot new_slot(new_free_end, tuple_len);
@@ -261,7 +270,7 @@ namespace hamdb
     // ── Queries ───────────────────────────────────────────────────────────────
 
     Status SlottedPage::readTuple(SlotId slot_id,
-                                  std::span<const std::byte>& tuple) const noexcept
+                                  Tuple& tuple) const noexcept
     {
         const auto slot_count = page_.header().slot_count;
         if (slot_id >= slot_count)
@@ -276,7 +285,7 @@ namespace hamdb
         }
 
         auto body = page_.body();
-        tuple = std::span<const std::byte>(body.data() + slot.offset, slot.length);
+        tuple = Tuple(std::span<const std::byte>(body.data() + slot.offset, slot.length));
         return Status::Ok;
     }
 
@@ -318,6 +327,32 @@ namespace hamdb
 
         const std::size_t needed = has_deleted ? tuple_size : tuple_size + TupleSlot::kSize;
         return free < needed;
+    }
+
+    // ── Links ─────────────────────────────────────────────────────────────────
+
+    PageId SlottedPage::getPrevPageId() const noexcept
+    {
+        return readSpHeader().prev_page_id;
+    }
+
+    void SlottedPage::setPrevPageId(PageId page_id) noexcept
+    {
+        SlottedPageHeader h = readSpHeader();
+        h.prev_page_id = page_id;
+        writeSpHeader(h);
+    }
+
+    PageId SlottedPage::getNextPageId() const noexcept
+    {
+        return readSpHeader().next_page_id;
+    }
+
+    void SlottedPage::setNextPageId(PageId page_id) noexcept
+    {
+        SlottedPageHeader h = readSpHeader();
+        h.next_page_id = page_id;
+        writeSpHeader(h);
     }
 
 } // namespace hamdb

@@ -5,6 +5,10 @@ add_library(hamdb_storage STATIC
     disk_manager.cpp
     tuple_slot.cpp
     slotted_page.cpp
+    tuple.cpp
+    rid.cpp
+    table_heap.cpp
+    heap_iterator.cpp
 )
 
 target_link_libraries(hamdb_storage PUBLIC
