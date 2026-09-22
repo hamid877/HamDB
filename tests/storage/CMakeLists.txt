@@ -2,6 +2,7 @@ add_executable(hamdb_storage_tests
     page_header_test.cpp
     page_test.cpp
     disk_manager_test.cpp
+    slotted_page_test.cpp
 )
 
 target_link_libraries(hamdb_storage_tests PRIVATE
