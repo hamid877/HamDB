@@ -15,8 +15,8 @@
 | Build            | CMake + Ninja               |
 | Testing          | GoogleTest                  |
 | Platform         | Linux (Ubuntu / Linux Mint) |
-| Current Version  | v0.1.0-dev                  |
-| Overall Progress | **31%**                     |
+| Current Version  | v0.2.0-dev                  |
+| Overall Progress | **35%**                     |
 
 ---
 
@@ -45,9 +45,9 @@ Every milestone must satisfy:
 | M1.4 | Serializer / Deserializer    | ✅ Complete | 67      |
 | M1.5 | Slotted Pages                | ✅ Complete | 96      |
 | M1.6 | Table Heap + RID + Iterator  | ✅ Complete | 125     |
-| M1.7 | Buffer Pool Manager Skeleton | ✅ Complete | **131** |
-| M1.8 | LRU-K Replacement Policy     | ⏳ Next     | —       |
-| M1.9 | Page Guards (RAII)           | ⬜ Planned  | —       |
+| M1.7 | Buffer Pool Manager Skeleton | ✅ Complete | 131     |
+| M1.8 | LRU-K Replacement Policy     | ✅ Complete | **135** |
+| M1.9 | Page Guards (RAII)           | ⏳ Next     | —       |
 
 ---
 
@@ -100,25 +100,22 @@ Every milestone must satisfy:
 
 # Completed Milestones
 
-## M1.7 — Buffer Pool Manager Skeleton
+## M1.8 — LRU-K Replacement Policy
 
 **Status:** ✅ Complete
 
 ### Implemented
 
-* BufferFrame abstraction.
-* BufferPoolManager.
-* Fixed-size frame pool.
-* Page table (`PageId → FrameId`).
-* Pin / unpin.
-* Dirty page tracking.
-* Flush page.
-* Flush all pages.
-* Pool full detection.
+* LRUKReplacer algorithm.
+* Access history timestamps (tracking up to K accesses).
+* Backward K-distance calculation for +inf and finite distances.
+* Tie-breaking logic (oldest timestamp, smaller FrameId).
+* BufferPoolManager integration (cache miss eviction, dirty page flushing).
+* Pinned frame tracking (evictability).
 
 ### Verification
 
-* Tests passing: **131 / 131**
+* Tests passing: **135 / 135**
 * Build: ✅
 * Lint: ✅
 * Test: ✅
@@ -126,7 +123,7 @@ Every milestone must satisfy:
 ### Git Commit
 
 ```text
-feat(buffer): implement buffer pool manager skeleton
+feat(buffer): implement LRU-K replacement policy
 ```
 
 ---
@@ -151,24 +148,22 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M1.8 — LRU-K Replacement Policy
+## M1.9 — Page Guards (RAII)
 
 ### Goal
 
-Replace "first free frame only" behavior with an LRU-K page replacement algorithm.
+Implement RAII wrappers around BufferPoolManager pages to automate pin and unpin operations and guarantee memory safety.
 
 ### Deliverables
 
-* LRUKReplacer.
-* Access history timestamps.
-* Backward K-distance calculation.
-* Evictable frame tracking.
-* Victim selection.
-* BufferPoolManager integration.
+* ReadPageGuard.
+* WritePageGuard.
+* BasicPageGuard.
+* Automatic unpinning on destruction.
 
 ### Expected Tests
 
-Approximately **150+ total tests** after completion.
+Approximately **160+ total tests** after completion.
 
 ---
 
@@ -182,7 +177,8 @@ Approximately **150+ total tests** after completion.
 | M1.4      | 67            |
 | M1.5      | 96            |
 | M1.6      | 125           |
-| M1.7      | **131**       |
+| M1.7      | 131           |
+| M1.8      | **135**       |
 
 ---
 

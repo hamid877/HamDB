@@ -6,7 +6,8 @@ namespace hamdb
     BufferPoolManager::BufferPoolManager(std::size_t pool_size, DiskManager& disk_manager)
         : pool_size_(pool_size),
           disk_manager_(disk_manager),
-          frames_(std::make_unique<BufferFrame[]>(pool_size))
+          frames_(std::make_unique<BufferFrame[]>(pool_size)),
+          replacer_(std::make_unique<LRUKReplacer>(pool_size, 2))
     {
         for (std::size_t i = 0; i < pool_size_; ++i)
         {
@@ -30,6 +31,24 @@ namespace hamdb
             }
         }
         
+        FrameId victim_fid;
+        if (replacer_->evict(victim_fid))
+        {
+            BufferFrame& victim = frames_[victim_fid];
+            if (victim.isDirty())
+            {
+                if (Status s = flushPage(victim.pageId()); s != Status::Ok)
+                {
+                    return s;
+                }
+            }
+            page_table_.erase(victim.pageId());
+            victim.invalidate();
+            replacer_->remove(victim_fid);
+            out_frame_id = victim_fid;
+            return Status::Ok;
+        }
+
         return Status::BufferPoolFull;
     }
 
@@ -42,6 +61,8 @@ namespace hamdb
         {
             FrameId frame_id = it->second;
             frames_[frame_id].pin();
+            replacer_->recordAccess(frame_id);
+            replacer_->setEvictable(frame_id, false);
             out_frame = &frames_[frame_id];
             return Status::Ok;
         }
@@ -62,6 +83,10 @@ namespace hamdb
         }
 
         page_table_[page_id] = free_frame_id;
+        
+        replacer_->recordAccess(free_frame_id);
+        replacer_->setEvictable(free_frame_id, false);
+
         out_frame = &frame;
 
         return Status::Ok;
@@ -87,6 +112,10 @@ namespace hamdb
         BufferFrame& frame = frames_[free_frame_id];
         frame.reset(new_page_id);
         page_table_[new_page_id] = free_frame_id;
+        
+        replacer_->recordAccess(free_frame_id);
+        replacer_->setEvictable(free_frame_id, false);
+
         out_page_id = new_page_id;
         out_frame = &frame;
 
@@ -110,6 +139,12 @@ namespace hamdb
         }
 
         frame.unpin(is_dirty);
+        
+        if (frame.pinCount() == 0)
+        {
+            replacer_->setEvictable(frame_id, true);
+        }
+        
         return Status::Ok;
     }
 

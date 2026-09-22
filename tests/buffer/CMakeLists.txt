@@ -1,5 +1,6 @@
 add_executable(hamdb_buffer_tests
     buffer_pool_manager_test.cpp
+    lruk_replacer_test.cpp
 )
 
 target_link_libraries(hamdb_buffer_tests PRIVATE

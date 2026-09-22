@@ -145,7 +145,7 @@ namespace hamdb
         EXPECT_EQ(bpm.flushPage(page_id), Status::Ok);
     }
 
-    TEST_F(BufferPoolManagerTest, PoolFullWithoutEviction)
+    TEST_F(BufferPoolManagerTest, EvictionWorksWhenPoolIsFull)
     {
         DiskManager dm(db_path_);
         ASSERT_EQ(dm.createDatabase(), Status::Ok);
@@ -164,12 +164,31 @@ namespace hamdb
         ASSERT_EQ(bpm.newPage(p2, frame2), Status::Ok);
         ASSERT_EQ(bpm.newPage(p3, frame3), Status::Ok);
         
-        // Next allocation should fail because pool is full (size 3) and we don't evict yet
+        // All frames are pinned, pool is full.
         EXPECT_EQ(bpm.newPage(p4, frame4), Status::BufferPoolFull);
         
-        // Even if we unpin, because findFreeFrame only checks `!isValid()`, it will still fail
+        // Unpin p1 (clean). Now it is evictable.
         EXPECT_EQ(bpm.unpinPage(p1, false), Status::Ok);
-        EXPECT_EQ(bpm.newPage(p4, frame4), Status::BufferPoolFull);
+        
+        // Next allocation should evict p1.
+        EXPECT_EQ(bpm.newPage(p4, frame4), Status::Ok);
+        EXPECT_EQ(p4, frame4->pageId());
+        
+        // Try to fetch p1, it should miss and cause another eviction if we unpin p2.
+        EXPECT_EQ(bpm.unpinPage(p2, true), Status::Ok); // unpin p2 as dirty
+        
+        BufferFrame* p1_frame = nullptr;
+        EXPECT_EQ(bpm.fetchPage(p1, p1_frame), Status::Ok);
+        EXPECT_EQ(p1, p1_frame->pageId());
+        
+        // The fetch should have evicted p2 (it was the only evictable frame).
+        // Since p2 was dirty, it should have been flushed to disk.
+        // Let's verify by fetching p2 again (we must unpin p3 to make room).
+        EXPECT_EQ(bpm.unpinPage(p3, false), Status::Ok);
+        
+        BufferFrame* p2_frame = nullptr;
+        EXPECT_EQ(bpm.fetchPage(p2, p2_frame), Status::Ok);
+        EXPECT_EQ(p2, p2_frame->pageId());
     }
 
 } // namespace hamdb

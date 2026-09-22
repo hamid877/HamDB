@@ -1,6 +1,7 @@
 add_library(hamdb_buffer STATIC
     buffer_frame.cpp
     buffer_pool_manager.cpp
+    lruk_replacer.cpp
 )
 
 target_link_libraries(hamdb_buffer PUBLIC

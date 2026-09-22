@@ -4,6 +4,7 @@
 /// @brief Manages a fixed-size pool of BufferFrames acting as a page cache.
 
 #include "buffer/buffer_frame.hpp"
+#include "buffer/lruk_replacer.hpp"
 #include "storage/disk_manager.hpp"
 #include <memory>
 #include <unordered_map>
@@ -106,6 +107,9 @@ namespace hamdb
         
         // Maps PageId to FrameId to quickly find cached pages.
         std::unordered_map<PageId, FrameId> page_table_;
+
+        // Replacement policy manager.
+        std::unique_ptr<LRUKReplacer> replacer_;
     };
 
 } // namespace hamdb
