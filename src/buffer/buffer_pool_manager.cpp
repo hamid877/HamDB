@@ -196,6 +196,7 @@ namespace hamdb
     Status BufferPoolManager::fetchPageRead(PageId page_id,
                                              ReadPageGuard& out_guard)
     {
+        out_guard.drop();
         BufferFrame* frame = nullptr;
         if (Status s = fetchPage(page_id, frame); s != Status::Ok)
         {
@@ -208,6 +209,7 @@ namespace hamdb
     Status BufferPoolManager::fetchPageWrite(PageId page_id,
                                               WritePageGuard& out_guard)
     {
+        out_guard.drop();
         BufferFrame* frame = nullptr;
         if (Status s = fetchPage(page_id, frame); s != Status::Ok)
         {
@@ -220,6 +222,7 @@ namespace hamdb
     Status BufferPoolManager::newPageGuard(PageId& out_page_id,
                                             WritePageGuard& out_guard)
     {
+        out_guard.drop();
         BufferFrame* frame    = nullptr;
         PageId       page_id  = kInvalidPageId;
         if (Status s = newPage(page_id, frame); s != Status::Ok)

@@ -33,12 +33,12 @@ namespace hamdb
         /**
          * @brief Move constructor.
          */
-        BPlusTreeIterator(BPlusTreeIterator&& other) noexcept = default;
+        BPlusTreeIterator(BPlusTreeIterator&& other) noexcept;
 
         /**
          * @brief Move assignment operator.
          */
-        BPlusTreeIterator& operator=(BPlusTreeIterator&& other) noexcept = default;
+        BPlusTreeIterator& operator=(BPlusTreeIterator&& other) noexcept;
 
         /**
          * @brief Check if this iterator represents the end of the tree.

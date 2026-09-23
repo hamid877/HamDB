@@ -12,6 +12,35 @@ namespace hamdb
         }
     }
 
+    BPlusTreeIterator::BPlusTreeIterator(BPlusTreeIterator&& other) noexcept
+        : bpm_(other.bpm_),
+          page_id_(other.page_id_),
+          index_(other.index_),
+          guard_(std::move(other.guard_)),
+          leaf_(std::move(other.leaf_))
+    {
+        other.bpm_ = nullptr;
+        other.page_id_ = kInvalidPageId;
+        other.index_ = 0;
+    }
+
+    BPlusTreeIterator& BPlusTreeIterator::operator=(BPlusTreeIterator&& other) noexcept
+    {
+        if (this != &other)
+        {
+            bpm_ = other.bpm_;
+            page_id_ = other.page_id_;
+            index_ = other.index_;
+            guard_ = std::move(other.guard_);
+            leaf_ = std::move(other.leaf_);
+
+            other.bpm_ = nullptr;
+            other.page_id_ = kInvalidPageId;
+            other.index_ = 0;
+        }
+        return *this;
+    }
+
     bool BPlusTreeIterator::isEnd() const noexcept
     {
         return page_id_ == kInvalidPageId;
