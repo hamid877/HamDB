@@ -51,6 +51,15 @@ namespace hamdb
          */
         [[nodiscard]] std::optional<RID> getValue(int64_t key) noexcept;
 
+        /**
+         * @brief Insert a key/value pair into the B+ Tree.
+         *
+         * @param key The key to insert.
+         * @param rid The RID to insert.
+         * @return Status::Ok on success, Status::AlreadyExists if duplicate, Status::PageFull if full.
+         */
+        [[nodiscard]] Status insert(int64_t key, RID rid) noexcept;
+
     private:
         BufferPoolManager& bpm_;
         PageId             root_page_id_{kInvalidPageId};

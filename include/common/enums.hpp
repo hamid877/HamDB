@@ -52,6 +52,7 @@ namespace hamdb
         NotSupported,  ///< Operation is not yet implemented.
         AlreadyExists, ///< Resource already exists and cannot be created again.
         BufferPoolFull,///< Buffer pool has no free frames available.
+        PageFull,      ///< Page has no free space.
         Unknown,       ///< An unclassified internal error occurred.
     };
 

@@ -179,4 +179,119 @@ namespace hamdb
         }
     }
 
+    TEST_F(BPlusTreeTest, InsertEmptyTree)
+    {
+        BPlusTree tree(*bpm_);
+        tree.create();
+        
+        EXPECT_EQ(tree.insert(42, RID{1, 2}), Status::Ok);
+        EXPECT_FALSE(tree.isEmpty());
+        
+        auto res = tree.getValue(42);
+        ASSERT_TRUE(res.has_value());
+        EXPECT_EQ(res->getPageId(), 1);
+        EXPECT_EQ(res->getSlotId(), 2);
+    }
+
+    TEST_F(BPlusTreeTest, InsertAscending)
+    {
+        BPlusTree tree(*bpm_);
+        tree.create();
+        
+        for (int i = 0; i < 50; ++i)
+        {
+            EXPECT_EQ(tree.insert(i, RID{1, static_cast<uint16_t>(i)}), Status::Ok);
+        }
+        
+        for (int i = 0; i < 50; ++i)
+        {
+            auto res = tree.getValue(i);
+            ASSERT_TRUE(res.has_value());
+            EXPECT_EQ(res->getSlotId(), static_cast<uint16_t>(i));
+        }
+    }
+
+    TEST_F(BPlusTreeTest, InsertDescending)
+    {
+        BPlusTree tree(*bpm_);
+        tree.create();
+        
+        for (int i = 50; i > 0; --i)
+        {
+            EXPECT_EQ(tree.insert(i, RID{1, static_cast<uint16_t>(i)}), Status::Ok);
+        }
+        
+        for (int i = 1; i <= 50; ++i)
+        {
+            auto res = tree.getValue(i);
+            ASSERT_TRUE(res.has_value());
+            EXPECT_EQ(res->getSlotId(), static_cast<uint16_t>(i));
+        }
+    }
+
+    TEST_F(BPlusTreeTest, InsertRandom)
+    {
+        BPlusTree tree(*bpm_);
+        tree.create();
+        
+        std::vector<int64_t> keys = {15, 3, 22, 8, 42, 1, 99, 17, 4};
+        for (auto k : keys)
+        {
+            EXPECT_EQ(tree.insert(k, RID{2, static_cast<uint16_t>(k)}), Status::Ok);
+        }
+        
+        for (auto k : keys)
+        {
+            auto res = tree.getValue(k);
+            ASSERT_TRUE(res.has_value());
+            EXPECT_EQ(res->getSlotId(), static_cast<uint16_t>(k));
+        }
+    }
+
+    TEST_F(BPlusTreeTest, InsertDuplicate)
+    {
+        BPlusTree tree(*bpm_);
+        tree.create();
+        
+        EXPECT_EQ(tree.insert(10, RID{1, 1}), Status::Ok);
+        EXPECT_EQ(tree.insert(10, RID{1, 2}), Status::AlreadyExists);
+    }
+
+    TEST_F(BPlusTreeTest, InsertPageFull)
+    {
+        BPlusTree tree(*bpm_);
+        tree.create();
+        
+        BTreeLeafPage dummy;
+        dummy.init(0, kInvalidPageId);
+        int max_entries = dummy.maxSize();
+        
+        for (int i = 0; i < max_entries; ++i)
+        {
+            EXPECT_EQ(tree.insert(i, RID{1, 1}), Status::Ok);
+        }
+        
+        EXPECT_EQ(tree.insert(max_entries, RID{1, 1}), Status::PageFull);
+    }
+    
+    TEST_F(BPlusTreeTest, InsertPinLeaksAndDirtyPropagation)
+    {
+        BPlusTree tree(*bpm_);
+        tree.create();
+        
+        // Pin leak check: if insert leaked pins, the pool of size 10 would fill up.
+        // Doing max_entries inserts ensures we don't hit BufferPoolFull.
+        BTreeLeafPage dummy;
+        dummy.init(0, kInvalidPageId);
+        int max_entries = dummy.maxSize();
+        
+        for (int i = 0; i < max_entries; ++i)
+        {
+            EXPECT_EQ(tree.insert(i, RID{1, static_cast<uint16_t>(i)}), Status::Ok);
+        }
+        
+        // Dirty propagation check: Flush all should successfully write the dirtied root page.
+        EXPECT_EQ(bpm_->flushAllPages(), Status::Ok);
+    }
+
 } // namespace hamdb

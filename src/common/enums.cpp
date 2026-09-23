@@ -25,6 +25,8 @@ namespace hamdb
             return "AlreadyExists";
         case Status::BufferPoolFull:
             return "BufferPoolFull";
+        case Status::PageFull:
+            return "PageFull";
         case Status::Unknown:
         default:
             return "Unknown";

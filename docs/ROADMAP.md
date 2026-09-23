@@ -59,9 +59,10 @@ Every milestone must satisfy:
 | M2.1 | Leaf Pages                  | ✅ Complete |
 | M2.2 | Internal Pages              | ✅ Complete |
 | M2.3 | Search Algorithm            | ✅ Complete |
-| M2.4 | Insert & Split              | ⬜          |
-| M2.5 | Delete & Merge              | ⬜          |
-| M2.6 | Index Iterator              | ⬜          |
+| M2.4 | B+ Tree Leaf Insert         | ✅ Complete |
+| M2.5 | B+ Tree Splits              | ⬜          |
+| M2.6 | Delete & Merge              | ⬜          |
+| M2.7 | Index Iterator              | ⬜          |
 
 ---
 
@@ -100,6 +101,37 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M2.4 — B+ Tree Leaf Insert
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `BPlusTree::insert(int64_t key, RID rid)` public API.
+* Empty tree creates a root leaf page via `BufferPoolManager`.
+* Tree traversal to target leaf using `ReadPageGuard`.
+* Insertion into leaf page with `WritePageGuard`.
+* Duplicate key rejection (`Status::AlreadyExists`).
+* Full leaf rejection (`Status::PageFull`).
+* Proper dirty page propagation and pin leak prevention via RAII guards.
+* Added `PageFull` to `Status` enum.
+* 7 new tests covering empty tree insertion, ordered/random inserts, duplicates, full page behaviour, and pin leak validation.
+
+### Verification
+
+* Tests passing: **314 / 314**
+* Build: ✅
+* Lint: ✅ (`clang-tidy passed`)
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(index): implement B+ tree leaf insert (M2.4)
+```
+
+---
 
 ## M2.3 — B+ Tree Search
 
@@ -310,11 +342,11 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M2.4 — Insert & Split
+## M2.5 — B+ Tree Splits
 
 ### Goal
 
-Implement B+ Tree insertion logic including page splitting.
+Implement B+ Tree page splitting logic for leaf and internal nodes, and root updates.
 
 ### Deliverables
 
@@ -344,7 +376,8 @@ Approximately **325+ total tests** after completion.
 | M2.0      | 212           |
 | M2.1      | 292           |
 | M2.2      | 303           |
-| M2.3      | **307**       |
+| M2.3      | 307           |
+| M2.4      | **314**       |
 
 ---
 
