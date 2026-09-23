@@ -3,6 +3,7 @@ add_executable(hamdb_index_tests
     btree_leaf_page_test.cpp
     btree_internal_page_test.cpp
     bplus_tree_test.cpp
+    bplus_tree_iterator_test.cpp
 )
 
 target_link_libraries(hamdb_index_tests PRIVATE

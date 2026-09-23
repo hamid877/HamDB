@@ -3,6 +3,7 @@ add_library(hamdb_index STATIC
     btree_leaf_page.cpp
     btree_internal_page.cpp
     bplus_tree.cpp
+    bplus_tree_iterator.cpp
 )
 
 target_link_libraries(hamdb_index PUBLIC

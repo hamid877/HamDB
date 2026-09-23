@@ -414,4 +414,129 @@ namespace hamdb
         return insertIntoParent(parent_page_id, median_key, new_internal_page_id);
     }
 
+    BPlusTreeIterator BPlusTree::begin() noexcept
+    {
+        if (isEmpty())
+        {
+            return end();
+        }
+
+        PageId curr_page_id = root_page_id_;
+        while (curr_page_id != kInvalidPageId)
+        {
+            ReadPageGuard guard;
+            if (bpm_.fetchPageRead(curr_page_id, guard) != Status::Ok)
+            {
+                return end();
+            }
+
+            BTreePage header;
+            if (header.deserialize(guard.page().body()) != Status::Ok)
+            {
+                return end();
+            }
+
+            if (header.pageType() == PageType::BTreeLeaf)
+            {
+                BTreeLeafPage leaf;
+                if (leaf.deserialize(guard.page().body()) != Status::Ok || leaf.isEmpty())
+                {
+                    return end();
+                }
+                guard.drop(); // Destroy before iterator creates its own
+                return BPlusTreeIterator(bpm_, curr_page_id, 0);
+            }
+            else if (header.pageType() == PageType::BTreeInternal)
+            {
+                BTreeInternalPage internal;
+                if (internal.deserialize(guard.page().body()) != Status::Ok)
+                {
+                    return end();
+                }
+                curr_page_id = internal.childAt(0); // Leftmost child
+            }
+            else
+            {
+                return end();
+            }
+        }
+
+        return end();
+    }
+
+    BPlusTreeIterator BPlusTree::begin(int64_t key) noexcept
+    {
+        if (isEmpty())
+        {
+            return end();
+        }
+
+        PageId curr_page_id = root_page_id_;
+        while (curr_page_id != kInvalidPageId)
+        {
+            ReadPageGuard guard;
+            if (bpm_.fetchPageRead(curr_page_id, guard) != Status::Ok)
+            {
+                return end();
+            }
+
+            BTreePage header;
+            if (header.deserialize(guard.page().body()) != Status::Ok)
+            {
+                return end();
+            }
+
+            if (header.pageType() == PageType::BTreeLeaf)
+            {
+                BTreeLeafPage leaf;
+                if (leaf.deserialize(guard.page().body()) != Status::Ok || leaf.isEmpty())
+                {
+                    return end();
+                }
+
+                uint16_t index = 0;
+                while (index < leaf.size() && leaf.keyAt(index) < key)
+                {
+                    index++;
+                }
+
+                if (index < leaf.size())
+                {
+                    guard.drop(); // Destroy before iterator creates its own
+                    return BPlusTreeIterator(bpm_, curr_page_id, index);
+                }
+                else
+                {
+                    PageId next_page_id = leaf.nextPageId();
+                    guard.drop(); // Destroy before iterator creates its own
+                    if (next_page_id != kInvalidPageId)
+                    {
+                        return BPlusTreeIterator(bpm_, next_page_id, 0);
+                    }
+                    return end();
+                }
+            }
+            else if (header.pageType() == PageType::BTreeInternal)
+            {
+                BTreeInternalPage internal;
+                if (internal.deserialize(guard.page().body()) != Status::Ok)
+                {
+                    return end();
+                }
+                curr_page_id = internal.lookup(key);
+            }
+            else
+            {
+                return end();
+            }
+        }
+
+        return end();
+    }
+
+    BPlusTreeIterator BPlusTree::end() noexcept
+    {
+        return BPlusTreeIterator();
+    }
+
 } // namespace hamdb

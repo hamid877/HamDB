@@ -2,6 +2,7 @@
 
 #include "buffer/buffer_pool_manager.hpp"
 #include "common/constants.hpp"
+#include "index/bplus_tree_iterator.hpp"
 #include "storage/rid.hpp"
 
 #include <optional>
@@ -59,6 +60,28 @@ namespace hamdb
          * @return Status::Ok on success, Status::AlreadyExists if duplicate, Status::PageFull if full.
          */
         [[nodiscard]] Status insert(int64_t key, RID rid) noexcept;
+
+        /**
+         * @brief Get an iterator pointing to the first key in the B+ tree.
+         *
+         * @return BPlusTreeIterator pointing to the first key/value pair.
+         */
+        [[nodiscard]] BPlusTreeIterator begin() noexcept;
+
+        /**
+         * @brief Get an iterator pointing to the first key >= the provided key.
+         *
+         * @param key The lower bound key.
+         * @return BPlusTreeIterator pointing to the key/value pair.
+         */
+        [[nodiscard]] BPlusTreeIterator begin(int64_t key) noexcept;
+
+        /**
+         * @brief Get an iterator representing the end of the tree.
+         *
+         * @return BPlusTreeIterator pointing past the last key.
+         */
+        [[nodiscard]] BPlusTreeIterator end() noexcept;
 
     private:
         /**

@@ -62,8 +62,8 @@ Every milestone must satisfy:
 | M2.4 | B+ Tree Leaf Insert         | ✅ Complete |
 | M2.5 | B+ Tree Splits              | ✅ Complete |
 | M2.6 | Recursive B+ Tree Insertion | ✅ Complete |
-| M2.7 | Delete & Merge              | ⬜          |
-| M2.8 | Index Iterator              | ⬜          |
+| M2.7 | B+ Tree Iterator & Range Scan | ✅ Complete |
+| M2.8 | Delete & Merge              | ⬜          |
 
 ---
 
@@ -102,6 +102,34 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M2.7 — B+ Tree Iterator & Range Scan
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `BPlusTreeIterator` class for forward iteration over leaf pages.
+* `begin()`, `begin(int64_t key)`, and `end()` methods in `BPlusTree`.
+* Support for exact matches, lower bounds, and multi-node range scans.
+* Automatic `ReadPageGuard` management within iterator to prevent pin leaks.
+* Overloaded iterator operators (`++`, `*`, `==`, `!=`).
+* Tests passing for empty tree, single node, multi-node, and range scans.
+
+### Verification
+
+* Tests passing: **322 / 322**
+* Build: ✅
+* Lint: ✅ (`clang-tidy passed`)
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(index): implement B+ tree iterator and range scan (M2.7)
+```
+
+---
 
 ## M2.6 — Recursive B+ Tree Insertion
 
@@ -399,7 +427,7 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M2.7 — Delete & Merge
+## M2.8 — Delete & Merge
 
 ### Goal
 
@@ -436,7 +464,8 @@ Approximately **335+ total tests** after completion.
 | M2.3      | 307           |
 | M2.4      | 314           |
 | M2.5      | 317           |
-| M2.6      | **318**       |
+| M2.6      | 318           |
+| M2.7      | **322**       |
 
 ---
 
