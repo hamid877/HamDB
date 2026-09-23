@@ -95,19 +95,20 @@ namespace hamdb
                 return Status::BufferPoolFull;
             }
 
-            root_page_id_ = new_page_id;
+            std::ranges::fill(guard.pageMut().body(), std::byte{0});
 
             BTreeLeafPage leaf;
             leaf.init(new_page_id, kInvalidPageId);
             Status status = leaf.insert(key, rid);
-            if (status == Status::Ok)
+            
+            if (leaf.serialize(guard.pageMut().body()) != Status::Ok)
             {
-                if (leaf.serialize(guard.pageMut().body()) != Status::Ok)
-                {
-                    return Status::IoError;
-                }
-                guard.markDirty();
+                return Status::IoError;
             }
+            
+            root_page_id_ = new_page_id;
+            guard.markDirty();
+            
             return status;
         }
 
