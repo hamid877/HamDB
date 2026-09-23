@@ -62,6 +62,15 @@ namespace hamdb
         [[nodiscard]] Status insert(int64_t key, RID rid) noexcept;
 
         /**
+         * @brief Remove a key/value pair from the B+ Tree.
+         *
+         * @param key The key to remove.
+         * @return Status::Ok on success, Status::NotFound if not found.
+         */
+        [[nodiscard]] Status remove(int64_t key) noexcept;
+
+
+        /**
          * @brief Get an iterator pointing to the first key in the B+ tree.
          *
          * @return BPlusTreeIterator pointing to the first key/value pair.
@@ -93,6 +102,15 @@ namespace hamdb
          * @return Status::Ok on success.
          */
         [[nodiscard]] Status insertIntoParent(PageId old_node_id, int64_t key, PageId new_node_id) noexcept;
+
+        /**
+         * @brief Recursively handle underflow for a given page.
+         *
+         * @param page_id The ID of the page that has underflowed.
+         * @return Status::Ok on success.
+         */
+        [[nodiscard]] Status handleUnderflow(PageId page_id) noexcept;
+
 
         BufferPoolManager& bpm_;
         PageId             root_page_id_{kInvalidPageId};

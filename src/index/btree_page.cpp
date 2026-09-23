@@ -40,6 +40,16 @@ namespace hamdb
         return max_size_;
     }
 
+    uint16_t BTreePage::minSize() const noexcept
+    {
+        if (page_type_ == PageType::BTreeLeaf)
+        {
+            return max_size_ / 2;
+        }
+        return (max_size_ + 1) / 2;
+    }
+
+
     PageId BTreePage::parentPageId() const noexcept
     {
         return parent_page_id_;

@@ -151,6 +151,10 @@ namespace hamdb
         /// Return the maximum number of key/RID pairs this leaf can hold.
         [[nodiscard]] uint16_t maxSize() const noexcept;
 
+        /// Return the minimum number of key/RID pairs this leaf must hold.
+        [[nodiscard]] uint16_t minSize() const noexcept;
+
+
         /// Return @c true when no entries are stored.
         [[nodiscard]] bool isEmpty() const noexcept;
 
@@ -231,6 +235,22 @@ namespace hamdb
          * @param recipient The leaf page to move the upper half of entries to.
          */
         void moveHalfTo(BTreeLeafPage& recipient) noexcept;
+
+        /**
+         * @brief Move the first entry of this page to the end of the recipient page.
+         */
+        void moveFirstToEndOf(BTreeLeafPage& recipient) noexcept;
+
+        /**
+         * @brief Move the last entry of this page to the front of the recipient page.
+         */
+        void moveLastToFrontOf(BTreeLeafPage& recipient) noexcept;
+
+        /**
+         * @brief Move all entries of this page to the end of the recipient page.
+         */
+        void moveAllTo(BTreeLeafPage& recipient) noexcept;
+
 
         // ── Serialisation ──────────────────────────────────────────────────────────
 

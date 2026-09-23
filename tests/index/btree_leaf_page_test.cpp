@@ -900,5 +900,62 @@ TEST(BTreeLeafPageTest, SerializeFullPageRoundTrip)
         EXPECT_EQ(decoded.valueAt(i), lp.valueAt(i)) << "mismatch at slot " << i;
     }
 }
+TEST(BTreeLeafPageTest, MoveFirstToEndOf) {
+    auto leaf = makePage();
+    for (int i = 1; i <= 5; ++i) {
+        mustInsert(leaf, i, makeRid(i));
+    }
+    BTreeLeafPage recipient;
+    recipient.init(2, 0);
+    EXPECT_EQ(recipient.insert(0, makeRid(0)), Status::Ok);
+
+    
+    leaf.moveFirstToEndOf(recipient);
+    
+    EXPECT_EQ(leaf.size(), 4u);
+    EXPECT_EQ(leaf.keyAt(0), 2);
+    
+    EXPECT_EQ(recipient.size(), 2u);
+    EXPECT_EQ(recipient.keyAt(1), 1);
+}
+
+TEST(BTreeLeafPageTest, MoveLastToFrontOf) {
+    auto leaf = makePage();
+    for (int i = 1; i <= 5; ++i) {
+        mustInsert(leaf, i, makeRid(i));
+    }
+    BTreeLeafPage recipient;
+    recipient.init(2, 0);
+    EXPECT_EQ(recipient.insert(6, makeRid(6)), Status::Ok);
+
+    
+    leaf.moveLastToFrontOf(recipient);
+    
+    EXPECT_EQ(leaf.size(), 4u);
+    EXPECT_EQ(leaf.keyAt(3), 4);
+    
+    EXPECT_EQ(recipient.size(), 2u);
+    EXPECT_EQ(recipient.keyAt(0), 5);
+    EXPECT_EQ(recipient.keyAt(1), 6);
+}
+
+TEST(BTreeLeafPageTest, MoveAllTo) {
+    auto leaf = makePage();
+    for (int i = 1; i <= 3; ++i) {
+        mustInsert(leaf, i, makeRid(i));
+    }
+    BTreeLeafPage recipient;
+    recipient.init(2, 0);
+    EXPECT_EQ(recipient.insert(0, makeRid(0)), Status::Ok);
+
+    
+    leaf.moveAllTo(recipient);
+    
+    EXPECT_EQ(leaf.size(), 0u);
+    
+    EXPECT_EQ(recipient.size(), 4u);
+    EXPECT_EQ(recipient.keyAt(1), 1);
+    EXPECT_EQ(recipient.keyAt(3), 3);
+}
 
 } // namespace hamdb

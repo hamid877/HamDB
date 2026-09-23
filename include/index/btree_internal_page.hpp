@@ -82,6 +82,10 @@ namespace hamdb
         /// Return the maximum number of child pointers this page can hold.
         [[nodiscard]] uint16_t maxSize() const noexcept;
 
+        /// Return the minimum number of child pointers this page must hold.
+        [[nodiscard]] uint16_t minSize() const noexcept;
+
+
         /// Return @c true when no children are stored.
         [[nodiscard]] bool isEmpty() const noexcept;
 
@@ -102,6 +106,12 @@ namespace hamdb
          * @param index Zero-based slot index. Must be >= 1 and < @c size().
          */
         [[nodiscard]] int64_t keyAt(uint16_t index) const noexcept;
+
+        /**
+         * @brief Set the key stored at slot @p index.
+         */
+        void setKeyAt(uint16_t index, int64_t key) noexcept;
+
 
         /**
          * @brief Return the child PageId stored at slot @p index.
@@ -157,13 +167,33 @@ namespace hamdb
          * @brief Move the upper half of the entries to a recipient page.
          * 
          * The median key is returned and removed from both pages.
-         * This function also updates the parent_page_id of the moved children.
          * 
          * @param recipient The sibling page that will receive the upper half.
-         * @param bpm The buffer pool manager used to fetch children and update their parent pointer.
          * @return The median key that should be promoted to the parent.
          */
-        int64_t moveHalfTo(BTreeInternalPage& recipient, class BufferPoolManager& bpm) noexcept;
+        int64_t moveHalfTo(BTreeInternalPage& recipient) noexcept;
+
+        /**
+         * @brief Move the first entry of this page to the end of the recipient page.
+         */
+        int64_t moveFirstToEndOf(BTreeInternalPage& recipient, int64_t middle_key) noexcept;
+
+        /**
+         * @brief Move the last entry of this page to the front of the recipient page.
+         */
+        int64_t moveLastToFrontOf(BTreeInternalPage& recipient, int64_t middle_key) noexcept;
+
+        /**
+         * @brief Move all entries of this page to the end of the recipient page.
+         */
+        void moveAllTo(BTreeInternalPage& recipient, int64_t middle_key) noexcept;
+
+        /**
+         * @brief Find the index of the given child page ID.
+         */
+        [[nodiscard]] int findChildIndex(PageId child_page_id) const noexcept;
+
+
 
         // ── Serialisation ──────────────────────────────────────────────────────────
 

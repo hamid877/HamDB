@@ -23,6 +23,12 @@ namespace hamdb
         return header_.maxSize();
     }
 
+    uint16_t BTreeInternalPage::minSize() const noexcept
+    {
+        return header_.minSize();
+    }
+
+
     bool BTreeInternalPage::isEmpty() const noexcept
     {
         return size() == 0;
@@ -48,6 +54,12 @@ namespace hamdb
         // index 0 has no valid key, but we allow accessing it
         return entries_[index].key;
     }
+
+    void BTreeInternalPage::setKeyAt(uint16_t index, int64_t key) noexcept
+    {
+        entries_[index].key = key;
+    }
+
 
     PageId BTreeInternalPage::childAt(uint16_t index) const noexcept
     {
@@ -260,7 +272,7 @@ namespace hamdb
         return Status::Ok;
     }
 
-    int64_t BTreeInternalPage::moveHalfTo(BTreeInternalPage& recipient, BufferPoolManager& bpm) noexcept
+    int64_t BTreeInternalPage::moveHalfTo(BTreeInternalPage& recipient) noexcept
     {
         int32_t start_idx = size() / 2;
         int64_t median_key = entries_[start_idx].key;
@@ -269,22 +281,6 @@ namespace hamdb
         for (int32_t i = start_idx; i < size(); ++i)
         {
             recipient.entries_[j] = entries_[i];
-
-            // Update parent_page_id of the moved child
-            PageId child_page_id = entries_[i].page_id;
-            WritePageGuard child_guard;
-            if (bpm.fetchPageWrite(child_page_id, child_guard) == Status::Ok)
-            {
-                BTreePage child_header;
-                if (child_header.deserialize(child_guard.page().body()) == Status::Ok)
-                {
-                    child_header.setParentPageId(recipient.pageId());
-                    if (child_header.serialize(child_guard.pageMut().body()) == Status::Ok)
-                    {
-                        child_guard.markDirty();
-                    }
-                }
-            }
             j++;
         }
 
@@ -293,5 +289,70 @@ namespace hamdb
 
         return median_key;
     }
+
+    int64_t BTreeInternalPage::moveFirstToEndOf(BTreeInternalPage& recipient, int64_t middle_key) noexcept
+    {
+        PageId child_id = entries_[0].page_id;
+        recipient.entries_[recipient.size()].key = middle_key;
+        recipient.entries_[recipient.size()].page_id = child_id;
+        recipient.header_.setCurrentSize(recipient.size() + 1);
+
+        int64_t new_middle_key = entries_[1].key;
+        
+        for (uint16_t i = 0; i < size() - 1; ++i)
+        {
+            entries_[i] = entries_[i + 1];
+        }
+        header_.setCurrentSize(size() - 1);
+        
+        return new_middle_key;
+    }
+
+    int64_t BTreeInternalPage::moveLastToFrontOf(BTreeInternalPage& recipient, int64_t middle_key) noexcept
+    {
+        int64_t new_middle_key = entries_[size() - 1].key;
+        PageId child_id = entries_[size() - 1].page_id;
+        
+        for (int i = recipient.size(); i > 0; --i)
+        {
+            recipient.entries_[i] = recipient.entries_[i - 1];
+        }
+        recipient.entries_[1].key = middle_key;
+        recipient.entries_[0].page_id = child_id;
+        recipient.header_.setCurrentSize(recipient.size() + 1);
+        
+        header_.setCurrentSize(size() - 1);
+        
+        return new_middle_key;
+    }
+
+    void BTreeInternalPage::moveAllTo(BTreeInternalPage& recipient, int64_t middle_key) noexcept
+    {
+        recipient.entries_[recipient.size()].key = middle_key;
+        recipient.entries_[recipient.size()].page_id = entries_[0].page_id;
+        
+        uint16_t start_idx = recipient.size() + 1;
+        for (uint16_t i = 1; i < size(); ++i)
+        {
+            recipient.entries_[start_idx + i - 1] = entries_[i];
+        }
+        
+        recipient.header_.setCurrentSize(recipient.size() + size());
+        header_.setCurrentSize(0);
+    }
+
+    int BTreeInternalPage::findChildIndex(PageId child_page_id) const noexcept
+    {
+        for (uint16_t i = 0; i < size(); ++i)
+        {
+            if (entries_[i].page_id == child_page_id)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+
 
 } // namespace hamdb

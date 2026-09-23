@@ -377,5 +377,71 @@ namespace hamdb
             EXPECT_EQ(res->getSlotId(), static_cast<uint16_t>(i));
         }
     }
+    TEST_F(BPlusTreeTest, RemoveNotFound)
+    {
+        BPlusTree tree(*bpm_);
+        tree.create();
+        
+        EXPECT_EQ(tree.remove(10), Status::NotFound);
+        EXPECT_EQ(tree.insert(5, RID{1, 1}), Status::Ok);
+        EXPECT_EQ(tree.remove(10), Status::NotFound);
+    }
+
+    TEST_F(BPlusTreeTest, RemoveSingleElement)
+    {
+        BPlusTree tree(*bpm_);
+        tree.create();
+        
+        EXPECT_EQ(tree.insert(10, RID{1, 1}), Status::Ok);
+        EXPECT_EQ(tree.remove(10), Status::Ok);
+        EXPECT_FALSE(tree.getValue(10).has_value());
+    }
+
+    TEST_F(BPlusTreeTest, RemoveMultipleElements)
+    {
+        BPlusTree tree(*bpm_);
+        tree.create();
+        
+        for (int i = 0; i < 100; ++i)
+        {
+            EXPECT_EQ(tree.insert(i, RID{1, static_cast<uint16_t>(i)}), Status::Ok);
+        }
+        for (int i = 0; i < 100; ++i)
+        {
+            EXPECT_EQ(tree.remove(i), Status::Ok);
+            EXPECT_FALSE(tree.getValue(i).has_value());
+        }
+    }
+
+    TEST_F(BPlusTreeTest, RemoveWithInternalNodes)
+    {
+        BPlusTree tree(*bpm_);
+        tree.create();
+        
+        for (int i = 0; i < 1000; ++i)
+        {
+            EXPECT_EQ(tree.insert(i, RID{1, static_cast<uint16_t>(i)}), Status::Ok);
+        }
+        
+        // Remove every other element
+        for (int i = 0; i < 1000; i += 2)
+        {
+            EXPECT_EQ(tree.remove(i), Status::Ok);
+        }
+        
+        for (int i = 1; i < 1000; i += 2)
+        {
+            auto res = tree.getValue(i);
+            ASSERT_TRUE(res.has_value());
+            EXPECT_EQ(res->getSlotId(), static_cast<uint16_t>(i));
+        }
+        
+        for (int i = 1; i < 1000; i += 2)
+        {
+            EXPECT_EQ(tree.remove(i), Status::Ok);
+        }
+        
+        EXPECT_TRUE(tree.isEmpty());
+    }
 
 } // namespace hamdb

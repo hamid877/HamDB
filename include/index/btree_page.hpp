@@ -100,6 +100,14 @@ namespace hamdb
         [[nodiscard]] uint16_t maxSize() const noexcept;
 
         /**
+         * @brief Return the minimum number of entries this page must hold.
+         *
+         * Follows B+ Tree occupancy rules.
+         */
+        [[nodiscard]] uint16_t minSize() const noexcept;
+
+
+        /**
          * @brief Return the logical page ID of the parent node.
          * @return @c kInvalidPageId if this page is the B+ Tree root.
          */

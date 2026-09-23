@@ -363,12 +363,31 @@ namespace hamdb
         BTreeInternalPage new_internal;
         new_internal.init(new_internal_page_id, parent.parentPageId());
 
-        int64_t median_key = parent.moveHalfTo(new_internal, bpm_);
+        int64_t median_key = parent.moveHalfTo(new_internal);
+
+        for (uint16_t i = 0; i < new_internal.size(); ++i)
+        {
+            PageId child_page_id = new_internal.childAt(i);
+            WritePageGuard child_guard;
+            if (bpm_.fetchPageWrite(child_page_id, child_guard) == Status::Ok)
+            {
+                BTreePage child_header;
+                if (child_header.deserialize(child_guard.page().body()) == Status::Ok)
+                {
+                    child_header.setParentPageId(new_internal_page_id);
+                    if (child_header.serialize(child_guard.pageMut().body()) == Status::Ok)
+                    {
+                        child_guard.markDirty();
+                    }
+                }
+            }
+        }
 
         Status insert_status = Status::Ok;
         if (key < median_key)
         {
             insert_status = parent.insert(key, new_node_id);
+
         }
         else
         {
@@ -413,6 +432,400 @@ namespace hamdb
 
         return insertIntoParent(parent_page_id, median_key, new_internal_page_id);
     }
+
+    Status BPlusTree::remove(int64_t key) noexcept
+    {
+        if (isEmpty())
+        {
+            return Status::NotFound;
+        }
+
+        PageId curr_page_id = root_page_id_;
+        PageId leaf_page_id = kInvalidPageId;
+
+        while (curr_page_id != kInvalidPageId)
+        {
+            ReadPageGuard guard;
+            if (bpm_.fetchPageRead(curr_page_id, guard) != Status::Ok)
+            {
+                return Status::IoError;
+            }
+
+            const auto& page = guard.page();
+
+            BTreePage header;
+            if (header.deserialize(page.body()) != Status::Ok)
+            {
+                return Status::IoError;
+            }
+
+            if (header.pageType() == PageType::BTreeLeaf)
+            {
+                leaf_page_id = curr_page_id;
+                break;
+            }
+            else if (header.pageType() == PageType::BTreeInternal)
+            {
+                BTreeInternalPage internal;
+                if (internal.deserialize(page.body()) != Status::Ok)
+                {
+                    return Status::IoError;
+                }
+                curr_page_id = internal.lookup(key);
+            }
+            else
+            {
+                return Status::Corruption;
+            }
+        }
+
+        if (leaf_page_id == kInvalidPageId)
+        {
+            return Status::NotFound;
+        }
+
+        WritePageGuard write_guard;
+        if (bpm_.fetchPageWrite(leaf_page_id, write_guard) != Status::Ok)
+        {
+            return Status::IoError;
+        }
+
+        BTreeLeafPage leaf;
+        if (leaf.deserialize(write_guard.page().body()) != Status::Ok)
+        {
+            return Status::IoError;
+        }
+
+        Status status = leaf.remove(key);
+        if (status != Status::Ok)
+        {
+            return status;
+        }
+
+        if (leaf.serialize(write_guard.pageMut().body()) != Status::Ok)
+        {
+            return Status::IoError;
+        }
+        write_guard.markDirty();
+        
+        bool underflow = leaf.size() < leaf.minSize();
+        bool is_empty_root = leaf_page_id == root_page_id_ && leaf.isEmpty();
+        
+        write_guard.drop();
+
+        if (is_empty_root)
+        {
+            root_page_id_ = kInvalidPageId;
+            return Status::Ok;
+        }
+
+        if (underflow && leaf_page_id != root_page_id_)
+        {
+            return handleUnderflow(leaf_page_id);
+        }
+
+        return Status::Ok;
+    }
+
+    Status BPlusTree::handleUnderflow(PageId page_id) noexcept
+    {
+        if (page_id == root_page_id_)
+        {
+            WritePageGuard root_guard;
+            if (bpm_.fetchPageWrite(root_page_id_, root_guard) != Status::Ok)
+            {
+                return Status::IoError;
+            }
+            BTreePage root_header;
+            if (root_header.deserialize(root_guard.page().body()) != Status::Ok)
+            {
+                return Status::IoError;
+            }
+
+            if (root_header.pageType() == PageType::BTreeInternal && root_header.currentSize() == 1)
+            {
+                BTreeInternalPage root_internal;
+                if (root_internal.deserialize(root_guard.page().body()) != Status::Ok)
+                {
+                    return Status::IoError;
+                }
+                PageId new_root_id = root_internal.childAt(0);
+
+                WritePageGuard child_guard;
+                if (bpm_.fetchPageWrite(new_root_id, child_guard) == Status::Ok)
+                {
+                    BTreePage child_header;
+                    if (child_header.deserialize(child_guard.page().body()) == Status::Ok)
+                    {
+                        child_header.setParentPageId(kInvalidPageId);
+                        if (child_header.serialize(child_guard.pageMut().body()) == Status::Ok)
+                        {
+                            child_guard.markDirty();
+                        }
+                    }
+                }
+                root_page_id_ = new_root_id;
+            }
+            return Status::Ok;
+        }
+
+        WritePageGuard node_guard;
+        if (bpm_.fetchPageWrite(page_id, node_guard) != Status::Ok)
+        {
+            return Status::IoError;
+        }
+        BTreePage node_header;
+        if (node_header.deserialize(node_guard.page().body()) != Status::Ok)
+        {
+            return Status::IoError;
+        }
+
+        PageId parent_id = node_header.parentPageId();
+        WritePageGuard parent_guard;
+        if (bpm_.fetchPageWrite(parent_id, parent_guard) != Status::Ok)
+        {
+            return Status::IoError;
+        }
+        BTreeInternalPage parent;
+        if (parent.deserialize(parent_guard.page().body()) != Status::Ok)
+        {
+            return Status::IoError;
+        }
+
+        int child_idx = parent.findChildIndex(page_id);
+        if (child_idx == -1)
+        {
+            return Status::Corruption;
+        }
+
+        PageId left_sibling_id = child_idx > 0 ? parent.childAt(child_idx - 1) : kInvalidPageId;
+        PageId right_sibling_id = child_idx < parent.size() - 1 ? parent.childAt(child_idx + 1) : kInvalidPageId;
+
+        // Try to borrow from left sibling
+        if (left_sibling_id != kInvalidPageId)
+        {
+            WritePageGuard sibling_guard;
+            if (bpm_.fetchPageWrite(left_sibling_id, sibling_guard) == Status::Ok)
+            {
+                BTreePage sibling_header;
+                if (sibling_header.deserialize(sibling_guard.page().body()) == Status::Ok)
+                {
+                    if (sibling_header.currentSize() > sibling_header.minSize())
+                    {
+                        if (node_header.pageType() == PageType::BTreeLeaf)
+                        {
+                            BTreeLeafPage node, sibling;
+                            if (node.deserialize(node_guard.page().body()) != Status::Ok) return Status::IoError;
+                            if (sibling.deserialize(sibling_guard.page().body()) != Status::Ok) return Status::IoError;
+
+                            sibling.moveLastToFrontOf(node);
+                            parent.setKeyAt(child_idx, node.keyAt(0));
+
+                            if (node.serialize(node_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                            if (sibling.serialize(sibling_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                        }
+                        else
+                        {
+                            BTreeInternalPage node, sibling;
+                            if (node.deserialize(node_guard.page().body()) != Status::Ok) return Status::IoError;
+                            if (sibling.deserialize(sibling_guard.page().body()) != Status::Ok) return Status::IoError;
+
+                            int64_t new_middle = sibling.moveLastToFrontOf(node, parent.keyAt(child_idx));
+                            parent.setKeyAt(child_idx, new_middle);
+
+                            PageId moved_child = node.childAt(0);
+                            WritePageGuard moved_guard;
+                            if (bpm_.fetchPageWrite(moved_child, moved_guard) == Status::Ok)
+                            {
+                                BTreePage moved_header;
+                                if (moved_header.deserialize(moved_guard.page().body()) == Status::Ok)
+                                {
+                                    moved_header.setParentPageId(page_id);
+                                    if (moved_header.serialize(moved_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                                    moved_guard.markDirty();
+                                }
+                            }
+
+                            if (node.serialize(node_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                            if (sibling.serialize(sibling_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                        }
+                        if (parent.serialize(parent_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                        node_guard.markDirty();
+                        sibling_guard.markDirty();
+                        parent_guard.markDirty();
+                        return Status::Ok;
+                    }
+                }
+            }
+        }
+
+        // Try to borrow from right sibling
+        if (right_sibling_id != kInvalidPageId)
+        {
+            WritePageGuard sibling_guard;
+            if (bpm_.fetchPageWrite(right_sibling_id, sibling_guard) == Status::Ok)
+            {
+                BTreePage sibling_header;
+                if (sibling_header.deserialize(sibling_guard.page().body()) == Status::Ok)
+                {
+                    if (sibling_header.currentSize() > sibling_header.minSize())
+                    {
+                        if (node_header.pageType() == PageType::BTreeLeaf)
+                        {
+                            BTreeLeafPage node, sibling;
+                            if (node.deserialize(node_guard.page().body()) != Status::Ok) return Status::IoError;
+                            if (sibling.deserialize(sibling_guard.page().body()) != Status::Ok) return Status::IoError;
+
+                            sibling.moveFirstToEndOf(node);
+                            parent.setKeyAt(child_idx + 1, sibling.keyAt(0));
+
+                            if (node.serialize(node_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                            if (sibling.serialize(sibling_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                        }
+                        else
+                        {
+                            BTreeInternalPage node, sibling;
+                            if (node.deserialize(node_guard.page().body()) != Status::Ok) return Status::IoError;
+                            if (sibling.deserialize(sibling_guard.page().body()) != Status::Ok) return Status::IoError;
+
+                            int64_t new_middle = sibling.moveFirstToEndOf(node, parent.keyAt(child_idx + 1));
+                            parent.setKeyAt(child_idx + 1, new_middle);
+
+                            PageId moved_child = node.childAt(node.size() - 1);
+                            WritePageGuard moved_guard;
+                            if (bpm_.fetchPageWrite(moved_child, moved_guard) == Status::Ok)
+                            {
+                                BTreePage moved_header;
+                                if (moved_header.deserialize(moved_guard.page().body()) == Status::Ok)
+                                {
+                                    moved_header.setParentPageId(page_id);
+                                    if (moved_header.serialize(moved_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                                    moved_guard.markDirty();
+                                }
+                            }
+
+                            if (node.serialize(node_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                            if (sibling.serialize(sibling_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                        }
+                        if (parent.serialize(parent_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                        node_guard.markDirty();
+                        sibling_guard.markDirty();
+                        parent_guard.markDirty();
+                        return Status::Ok;
+                    }
+                }
+            }
+        }
+
+        // Merge right node into left node
+        bool merged_with_left = false;
+        int right_node_idx = -1;
+
+        if (left_sibling_id != kInvalidPageId)
+        {
+            merged_with_left = true;
+            right_node_idx = child_idx;
+        }
+        else
+        {
+            merged_with_left = false;
+            right_node_idx = child_idx + 1;
+        }
+
+
+        WritePageGuard sibling_guard;
+        PageId merge_sibling_id = merged_with_left ? left_sibling_id : right_sibling_id;
+        if (bpm_.fetchPageWrite(merge_sibling_id, sibling_guard) != Status::Ok)
+        {
+            return Status::IoError;
+        }
+
+        std::span<std::byte> left_body = merged_with_left ? sibling_guard.pageMut().body() : node_guard.pageMut().body();
+        std::span<std::byte> right_body = merged_with_left ? node_guard.pageMut().body() : sibling_guard.pageMut().body();
+
+        if (node_header.pageType() == PageType::BTreeLeaf)
+        {
+            BTreeLeafPage left, right;
+            if (left.deserialize(left_body) != Status::Ok) return Status::IoError;
+            if (right.deserialize(right_body) != Status::Ok) return Status::IoError;
+
+            right.moveAllTo(left);
+            left.setNextPageId(right.nextPageId());
+
+            if (left.nextPageId() != kInvalidPageId)
+            {
+                WritePageGuard next_guard;
+                if (bpm_.fetchPageWrite(left.nextPageId(), next_guard) == Status::Ok)
+                {
+                    BTreeLeafPage next_leaf;
+                    if (next_leaf.deserialize(next_guard.page().body()) == Status::Ok)
+                    {
+                        next_leaf.setPrevPageId(left.pageId());
+                        if (next_leaf.serialize(next_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                        next_guard.markDirty();
+                    }
+                }
+            }
+
+            if (left.serialize(left_body) != Status::Ok) return Status::IoError;
+            if (right.serialize(right_body) != Status::Ok) return Status::IoError;
+        }
+        else
+        {
+            BTreeInternalPage left, right;
+            if (left.deserialize(left_body) != Status::Ok) return Status::IoError;
+            if (right.deserialize(right_body) != Status::Ok) return Status::IoError;
+
+            uint16_t right_orig_size = right.size();
+            right.moveAllTo(left, parent.keyAt(right_node_idx));
+
+            for (uint16_t i = left.size() - right_orig_size; i < left.size(); ++i)
+            {
+                PageId moved_child = left.childAt(i);
+                WritePageGuard moved_guard;
+                if (bpm_.fetchPageWrite(moved_child, moved_guard) == Status::Ok)
+                {
+                    BTreePage moved_header;
+                    if (moved_header.deserialize(moved_guard.page().body()) == Status::Ok)
+                    {
+                        moved_header.setParentPageId(left.pageId());
+                        if (moved_header.serialize(moved_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                        moved_guard.markDirty();
+                    }
+                }
+            }
+
+            if (left.serialize(left_body) != Status::Ok) return Status::IoError;
+            if (right.serialize(right_body) != Status::Ok) return Status::IoError;
+        }
+
+        if (parent.remove(parent.keyAt(right_node_idx)) != Status::Ok) return Status::IoError;
+        if (parent.serialize(parent_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+
+        node_guard.markDirty();
+        sibling_guard.markDirty();
+        parent_guard.markDirty();
+
+        node_guard.drop();
+        sibling_guard.drop();
+        
+        bool parent_underflow = parent.size() < parent.minSize();
+        bool parent_is_empty_root = parent_id == root_page_id_ && parent.size() == 1;
+
+        parent_guard.drop();
+
+        if (parent_is_empty_root)
+        {
+            return handleUnderflow(parent_id);
+        }
+        else if (parent_underflow && parent_id != root_page_id_)
+        {
+            return handleUnderflow(parent_id);
+        }
+
+        return Status::Ok;
+    }
+
 
     BPlusTreeIterator BPlusTree::begin() noexcept
     {

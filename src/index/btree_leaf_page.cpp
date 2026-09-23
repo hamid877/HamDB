@@ -100,6 +100,12 @@ namespace hamdb
         return header_.maxSize();
     }
 
+    uint16_t BTreeLeafPage::minSize() const noexcept
+    {
+        return header_.minSize();
+    }
+
+
     bool BTreeLeafPage::isEmpty() const noexcept
     {
         return header_.currentSize() == 0;
@@ -265,6 +271,41 @@ namespace hamdb
         recipient.header_.setCurrentSize(move_count);
         header_.setCurrentSize(half);
     }
+
+    void BTreeLeafPage::moveFirstToEndOf(BTreeLeafPage& recipient) noexcept
+    {
+        recipient.entries_[recipient.size()] = entries_[0];
+        recipient.header_.setCurrentSize(recipient.size() + 1);
+
+        for (uint16_t i = 0; i < size() - 1; ++i)
+        {
+            entries_[i] = entries_[i + 1];
+        }
+        header_.setCurrentSize(size() - 1);
+    }
+
+    void BTreeLeafPage::moveLastToFrontOf(BTreeLeafPage& recipient) noexcept
+    {
+        for (int i = recipient.size(); i > 0; --i)
+        {
+            recipient.entries_[i] = recipient.entries_[i - 1];
+        }
+        recipient.entries_[0] = entries_[size() - 1];
+        recipient.header_.setCurrentSize(recipient.size() + 1);
+        header_.setCurrentSize(size() - 1);
+    }
+
+    void BTreeLeafPage::moveAllTo(BTreeLeafPage& recipient) noexcept
+    {
+        uint16_t rec_size = recipient.size();
+        for (uint16_t i = 0; i < size(); ++i)
+        {
+            recipient.entries_[rec_size + i] = entries_[i];
+        }
+        recipient.header_.setCurrentSize(rec_size + size());
+        header_.setCurrentSize(0);
+    }
+
 
     // ── Serialisation ─────────────────────────────────────────────────────────────
 

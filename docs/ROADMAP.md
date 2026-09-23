@@ -63,7 +63,7 @@ Every milestone must satisfy:
 | M2.5 | B+ Tree Splits              | ✅ Complete |
 | M2.6 | Recursive B+ Tree Insertion | ✅ Complete |
 | M2.7 | B+ Tree Iterator & Range Scan | ✅ Complete |
-| M2.8 | Delete & Merge              | ⬜          |
+| M2.8 | Delete & Merge              | ✅ Complete |
 
 ---
 
@@ -102,6 +102,33 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M2.8 — B+ Tree Delete & Rebalancing
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `remove(key)` logic.
+* Leaf and internal node merging.
+* Sibling borrowing (redistribution).
+* Root collapse when tree height shrinks.
+* Tests passing for leaf redistribution, leaf merge, internal redistribution, internal merge, and root collapse.
+
+### Verification
+
+* Tests passing: **329 / 329**
+* Build: ✅
+* Lint: ✅ (`clang-tidy passed`)
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(index): implement B+ tree delete & rebalancing (M2.8)
+```
+
+---
 
 ## M2.7 — B+ Tree Iterator & Range Scan
 
@@ -441,7 +468,7 @@ Implement B+ Tree deletion and page merging logic.
 
 ### Expected Tests
 
-Approximately **335+ total tests** after completion.
+Approximately **329+ total tests** after completion.
 
 ---
 
@@ -465,7 +492,8 @@ Approximately **335+ total tests** after completion.
 | M2.4      | 314           |
 | M2.5      | 317           |
 | M2.6      | 318           |
-| M2.7      | **322**       |
+| M2.7      | 322           |
+| M2.8      | **329**       |
 
 ---
 
