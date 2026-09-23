@@ -193,4 +193,43 @@ namespace hamdb
         return Status::Ok;
     }
 
+    Status BufferPoolManager::fetchPageRead(PageId page_id,
+                                             ReadPageGuard& out_guard)
+    {
+        BufferFrame* frame = nullptr;
+        if (Status s = fetchPage(page_id, frame); s != Status::Ok)
+        {
+            return s;
+        }
+        out_guard = ReadPageGuard(BasicPageGuard(this, frame, false));
+        return Status::Ok;
+    }
+
+    Status BufferPoolManager::fetchPageWrite(PageId page_id,
+                                              WritePageGuard& out_guard)
+    {
+        BufferFrame* frame = nullptr;
+        if (Status s = fetchPage(page_id, frame); s != Status::Ok)
+        {
+            return s;
+        }
+        out_guard = WritePageGuard(BasicPageGuard(this, frame, false));
+        return Status::Ok;
+    }
+
+    Status BufferPoolManager::newPageGuard(PageId& out_page_id,
+                                            WritePageGuard& out_guard)
+    {
+        BufferFrame* frame    = nullptr;
+        PageId       page_id  = kInvalidPageId;
+        if (Status s = newPage(page_id, frame); s != Status::Ok)
+        {
+            return s;
+        }
+        out_page_id = page_id;
+        out_guard   = WritePageGuard(BasicPageGuard(this, frame, false));
+        return Status::Ok;
+    }
+
 } // namespace hamdb
+

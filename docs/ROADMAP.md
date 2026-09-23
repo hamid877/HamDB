@@ -16,7 +16,7 @@
 | Testing          | GoogleTest                  |
 | Platform         | Linux (Ubuntu / Linux Mint) |
 | Current Version  | v0.2.0-dev                  |
-| Overall Progress | **35%**                     |
+| Overall Progress | **40%**                     |
 
 ---
 
@@ -47,7 +47,7 @@ Every milestone must satisfy:
 | M1.6 | Table Heap + RID + Iterator  | ✅ Complete | 125     |
 | M1.7 | Buffer Pool Manager Skeleton | ✅ Complete | 131     |
 | M1.8 | LRU-K Replacement Policy     | ✅ Complete | **135** |
-| M1.9 | Page Guards (RAII)           | ⏳ Next     | —       |
+| M1.9 | Page Guards (RAII)           | ✅ Complete | **161** |
 
 ---
 
@@ -100,6 +100,36 @@ Every milestone must satisfy:
 
 # Completed Milestones
 
+## M1.9 — Page Guards (RAII)
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `BasicPageGuard` — move-only RAII owner of a pinned `BufferFrame`.
+* `ReadPageGuard` — const-only page access; unpins with dirty=false.
+* `WritePageGuard` — mutable page access; propagates `markDirty()` on unpin.
+* `drop()` for early release; destructor auto-unpins if still valid.
+* `isValid()` / `pageId()` / `page()` / `pageMut()` observers.
+* `BufferPoolManager::fetchPageRead()`, `fetchPageWrite()`, `newPageGuard()` factory methods.
+* 26 new tests covering auto-unpin, move semantics, drop(), dirty propagation,
+  moved-from safety, nested scopes, pin-count correctness, and round-trip persistence.
+
+### Verification
+
+* Tests passing: **161 / 161**
+* Build: ✅
+* Lint: ✅ (`clang-tidy passed`)
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(buffer): implement page guards (RAII)
+```
+
+---
+
 ## M1.8 — LRU-K Replacement Policy
 
 **Status:** ✅ Complete
@@ -148,22 +178,23 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M1.9 — Page Guards (RAII)
+## M2.0 — B+ Tree Leaf Pages
 
 ### Goal
 
-Implement RAII wrappers around BufferPoolManager pages to automate pin and unpin operations and guarantee memory safety.
+Implement B+ Tree leaf pages as the foundation for the index engine.
 
 ### Deliverables
 
-* ReadPageGuard.
-* WritePageGuard.
-* BasicPageGuard.
-* Automatic unpinning on destruction.
+* `BPlusTreeLeafPage` with key/value slot array.
+* Insert, search, and delete on a single leaf.
+* Overflow detection (page full).
+* Leaf page serialization/deserialization.
+* Unit tests for all leaf-page operations.
 
 ### Expected Tests
 
-Approximately **160+ total tests** after completion.
+Approximately **185+ total tests** after completion.
 
 ---
 
@@ -178,7 +209,8 @@ Approximately **160+ total tests** after completion.
 | M1.5      | 96            |
 | M1.6      | 125           |
 | M1.7      | 131           |
-| M1.8      | **135**       |
+| M1.8      | 135           |
+| M1.9      | **161**       |
 
 ---
 
@@ -191,3 +223,28 @@ Approximately **160+ total tests** after completion.
 | v0.3.0-dev | After B+ Tree                        |
 | v0.4.0-dev | After SQL Parser                     |
 | v1.0.0     | Basic SQL database with transactions |
+
+## M1.8 — LRU-K Replacement Policy
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* LRUKReplacer (K = 2).
+* Access history tracking.
+* Backward K-distance calculation.
+* Infinite-distance handling for pages with fewer than K accesses.
+* Deterministic victim selection.
+* Evictable frame tracking.
+* Integration with BufferPoolManager.
+* Dirty-page flushing before eviction.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Tests: ✅ (all tests passing)
+
+### Git Commit
+
+feat(buffer): implement LRU-K replacement policy

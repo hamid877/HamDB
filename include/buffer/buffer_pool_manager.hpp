@@ -5,6 +5,7 @@
 
 #include "buffer/buffer_frame.hpp"
 #include "buffer/lruk_replacer.hpp"
+#include "buffer/page_guard.hpp"
 #include "storage/disk_manager.hpp"
 #include <memory>
 #include <unordered_map>
@@ -87,6 +88,44 @@ namespace hamdb
          * @return Status::Ok on success.
          */
         [[nodiscard]] Status flushAllPages();
+
+        // ── Guard factory methods ────────────────────────────────────────────
+
+        /**
+         * @brief Fetch a page and return a ReadPageGuard for read-only access.
+         *
+         * The guard automatically unpins the page (with dirty=false) when it
+         * goes out of scope.  On failure the returned guard is invalid.
+         *
+         * @param page_id The logical ID of the page to fetch.
+         * @param[out] out_guard The resulting ReadPageGuard.
+         * @return Status::Ok on success.
+         */
+        [[nodiscard]] Status fetchPageRead(PageId page_id,
+                                           ReadPageGuard& out_guard);
+
+        /**
+         * @brief Fetch a page and return a WritePageGuard for mutable access.
+         *
+         * The guard automatically unpins the page (propagating any dirty mark)
+         * when it goes out of scope.  On failure the returned guard is invalid.
+         *
+         * @param page_id The logical ID of the page to fetch.
+         * @param[out] out_guard The resulting WritePageGuard.
+         * @return Status::Ok on success.
+         */
+        [[nodiscard]] Status fetchPageWrite(PageId page_id,
+                                            WritePageGuard& out_guard);
+
+        /**
+         * @brief Allocate a new page on disk and return a WritePageGuard.
+         *
+         * @param[out] out_page_id The logical ID of the new page.
+         * @param[out] out_guard   The resulting WritePageGuard.
+         * @return Status::Ok on success.
+         */
+        [[nodiscard]] Status newPageGuard(PageId& out_page_id,
+                                          WritePageGuard& out_guard);
 
     private:
         /**

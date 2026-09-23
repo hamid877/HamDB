@@ -799,6 +799,7 @@ Purpose:
 
 Update ROADMAP.md **after every completed milestone**.
 
+
 ### AI Agent Rule
 
 At the end of every milestone implementation:
@@ -806,3 +807,31 @@ At the end of every milestone implementation:
 1. Update `docs/ROADMAP.md` with the completed milestone, test count, architecture snapshot, and next milestone.
 2. Update `Claude.md` only if permanent project rules or architecture changed.
 3. Treat both documents as project artifacts and include them in the milestone commit if modified.
+
+### M1.8 — LRU-K Replacement Policy
+
+Implemented:
+
+* LRUKReplacer (K = 2).
+* Access history timestamps.
+* Backward K-distance calculation.
+* Infinite-distance handling.
+* Deterministic victim selection.
+* BufferPoolManager integration.
+
+Status: Complete.
+
+---
+
+### M1.9 — Page Guards (RAII)
+
+Implemented:
+
+* BasicPageGuard (move-only, auto-unpin on destruction).
+* ReadPageGuard (const-only Page access).
+* WritePageGuard (mutable Page access + markDirty()).
+* drop() for early release.
+* isValid() ownership predicate.
+* BufferPoolManager::fetchPageRead(), fetchPageWrite(), newPageGuard().
+
+Status: Complete.
