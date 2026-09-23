@@ -120,6 +120,11 @@ namespace hamdb
         return header_.parentPageId();
     }
 
+    void BTreeLeafPage::setParentPageId(PageId id) noexcept
+    {
+        header_.setParentPageId(id);
+    }
+
     // ── Slot accessors ────────────────────────────────────────────────────────────
 
     int64_t BTreeLeafPage::keyAt(uint16_t index) const noexcept
@@ -246,6 +251,21 @@ namespace hamdb
 
         header_.setCurrentSize(static_cast<uint16_t>(count - 1u));
         return Status::Ok;
+    }
+
+    void BTreeLeafPage::moveHalfTo(BTreeLeafPage& recipient) noexcept
+    {
+        const uint16_t total = header_.currentSize();
+        const uint16_t half  = total / 2;
+        const uint16_t move_count = total - half;
+
+        for (uint16_t i = 0; i < move_count; ++i)
+        {
+            recipient.entries_[i] = entries_[half + i];
+        }
+
+        recipient.header_.setCurrentSize(move_count);
+        header_.setCurrentSize(half);
     }
 
     // ── Serialisation ─────────────────────────────────────────────────────────────

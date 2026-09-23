@@ -257,7 +257,7 @@ namespace hamdb
         EXPECT_EQ(tree.insert(10, RID{1, 2}), Status::AlreadyExists);
     }
 
-    TEST_F(BPlusTreeTest, InsertPageFull)
+    TEST_F(BPlusTreeTest, InsertTriggersLeafSplit)
     {
         BPlusTree tree(*bpm_);
         tree.create();
@@ -268,24 +268,72 @@ namespace hamdb
         
         for (int i = 0; i < max_entries; ++i)
         {
-            EXPECT_EQ(tree.insert(i, RID{1, 1}), Status::Ok);
+            EXPECT_EQ(tree.insert(i, RID{1, static_cast<uint16_t>(i)}), Status::Ok);
         }
         
-        EXPECT_EQ(tree.insert(max_entries, RID{1, 1}), Status::PageFull);
+        // This will trigger a split
+        EXPECT_EQ(tree.insert(max_entries, RID{1, static_cast<uint16_t>(max_entries)}), Status::Ok);
+        
+        // Ensure we can find the new key
+        auto res = tree.getValue(max_entries);
+        ASSERT_TRUE(res.has_value());
+        EXPECT_EQ(res->getSlotId(), static_cast<uint16_t>(max_entries));
+
+        // Ensure we can find the old key
+        auto res_old = tree.getValue(0);
+        ASSERT_TRUE(res_old.has_value());
+        EXPECT_EQ(res_old->getSlotId(), 0);
+
+        // Verify root creation (root is now an internal node)
+        for (int i = 0; i <= max_entries; ++i)
+        {
+            auto lookup = tree.getValue(i);
+            ASSERT_TRUE(lookup.has_value()) << "Key " << i << " not found!";
+            EXPECT_EQ(lookup->getSlotId(), i);
+        }
     }
-    
+
+    TEST_F(BPlusTreeTest, SiblingLinksAfterSplit)
+    {
+        BPlusTree tree(*bpm_);
+        tree.create();
+        
+        BTreeLeafPage dummy;
+        dummy.init(0, kInvalidPageId);
+        int max_entries = dummy.maxSize();
+        
+        for (int i = 0; i <= max_entries; ++i) // Triggers one split
+        {
+            EXPECT_EQ(tree.insert(i, RID{1, static_cast<uint16_t>(i)}), Status::Ok);
+        }
+        
+        ReadPageGuard guard0;
+        ASSERT_EQ(bpm_->fetchPageRead(1, guard0), Status::Ok);
+        BTreeLeafPage leaf0;
+        ASSERT_EQ(leaf0.deserialize(guard0.page().body()), Status::Ok);
+
+        ReadPageGuard guard1;
+        ASSERT_EQ(bpm_->fetchPageRead(2, guard1), Status::Ok);
+        BTreeLeafPage leaf1;
+        ASSERT_EQ(leaf1.deserialize(guard1.page().body()), Status::Ok);
+
+        EXPECT_EQ(leaf0.nextPageId(), 2);
+        EXPECT_EQ(leaf1.prevPageId(), 1);
+        EXPECT_EQ(leaf0.prevPageId(), kInvalidPageId);
+        EXPECT_EQ(leaf1.nextPageId(), kInvalidPageId);
+    }
+
     TEST_F(BPlusTreeTest, InsertPinLeaksAndDirtyPropagation)
     {
         BPlusTree tree(*bpm_);
         tree.create();
         
-        // Pin leak check: if insert leaked pins, the pool of size 10 would fill up.
-        // Doing max_entries inserts ensures we don't hit BufferPoolFull.
         BTreeLeafPage dummy;
         dummy.init(0, kInvalidPageId);
         int max_entries = dummy.maxSize();
         
-        for (int i = 0; i < max_entries; ++i)
+        // Insert enough to trigger a split, verifying no pin leaks
+        for (int i = 0; i <= max_entries + 10; ++i)
         {
             EXPECT_EQ(tree.insert(i, RID{1, static_cast<uint16_t>(i)}), Status::Ok);
         }

@@ -163,6 +163,9 @@ namespace hamdb
         /// Return the logical page ID of the parent node.
         [[nodiscard]] PageId parentPageId() const noexcept;
 
+        /// Set the logical page ID of the parent node.
+        void setParentPageId(PageId id) noexcept;
+
         // ── Slot accessors ─────────────────────────────────────────────────────────
 
         /**
@@ -221,6 +224,13 @@ namespace hamdb
          * @return @c Status::NotFound — @p key was not present.
          */
         [[nodiscard]] Status remove(int64_t key) noexcept;
+
+        /**
+         * @brief Move half of the entries to the recipient page.
+         *
+         * @param recipient The leaf page to move the upper half of entries to.
+         */
+        void moveHalfTo(BTreeLeafPage& recipient) noexcept;
 
         // ── Serialisation ──────────────────────────────────────────────────────────
 

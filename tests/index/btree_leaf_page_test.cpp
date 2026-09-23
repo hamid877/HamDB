@@ -796,6 +796,53 @@ TEST(BTreeLeafPageTest, InsertMinAndMaxInt64KeysSorted)
     EXPECT_EQ(lp.keyAt(1), INT64_MAX);
 }
 
+// ── Splitting ─────────────────────────────────────────────────────────────────
+
+TEST(BTreeLeafPageTest, MoveHalfToEvenSplit)
+{
+    auto lp = makePage();
+    for (int i = 0; i < 10; ++i)
+    {
+        mustInsert(lp, i, makeRid(i));
+    }
+    
+    auto right = makePage(kPage2, kPage3);
+    lp.moveHalfTo(right);
+    
+    EXPECT_EQ(lp.size(), 5u);
+    EXPECT_EQ(right.size(), 5u);
+    
+    for (int i = 0; i < 5; ++i)
+    {
+        EXPECT_EQ(lp.keyAt(i), i);
+        EXPECT_EQ(right.keyAt(i), i + 5);
+    }
+}
+
+TEST(BTreeLeafPageTest, MoveHalfToOddSplit)
+{
+    auto lp = makePage();
+    for (int i = 0; i < 11; ++i)
+    {
+        mustInsert(lp, i, makeRid(i));
+    }
+    
+    auto right = makePage(kPage2, kPage3);
+    lp.moveHalfTo(right);
+    
+    EXPECT_EQ(lp.size(), 5u);
+    EXPECT_EQ(right.size(), 6u);
+    
+    for (int i = 0; i < 5; ++i)
+    {
+        EXPECT_EQ(lp.keyAt(i), i);
+    }
+    for (int i = 0; i < 6; ++i)
+    {
+        EXPECT_EQ(right.keyAt(i), i + 5);
+    }
+}
+
 TEST(BTreeLeafPageTest, LookupMinInt64Key)
 {
     auto lp = makePage();

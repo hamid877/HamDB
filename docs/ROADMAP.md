@@ -60,7 +60,7 @@ Every milestone must satisfy:
 | M2.2 | Internal Pages              | ✅ Complete |
 | M2.3 | Search Algorithm            | ✅ Complete |
 | M2.4 | B+ Tree Leaf Insert         | ✅ Complete |
-| M2.5 | B+ Tree Splits              | ⬜          |
+| M2.5 | B+ Tree Splits              | ✅ Complete |
 | M2.6 | Delete & Merge              | ⬜          |
 | M2.7 | Index Iterator              | ⬜          |
 
@@ -101,6 +101,33 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M2.5 — B+ Tree Splits
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Leaf page splitting using `moveHalfTo` during `BPlusTree::insert`.
+* Sibling leaf allocation via `BufferPoolManager` and link updates (`nextPageId`, `prevPageId`).
+* `setParentPageId` added to leaf node.
+* Root creation into a new internal page when the root splits.
+* 3 new tests covering even/odd split logic, insertion triggering leaf splits, sibling links validation, and pin leak safety.
+
+### Verification
+
+* Tests passing: **317 / 317**
+* Build: ✅
+* Lint: ✅ (`clang-tidy passed`)
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(index): implement B+ tree leaf split (M2.5)
+```
+
+---
 
 ## M2.4 — B+ Tree Leaf Insert
 
@@ -342,21 +369,21 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M2.5 — B+ Tree Splits
+## M2.6 — Delete & Merge
 
 ### Goal
 
-Implement B+ Tree page splitting logic for leaf and internal nodes, and root updates.
+Implement B+ Tree deletion and page merging logic.
 
 ### Deliverables
 
-* `insert(key, value)` logic.
-* Leaf and internal node splitting.
-* Root node updates.
+* `remove(key)` logic.
+* Leaf and internal node merging.
+* Sibling borrowing (redistribution).
 
 ### Expected Tests
 
-Approximately **325+ total tests** after completion.
+Approximately **335+ total tests** after completion.
 
 ---
 
@@ -377,7 +404,8 @@ Approximately **325+ total tests** after completion.
 | M2.1      | 292           |
 | M2.2      | 303           |
 | M2.3      | 307           |
-| M2.4      | **314**       |
+| M2.4      | 314           |
+| M2.5      | **317**       |
 
 ---
 
