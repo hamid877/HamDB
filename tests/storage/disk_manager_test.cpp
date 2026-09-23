@@ -33,10 +33,16 @@ namespace hamdb
         std::filesystem::path path_;
     };
 
-    static std::filesystem::path tmpPath(const std::string& name)
-    {
-        return std::filesystem::temp_directory_path() / name;
-    }
+    std::filesystem::path tmpPath(const std::string &prefix) {
+    auto dir = std::filesystem::temp_directory_path();
+
+    auto unique =
+        std::to_string(std::chrono::steady_clock::now()
+                           .time_since_epoch()
+                           .count());
+
+    return dir / (prefix + "-" + unique + ".hamdb");
+}
 
     // ── Construction (existing, kept as-is) ───────────────────────────────────
 
