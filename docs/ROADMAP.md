@@ -71,7 +71,7 @@ Every milestone must satisfy:
 
 | ID   | Milestone                  | Status |
 | ---- | -------------------------- | ------ |
-| M3.0 | Schema Representation      | ⬜      |
+| M3.0 | Transaction Manager Skeleton | ✅ Complete |
 | M3.1 | Catalog Manager            | ⬜      |
 | M3.2 | Table Metadata Persistence | ⬜      |
 
@@ -102,6 +102,34 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M3.0 — Transaction Manager Skeleton
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `TransactionState` enum (`ACTIVE`, `COMMITTED`, `ABORTED`).
+* `Transaction` class with `txn_id`, state, and timestamps.
+* `TransactionManager` with `begin()`, `commit()`, `abort()`, and `getTransaction()`.
+* Monotonically increasing transaction IDs via `std::atomic`.
+* In-memory tracking of active transactions and RAII memory cleanup.
+* Tests passing for begin, commit, abort, and ID incrementation.
+
+### Verification
+
+* Tests passing: **330 / 330**
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(transaction): implement transaction manager skeleton (M3.0)
+```
+
+---
 
 ## M2.8 — B+ Tree Delete & Rebalancing
 
@@ -493,7 +521,8 @@ Approximately **329+ total tests** after completion.
 | M2.5      | 317           |
 | M2.6      | 318           |
 | M2.7      | 322           |
-| M2.8      | **329**       |
+| M2.8      | 329           |
+| M3.0      | **330**       |
 
 ---
 
