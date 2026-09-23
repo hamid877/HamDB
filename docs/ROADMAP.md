@@ -16,7 +16,7 @@
 | Testing          | GoogleTest                  |
 | Platform         | Linux (Ubuntu / Linux Mint) |
 | Current Version  | v0.3.0-dev                  |
-| Overall Progress | **54%**                     |
+| Overall Progress | **57%**                     |
 
 ---
 
@@ -72,7 +72,7 @@ Every milestone must satisfy:
 | ID   | Milestone                  | Status |
 | ---- | -------------------------- | ------ |
 | M3.0 | Transaction Manager Skeleton | ✅ Complete |
-| M3.1 | Catalog Manager            | ⬜      |
+| M3.1 | Lock Manager               | ✅ Complete |
 | M3.2 | Table Metadata Persistence | ⬜      |
 
 ---
@@ -522,7 +522,8 @@ Approximately **329+ total tests** after completion.
 | M2.6      | 318           |
 | M2.7      | 322           |
 | M2.8      | 329           |
-| M3.0      | **330**       |
+| M3.0      | 330           |
+| M3.1      | **331**       |
 
 ---
 
@@ -561,3 +562,31 @@ Approximately **329+ total tests** after completion.
 ### Git Commit
 
 feat(buffer): implement LRU-K replacement policy
+
+---
+
+## M3.1 — Lock Manager (Shared / Exclusive)
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `LockMode` (SHARED, EXCLUSIVE).
+* `LockManager` with `lockShared`, `lockExclusive`, `lockUpgrade`, `unlock`, and `releaseAll`.
+* `LockRequestQueue` using `std::condition_variable` and `std::deque`.
+* Thread-safety via a global `std::mutex`.
+* Update to `Transaction` to store `shared_lock_set_` and `exclusive_lock_set_`.
+* Added `RIDHash`.
+* Wait-only condition variable handling.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Tests: ✅ (331 / 331 passing)
+
+### Git Commit
+
+```text
+feat(transaction): implement lock manager (shared / exclusive) (M3.1)
+```
