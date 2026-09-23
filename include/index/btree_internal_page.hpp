@@ -153,6 +153,18 @@ namespace hamdb
          */
         [[nodiscard]] Status remove(int64_t key) noexcept;
 
+        /**
+         * @brief Move the upper half of the entries to a recipient page.
+         * 
+         * The median key is returned and removed from both pages.
+         * This function also updates the parent_page_id of the moved children.
+         * 
+         * @param recipient The sibling page that will receive the upper half.
+         * @param bpm The buffer pool manager used to fetch children and update their parent pointer.
+         * @return The median key that should be promoted to the parent.
+         */
+        int64_t moveHalfTo(BTreeInternalPage& recipient, class BufferPoolManager& bpm) noexcept;
+
         // ── Serialisation ──────────────────────────────────────────────────────────
 
         /**

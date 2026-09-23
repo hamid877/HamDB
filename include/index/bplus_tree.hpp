@@ -61,6 +61,16 @@ namespace hamdb
         [[nodiscard]] Status insert(int64_t key, RID rid) noexcept;
 
     private:
+        /**
+         * @brief Recursively insert a new child into the parent page.
+         *
+         * @param old_node_id The child page that was split.
+         * @param key The separator key.
+         * @param new_node_id The new child page created by the split.
+         * @return Status::Ok on success.
+         */
+        [[nodiscard]] Status insertIntoParent(PageId old_node_id, int64_t key, PageId new_node_id) noexcept;
+
         BufferPoolManager& bpm_;
         PageId             root_page_id_{kInvalidPageId};
     };

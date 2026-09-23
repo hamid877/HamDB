@@ -342,4 +342,40 @@ namespace hamdb
         EXPECT_EQ(bpm_->flushAllPages(), Status::Ok);
     }
 
+    TEST_F(BPlusTreeTest, InsertTriggersInternalSplit)
+    {
+        BPlusTree tree(*bpm_);
+        tree.create();
+
+        BTreeLeafPage dummy_leaf;
+        dummy_leaf.init(0, kInvalidPageId);
+        int leaf_max = dummy_leaf.maxSize();
+
+        BTreeInternalPage dummy_internal;
+        dummy_internal.init(0, kInvalidPageId);
+        int internal_max = dummy_internal.maxSize();
+
+        // To split the root internal node, we need to create internal_max + 1 leaf pages.
+        // Each leaf split creates 1 new child.
+        // So we need (internal_max) splits.
+        // If we just insert sequentially, each leaf splits when it reaches leaf_max.
+        // It keeps half (leaf_max / 2) and moves the other half.
+        // It's actually faster to just insert sequentially until internal page splits.
+        // Sequential inserts split at the rightmost leaf.
+        // Let's just insert internal_max * (leaf_max / 2 + 1) entries.
+        int total_entries = internal_max * (leaf_max / 2 + 2);
+        
+        for (int i = 0; i < total_entries; ++i)
+        {
+            ASSERT_EQ(tree.insert(i, RID{1, static_cast<uint16_t>(i)}), Status::Ok);
+        }
+
+        for (int i = 0; i < total_entries; ++i)
+        {
+            auto res = tree.getValue(i);
+            ASSERT_TRUE(res.has_value()) << "Failed to find key " << i;
+            EXPECT_EQ(res->getSlotId(), static_cast<uint16_t>(i));
+        }
+    }
+
 } // namespace hamdb

@@ -16,7 +16,7 @@
 | Testing          | GoogleTest                  |
 | Platform         | Linux (Ubuntu / Linux Mint) |
 | Current Version  | v0.3.0-dev                  |
-| Overall Progress | **52%**                     |
+| Overall Progress | **54%**                     |
 
 ---
 
@@ -61,8 +61,9 @@ Every milestone must satisfy:
 | M2.3 | Search Algorithm            | ✅ Complete |
 | M2.4 | B+ Tree Leaf Insert         | ✅ Complete |
 | M2.5 | B+ Tree Splits              | ✅ Complete |
-| M2.6 | Delete & Merge              | ⬜          |
-| M2.7 | Index Iterator              | ⬜          |
+| M2.6 | Recursive B+ Tree Insertion | ✅ Complete |
+| M2.7 | Delete & Merge              | ⬜          |
+| M2.8 | Index Iterator              | ⬜          |
 
 ---
 
@@ -101,6 +102,35 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M2.6 — Recursive B+ Tree Insertion
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Internal page split API (`moveHalfTo`).
+* Promotion of median key (removed from both children).
+* Updating parent pointers of moved children.
+* Recursive `insertIntoParent()` in `BPlusTree`.
+* New root creation when the old root splits.
+* RAII page guards used extensively to avoid pin leaks.
+* Tests passing for internal node splits.
+
+### Verification
+
+* Tests passing: **318 / 318**
+* Build: ✅
+* Lint: ✅ (`clang-tidy passed`)
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(index): implement recursive B+ tree insertion (M2.6)
+```
+
+---
 
 ## M2.5 — B+ Tree Splits
 
@@ -369,7 +399,7 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M2.6 — Delete & Merge
+## M2.7 — Delete & Merge
 
 ### Goal
 
@@ -405,7 +435,8 @@ Approximately **335+ total tests** after completion.
 | M2.2      | 303           |
 | M2.3      | 307           |
 | M2.4      | 314           |
-| M2.5      | **317**       |
+| M2.5      | 317           |
+| M2.6      | **318**       |
 
 ---
 

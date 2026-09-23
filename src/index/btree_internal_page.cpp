@@ -1,4 +1,5 @@
 #include "index/btree_internal_page.hpp"
+#include "buffer/buffer_pool_manager.hpp"
 
 namespace hamdb
 {
@@ -257,6 +258,40 @@ namespace hamdb
         }
 
         return Status::Ok;
+    }
+
+    int64_t BTreeInternalPage::moveHalfTo(BTreeInternalPage& recipient, BufferPoolManager& bpm) noexcept
+    {
+        int32_t start_idx = size() / 2;
+        int64_t median_key = entries_[start_idx].key;
+
+        int32_t j = 0;
+        for (int32_t i = start_idx; i < size(); ++i)
+        {
+            recipient.entries_[j] = entries_[i];
+
+            // Update parent_page_id of the moved child
+            PageId child_page_id = entries_[i].page_id;
+            WritePageGuard child_guard;
+            if (bpm.fetchPageWrite(child_page_id, child_guard) == Status::Ok)
+            {
+                BTreePage child_header;
+                if (child_header.deserialize(child_guard.page().body()) == Status::Ok)
+                {
+                    child_header.setParentPageId(recipient.pageId());
+                    if (child_header.serialize(child_guard.pageMut().body()) == Status::Ok)
+                    {
+                        child_guard.markDirty();
+                    }
+                }
+            }
+            j++;
+        }
+
+        recipient.header_.setCurrentSize(j);
+        header_.setCurrentSize(start_idx);
+
+        return median_key;
     }
 
 } // namespace hamdb
