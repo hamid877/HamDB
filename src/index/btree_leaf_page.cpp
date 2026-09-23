@@ -221,11 +221,9 @@ namespace hamdb
             return Status::AlreadyExists;
         }
 
-        // Shift entries right to make room.
-        for (uint16_t i = count; i > pos; --i)
-        {
-            entries_[i] = entries_[i - 1u];
-        }
+        // Shift entries right-to-left to make room.
+        std::move_backward(entries_.begin() + pos, entries_.begin() + count,
+                           entries_.begin() + count + 1);
 
         entries_[pos] = LeafEntry{key, rid};
         header_.setCurrentSize(static_cast<uint16_t>(count + 1u));

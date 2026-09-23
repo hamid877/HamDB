@@ -1,0 +1,5 @@
+if(EXISTS "/home/hamid/Documents/project/HamDB/build_asan/tests/buffer/hamdb_buffer_tests[1]_tests.cmake")
+  include("/home/hamid/Documents/project/HamDB/build_asan/tests/buffer/hamdb_buffer_tests[1]_tests.cmake")
+else()
+  add_test(hamdb_buffer_tests_NOT_BUILT hamdb_buffer_tests_NOT_BUILT)
+endif()

@@ -1,0 +1,5 @@
+if(EXISTS "/home/hamid/Documents/project/HamDB/build_asan/tests/storage/hamdb_storage_tests[1]_tests.cmake")
+  include("/home/hamid/Documents/project/HamDB/build_asan/tests/storage/hamdb_storage_tests[1]_tests.cmake")
+else()
+  add_test(hamdb_storage_tests_NOT_BUILT hamdb_storage_tests_NOT_BUILT)
+endif()
