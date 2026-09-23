@@ -16,7 +16,7 @@
 | Testing          | GoogleTest                  |
 | Platform         | Linux (Ubuntu / Linux Mint) |
 | Current Version  | v0.3.0-dev                  |
-| Overall Progress | **45%**                     |
+| Overall Progress | **48%**                     |
 
 ---
 
@@ -56,7 +56,7 @@ Every milestone must satisfy:
 | ID   | Milestone          | Status |
 | ---- | ------------------ | ------ |
 | M2.0 | B+ Tree Page Infrastructure | ✅ Complete |
-| M2.1 | Leaf Pages                  | ⬜          |
+| M2.1 | Leaf Pages                  | ✅ Complete |
 | M2.2 | Internal Pages              | ⬜          |
 | M2.3 | Search Algorithm            | ⬜          |
 | M2.4 | Insert & Split              | ⬜          |
@@ -100,6 +100,46 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M2.1 — B+ Tree Leaf Pages
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `BTreeLeafPage` — concrete leaf node built on top of `BTreePage`.
+* Concrete key type: `int64_t`; value type: `RID` (heap record identifier).
+* Fixed on-disk leaf header: 16 B `BTreePage` + 4 B `prev_page_id` +
+  4 B `next_page_id` = **24 bytes**.
+* Entry size: 8 B key + 4 B `page_id` + 2 B `slot_id` = **14 bytes**.
+* Maximum entries per page: `(kPageBodySize - 24) / 14 = 289`.
+* Sorted insert by binary lower-bound + right-shift.
+* Remove by binary search + left-shift.
+* Binary search `lookup()` returning `std::optional<RID>`.
+* `keyAt()`, `valueAt()`, `size()`, `maxSize()`, `isEmpty()`, `isFull()`.
+* `prevPageId()` / `nextPageId()` sibling link getters and setters.
+* `serialize()` / `deserialize()` field-by-field using project utilities.
+* Duplicate key rejection (`Status::AlreadyExists`).
+* Full-page insert rejection (`Status::InvalidArg`).
+* 80 new tests: layout constants, init, sibling links, sorted insertion,
+  duplicate rejection, full-page behaviour, slot accessors, binary search,
+  deletion, round-trip serialisation, error handling, and boundary conditions.
+* `hamdb_index` now links `hamdb_storage` for `RID` symbol resolution.
+
+### Verification
+
+* Tests passing: **292 / 292**
+* Build: ✅
+* Lint: ✅ (`clang-tidy passed`)
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(index): implement B+ Tree leaf page (M2.1)
+```
+
+---
 
 ## M2.0 — B+ Tree Page Infrastructure
 
@@ -202,7 +242,7 @@ Executor (future)
         │
 TableHeap
         │
-BufferPoolManager ←── BTreePage (index layer stub)
+BufferPoolManager ←── BTreeLeafPage → BTreePage (index layer)
         │
 DiskManager
         │
@@ -213,24 +253,25 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M2.1 — B+ Tree Leaf Pages
+## M2.2 — B+ Tree Internal Pages
 
 ### Goal
 
-Implement B+ Tree leaf pages using `BTreePage` as the shared header foundation.
+Implement B+ Tree internal (routing) pages using `BTreePage` as the shared
+header foundation.
 
 ### Deliverables
 
-* `BTreeLeafPage<K, V>` with typed key/value slot array.
-* Insert, search, and delete on a single leaf.
-* Overflow detection (`isFull()`).
-* Next-page sibling pointer for sequential scans.
-* Full serialization/deserialization.
-* Unit tests for all leaf-page operations.
+* `BTreeInternalPage` — sorted array of separator keys + child `PageId` pointers.
+* `lookupChild(key)` — return child page ID for a given search key.
+* `insertKey(key, right_child)` — insert separator key and right-child pointer in sorted order.
+* `keyAt()`, `childAt()`, `size()`, `maxSize()`, `isFull()` accessors.
+* `serialize()` / `deserialize()` using project `Serializer` / `Deserializer` utilities.
+* Unit tests for all internal-page operations.
 
 ### Expected Tests
 
-Approximately **240+ total tests** after completion.
+Approximately **350+ total tests** after completion.
 
 ---
 
@@ -247,7 +288,8 @@ Approximately **240+ total tests** after completion.
 | M1.7      | 131           |
 | M1.8      | 135           |
 | M1.9      | 161           |
-| M2.0      | **212**       |
+| M2.0      | 212           |
+| M2.1      | **292**       |
 
 ---
 
