@@ -58,7 +58,7 @@ Every milestone must satisfy:
 | M2.0 | B+ Tree Page Infrastructure | ✅ Complete |
 | M2.1 | Leaf Pages                  | ✅ Complete |
 | M2.2 | Internal Pages              | ✅ Complete |
-| M2.3 | Search Algorithm            | ⬜          |
+| M2.3 | Search Algorithm            | ✅ Complete |
 | M2.4 | Insert & Split              | ⬜          |
 | M2.5 | Delete & Merge              | ⬜          |
 | M2.6 | Index Iterator              | ⬜          |
@@ -100,6 +100,34 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M2.3 — B+ Tree Search
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `BPlusTree` — Read-only search using `BufferPoolManager` and `ReadPageGuard`.
+* `create()` initializes an empty tree.
+* `open()` opens an existing root.
+* `getValue(int64_t key)` traverses from root to leaf to return `std::optional<RID>`.
+* Automatic `ReadPageGuard` release at each step.
+* 4 new tests covering empty tree, single-leaf lookup, multi-level routing, missing keys, boundary conditions, and guard release validation.
+
+### Verification
+
+* Tests passing: **307 / 307**
+* Build: ✅
+* Lint: ✅ (`clang-tidy passed`)
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(index): implement B+ tree search (M2.3)
+```
+
+---
 
 ## M2.2 — B+ Tree Internal Pages
 
@@ -271,7 +299,7 @@ Executor (future)
         │
 TableHeap
         │
-BufferPoolManager ←── BTreeLeafPage → BTreePage (index layer)
+BufferPoolManager ←── BPlusTree → BTreePage (index layer)
         │
 DiskManager
         │
@@ -282,20 +310,21 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M2.3 — Search Algorithm
+## M2.4 — Insert & Split
 
 ### Goal
 
-Implement B+ Tree search algorithm to locate leaf pages for a given key.
+Implement B+ Tree insertion logic including page splitting.
 
 ### Deliverables
 
-* `BTree::findLeafPage(key)` — traverse internal pages to find correct leaf.
-* Unit tests for point lookup routing.
+* `insert(key, value)` logic.
+* Leaf and internal node splitting.
+* Root node updates.
 
 ### Expected Tests
 
-Approximately **315+ total tests** after completion.
+Approximately **325+ total tests** after completion.
 
 ---
 
@@ -314,7 +343,8 @@ Approximately **315+ total tests** after completion.
 | M1.9      | 161           |
 | M2.0      | 212           |
 | M2.1      | 292           |
-| M2.2      | **303**       |
+| M2.2      | 303           |
+| M2.3      | **307**       |
 
 ---
 
