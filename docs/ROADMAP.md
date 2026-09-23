@@ -16,7 +16,7 @@
 | Testing          | GoogleTest                  |
 | Platform         | Linux (Ubuntu / Linux Mint) |
 | Current Version  | v0.3.0-dev                  |
-| Overall Progress | **48%**                     |
+| Overall Progress | **52%**                     |
 
 ---
 
@@ -57,7 +57,7 @@ Every milestone must satisfy:
 | ---- | ------------------ | ------ |
 | M2.0 | B+ Tree Page Infrastructure | ✅ Complete |
 | M2.1 | Leaf Pages                  | ✅ Complete |
-| M2.2 | Internal Pages              | ⬜          |
+| M2.2 | Internal Pages              | ✅ Complete |
 | M2.3 | Search Algorithm            | ⬜          |
 | M2.4 | Insert & Split              | ⬜          |
 | M2.5 | Delete & Merge              | ⬜          |
@@ -100,6 +100,35 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M2.2 — B+ Tree Internal Pages
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `BTreeInternalPage` — sorted array of separator keys + child `PageId` pointers.
+* `lookup(key)` — return child page ID for a given search key.
+* `insert(key, right_child)` — insert separator key and right-child pointer in sorted order.
+* `keyAt()`, `childAt()`, `size()`, `maxSize()`, `isFull()` accessors.
+* `serialize()` / `deserialize()` using project `Serializer` / `Deserializer` utilities.
+* 11 new tests covering default init, population, sibling routing, sorted insertion,
+  duplicate rejection, deletion, full-page behaviour, and round-trip serialisation.
+
+### Verification
+
+* Tests passing: **303 / 303**
+* Build: ✅
+* Lint: ✅ (`clang-tidy passed`)
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(index): implement B+ Tree internal page (M2.2)
+```
+
+---
 
 ## M2.1 — B+ Tree Leaf Pages
 
@@ -253,25 +282,20 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M2.2 — B+ Tree Internal Pages
+## M2.3 — Search Algorithm
 
 ### Goal
 
-Implement B+ Tree internal (routing) pages using `BTreePage` as the shared
-header foundation.
+Implement B+ Tree search algorithm to locate leaf pages for a given key.
 
 ### Deliverables
 
-* `BTreeInternalPage` — sorted array of separator keys + child `PageId` pointers.
-* `lookupChild(key)` — return child page ID for a given search key.
-* `insertKey(key, right_child)` — insert separator key and right-child pointer in sorted order.
-* `keyAt()`, `childAt()`, `size()`, `maxSize()`, `isFull()` accessors.
-* `serialize()` / `deserialize()` using project `Serializer` / `Deserializer` utilities.
-* Unit tests for all internal-page operations.
+* `BTree::findLeafPage(key)` — traverse internal pages to find correct leaf.
+* Unit tests for point lookup routing.
 
 ### Expected Tests
 
-Approximately **350+ total tests** after completion.
+Approximately **315+ total tests** after completion.
 
 ---
 
@@ -289,7 +313,8 @@ Approximately **350+ total tests** after completion.
 | M1.8      | 135           |
 | M1.9      | 161           |
 | M2.0      | 212           |
-| M2.1      | **292**       |
+| M2.1      | 292           |
+| M2.2      | **303**       |
 
 ---
 

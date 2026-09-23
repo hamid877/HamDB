@@ -1,6 +1,7 @@
 add_library(hamdb_index STATIC
     btree_page.cpp
     btree_leaf_page.cpp
+    btree_internal_page.cpp
 )
 
 target_link_libraries(hamdb_index PUBLIC
