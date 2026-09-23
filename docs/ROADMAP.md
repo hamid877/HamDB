@@ -15,8 +15,8 @@
 | Build            | CMake + Ninja               |
 | Testing          | GoogleTest                  |
 | Platform         | Linux (Ubuntu / Linux Mint) |
-| Current Version  | v0.2.0-dev                  |
-| Overall Progress | **40%**                     |
+| Current Version  | v0.3.0-dev                  |
+| Overall Progress | **45%**                     |
 
 ---
 
@@ -55,12 +55,13 @@ Every milestone must satisfy:
 
 | ID   | Milestone          | Status |
 | ---- | ------------------ | ------ |
-| M2.0 | B+ Tree Leaf Pages | ⬜      |
-| M2.1 | Internal Pages     | ⬜      |
-| M2.2 | Search Algorithm   | ⬜      |
-| M2.3 | Insert & Split     | ⬜      |
-| M2.4 | Delete & Merge     | ⬜      |
-| M2.5 | Index Iterator     | ⬜      |
+| M2.0 | B+ Tree Page Infrastructure | ✅ Complete |
+| M2.1 | Leaf Pages                  | ⬜          |
+| M2.2 | Internal Pages              | ⬜          |
+| M2.3 | Search Algorithm            | ⬜          |
+| M2.4 | Insert & Split              | ⬜          |
+| M2.5 | Delete & Merge              | ⬜          |
+| M2.6 | Index Iterator              | ⬜          |
 
 ---
 
@@ -99,6 +100,40 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M2.0 — B+ Tree Page Infrastructure
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `PageType::BTreeInternal` and `PageType::BTreeLeaf` added to `enums.hpp`.
+* `BTreePage` — shared 16-byte header for all B+ Tree node pages.
+* Fixed header layout: `page_type` (1 B) + `current_size` (2 B) + `max_size` (2 B) +
+  `parent_page_id` (4 B) + `page_id` (4 B) + reserved (3 B) = **16 bytes**.
+* `serialize()` / `deserialize()` using project `Serializer` / `Deserializer` utilities.
+* `isFull()` and `isRoot()` convenience predicates.
+* Full getter/setter API with `[[nodiscard]]` and `noexcept`.
+* `hamdb_index` static library (`src/index/`).
+* 51 new tests covering default init, parameterised construction, getters/setters,
+  serialised byte layout, header size constant, round-trip serialisation,
+  error handling (buffer-too-small), equality, parent metadata, and larger-buffer
+  compatibility.
+
+### Verification
+
+* Tests passing: **212 / 212**
+* Build: ✅
+* Lint: ✅ (`clang-tidy passed`)
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(index): implement B+ Tree page infrastructure (M2.0)
+```
+
+---
 
 ## M1.9 — Page Guards (RAII)
 
@@ -167,7 +202,7 @@ Executor (future)
         │
 TableHeap
         │
-BufferPoolManager
+BufferPoolManager ←── BTreePage (index layer stub)
         │
 DiskManager
         │
@@ -178,23 +213,24 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M2.0 — B+ Tree Leaf Pages
+## M2.1 — B+ Tree Leaf Pages
 
 ### Goal
 
-Implement B+ Tree leaf pages as the foundation for the index engine.
+Implement B+ Tree leaf pages using `BTreePage` as the shared header foundation.
 
 ### Deliverables
 
-* `BPlusTreeLeafPage` with key/value slot array.
+* `BTreeLeafPage<K, V>` with typed key/value slot array.
 * Insert, search, and delete on a single leaf.
-* Overflow detection (page full).
-* Leaf page serialization/deserialization.
+* Overflow detection (`isFull()`).
+* Next-page sibling pointer for sequential scans.
+* Full serialization/deserialization.
 * Unit tests for all leaf-page operations.
 
 ### Expected Tests
 
-Approximately **185+ total tests** after completion.
+Approximately **240+ total tests** after completion.
 
 ---
 
@@ -210,7 +246,8 @@ Approximately **185+ total tests** after completion.
 | M1.6      | 125           |
 | M1.7      | 131           |
 | M1.8      | 135           |
-| M1.9      | **161**       |
+| M1.9      | 161           |
+| M2.0      | **212**       |
 
 ---
 
@@ -220,8 +257,9 @@ Approximately **185+ total tests** after completion.
 | ---------- | ------------------------------------ |
 | v0.1.0-dev | M1.1–M1.7                            |
 | v0.2.0-dev | After Buffer Pool & LRU-K            |
-| v0.3.0-dev | After B+ Tree                        |
-| v0.4.0-dev | After SQL Parser                     |
+| v0.3.0-dev | After B+ Tree Page Infrastructure    |
+| v0.4.0-dev | After B+ Tree full implementation    |
+| v0.5.0-dev | After SQL Parser                     |
 | v1.0.0     | Basic SQL database with transactions |
 
 ## M1.8 — LRU-K Replacement Policy

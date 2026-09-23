@@ -1,0 +1,18 @@
+add_executable(hamdb_index_tests
+    btree_page_test.cpp
+)
+
+target_link_libraries(hamdb_index_tests PRIVATE
+    hamdb_index
+    hamdb_common
+    GTest::gtest_main
+)
+
+target_include_directories(hamdb_index_tests PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+)
+
+target_compile_features(hamdb_index_tests PRIVATE cxx_std_20)
+
+include(GoogleTest)
+gtest_discover_tests(hamdb_index_tests)

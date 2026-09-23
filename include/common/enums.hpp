@@ -24,11 +24,13 @@ namespace hamdb
      */
     enum class PageType : std::uint8_t
     {
-        Free = 0,     ///< Page is unallocated and available for reuse.
-        Metadata = 1, ///< Database-level metadata (file header, catalog root).
-        Table = 2,    ///< Heap-file page storing row data for a table.
-        Index = 3,    ///< B-tree node (internal or leaf) for an index.
-        Overflow = 4, ///< Overflow page for variable-length column values.
+        Free = 0,          ///< Page is unallocated and available for reuse.
+        Metadata = 1,      ///< Database-level metadata (file header, catalog root).
+        Table = 2,         ///< Heap-file page storing row data for a table.
+        Index = 3,         ///< B-tree node (internal or leaf) for an index.
+        Overflow = 4,      ///< Overflow page for variable-length column values.
+        BTreeInternal = 5, ///< B+ Tree internal (routing) node page.
+        BTreeLeaf = 6,     ///< B+ Tree leaf node page holding key/value pairs.
     };
 
     // ── Operation results ─────────────────────────────────────────────────────────
