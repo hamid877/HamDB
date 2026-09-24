@@ -86,11 +86,12 @@ Every milestone must satisfy:
 | M4.0 | Catalog Manager | ✅ Complete |
 | M4.1 | Expression System | ✅ Complete |
 | M4.2 | Sequential Scan Executor | ✅ Complete |
-| M4.3 | SQL Lexer  | ⬜      |
-| M4.4 | SQL Parser | ⬜      |
-| M4.5 | AST        | ⬜      |
-| M4.6 | Planner    | ⬜      |
-| M4.7 | Executor   | ⬜      |
+| M4.3 | Index Scan Executor | ✅ Complete |
+| M4.4 | SQL Lexer  | ⬜      |
+| M4.5 | SQL Parser | ⬜      |
+| M4.6 | AST        | ⬜      |
+| M4.7 | Planner    | ⬜      |
+| M4.8 | Executor   | ⬜      |
 
 ---
 
@@ -107,6 +108,33 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M4.3 — Index Scan Executor
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `IndexScanExecutor` implementing the executor lifecycle (`init()`, `next()`, `outputSchema()`).
+* Equality lookups on `int64_t` keys using `BPlusTree::getValue()`.
+* Reading tuples from `TableHeap` via RID.
+* Applying MVCC visibility rules inside `next()` to return the correct tuple version or skip deleted ones.
+* Only returns the matching tuple once, returning exhaustion on subsequent calls.
+
+### Verification
+
+* Tests passing: **338 / 338**
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement index scan executor (M4.3)
+```
+
+---
 
 ## M4.2 — Sequential Scan Executor
 
@@ -629,7 +657,7 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M4.0 — SQL Lexer
+## M4.4 — SQL Lexer
 
 ### Goal
 
@@ -675,7 +703,9 @@ Approximately **370+ total tests** after completion.
 | M3.3      | 333           |
 | M3.4      | 334           |
 | M4.0      | 337           |
-| M4.1      | **338**       |
+| M4.1      | 338           |
+| M4.2      | 338           |
+| M4.3      | **338**       |
 
 ---
 

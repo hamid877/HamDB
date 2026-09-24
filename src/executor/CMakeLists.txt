@@ -3,6 +3,7 @@ add_library(hamdb_executor STATIC
     column_value_expression.cpp
     executor_context.cpp
     seq_scan_executor.cpp
+    index_scan_executor.cpp
 )
 
 target_link_libraries(hamdb_executor PUBLIC
@@ -12,6 +13,7 @@ target_link_libraries(hamdb_executor PUBLIC
     hamdb_catalog
     hamdb_transaction
     hamdb_buffer
+    hamdb_index
 )
 
 target_include_directories(hamdb_executor PUBLIC
