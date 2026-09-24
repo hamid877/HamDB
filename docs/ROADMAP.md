@@ -16,7 +16,7 @@
 | Testing          | GoogleTest                  |
 | Platform         | Linux (Ubuntu / Linux Mint) |
 | Current Version  | v0.3.0-dev                  |
-| Overall Progress | **58%**                     |
+| Overall Progress | **59%**                     |
 
 ---
 
@@ -84,11 +84,12 @@ Every milestone must satisfy:
 | ID   | Milestone  | Status |
 | ---- | ---------- | ------ |
 | M4.0 | Catalog Manager | ✅ Complete |
-| M4.1 | SQL Lexer  | ⬜      |
-| M4.2 | SQL Parser | ⬜      |
-| M4.3 | AST        | ⬜      |
-| M4.4 | Planner    | ⬜      |
-| M4.5 | Executor   | ⬜      |
+| M4.1 | Expression System | ✅ Complete |
+| M4.2 | SQL Lexer  | ⬜      |
+| M4.3 | SQL Parser | ⬜      |
+| M4.4 | AST        | ⬜      |
+| M4.5 | Planner    | ⬜      |
+| M4.6 | Executor   | ⬜      |
 
 ---
 
@@ -105,6 +106,36 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M4.1 — Expression System
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `Value` class supporting `INTEGER`, `BOOLEAN`, `VARCHAR`, and `NULL`.
+* Comparison operators (`=`, `!=`, `<`, `<=`, `>`, `>=`).
+* Arithmetic operators (`+`, `-`, `*`, `/`).
+* `Expression` base class with `evaluate` API.
+* `ConstantExpression` returning fixed values.
+* `ColumnValueExpression` extracting column values dynamically from `Tuple` based on `Schema`.
+* `ComparisonExpression` and `ArithmeticExpression` allowing nested evaluation trees.
+* Integrated gracefully with `Tuple` and `Schema` classes.
+
+### Verification
+
+* Tests passing: **338 / 338**
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement expression system (M4.1)
+```
+
+---
 
 ## M4.0 — Catalog Manager
 
@@ -615,7 +646,8 @@ Approximately **370+ total tests** after completion.
 | M3.2      | 332           |
 | M3.3      | 333           |
 | M3.4      | 334           |
-| M4.0      | **337**       |
+| M4.0      | 337           |
+| M4.1      | **338**       |
 
 ---
 
