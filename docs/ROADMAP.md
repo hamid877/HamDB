@@ -74,6 +74,7 @@ Every milestone must satisfy:
 | M3.0 | Transaction Manager Skeleton | ✅ Complete |
 | M3.1 | Lock Manager               | ✅ Complete |
 | M3.2 | MVCC (Snapshot Isolation)  | ✅ Complete |
+| M3.3 | Write-Ahead Logging (WAL)  | ✅ Complete |
 
 ---
 
@@ -102,6 +103,35 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M3.3 — Write-Ahead Logging (WAL)
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `LogRecordType` enum (`BEGIN`, `INSERT`, `UPDATE`, `DELETE`, `COMMIT`, `ABORT`).
+* Binary `LogRecord` serialization and deserialization.
+* `LogManager` with `append`, `flush`, `flushAll`, `persistentLSN`, `nextLSN`.
+* Monotonically increasing LSNs via `std::atomic<uint64_t>`.
+* Buffered WAL writes into memory.
+* BEGIN/COMMIT/ABORT logging hooks support.
+* INSERT/UPDATE/DELETE record payload support with `RID` and `Tuple`.
+
+### Verification
+
+* Tests passing: **333 / 333**
+* Build: ✅
+* Lint: ✅ (`clang-tidy passed`)
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(wal): implement write-ahead logging (M3.3)
+```
+
+---
 
 ## M3.0 — Transaction Manager Skeleton
 
@@ -524,7 +554,8 @@ Approximately **370+ total tests** after completion.
 | M2.8      | 329           |
 | M3.0      | 330           |
 | M3.1      | 331           |
-| M3.2      | **332**       |
+| M3.2      | 332           |
+| M3.3      | **333**       |
 
 ---
 

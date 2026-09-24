@@ -37,6 +37,7 @@ add_subdirectory(src/database)
 add_subdirectory(src/buffer)
 add_subdirectory(src/index)
 add_subdirectory(src/transaction)
+add_subdirectory(src/wal)
 
 # ── hamdb_core convenience interface ──────────────────────────────────────────
 add_library(hamdb_core INTERFACE)
@@ -48,6 +49,7 @@ target_link_libraries(hamdb_core INTERFACE
     hamdb_database
     hamdb_index
     hamdb_transaction
+    hamdb_wal
 )
 target_include_directories(hamdb_core INTERFACE
     ${PROJECT_SOURCE_DIR}/include
@@ -59,6 +61,7 @@ add_subdirectory(tests/utils)
 add_subdirectory(tests/buffer)
 add_subdirectory(tests/index)
 add_subdirectory(tests/transaction)
+add_subdirectory(tests/wal)
 
 # ── Examples ──────────────────────────────────────────────────────────────────
 add_subdirectory(examples)
