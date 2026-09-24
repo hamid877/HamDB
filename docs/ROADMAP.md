@@ -85,11 +85,12 @@ Every milestone must satisfy:
 | ---- | ---------- | ------ |
 | M4.0 | Catalog Manager | ✅ Complete |
 | M4.1 | Expression System | ✅ Complete |
-| M4.2 | SQL Lexer  | ⬜      |
-| M4.3 | SQL Parser | ⬜      |
-| M4.4 | AST        | ⬜      |
-| M4.5 | Planner    | ⬜      |
-| M4.6 | Executor   | ⬜      |
+| M4.2 | Sequential Scan Executor | ✅ Complete |
+| M4.3 | SQL Lexer  | ⬜      |
+| M4.4 | SQL Parser | ⬜      |
+| M4.5 | AST        | ⬜      |
+| M4.6 | Planner    | ⬜      |
+| M4.7 | Executor   | ⬜      |
 
 ---
 
@@ -106,6 +107,33 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M4.2 — Sequential Scan Executor
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `ExecutorContext` holding references to `CatalogManager`, `Transaction`, `MvccManager`, and `BufferPoolManager`.
+* `AbstractExecutor` interface definition.
+* `SeqScanExecutor` implementing the executor lifecycle (`init()`, `next()`, `outputSchema()`).
+* Iteration over `TableHeap` using `HeapIterator`.
+* MVCC visibility checks integrated inside `next()` to skip deleted or invisible tuple versions.
+
+### Verification
+
+* Tests passing: **338 / 338**
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement sequential scan executor (M4.2)
+```
+
+---
 
 ## M4.1 — Expression System
 
