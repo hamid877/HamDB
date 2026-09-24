@@ -83,11 +83,12 @@ Every milestone must satisfy:
 
 | ID   | Milestone  | Status |
 | ---- | ---------- | ------ |
-| M4.0 | SQL Lexer  | ⬜      |
-| M4.1 | SQL Parser | ⬜      |
-| M4.2 | AST        | ⬜      |
-| M4.3 | Planner    | ⬜      |
-| M4.4 | Executor   | ⬜      |
+| M4.0 | Catalog Manager | ✅ Complete |
+| M4.1 | SQL Lexer  | ⬜      |
+| M4.2 | SQL Parser | ⬜      |
+| M4.3 | AST        | ⬜      |
+| M4.4 | Planner    | ⬜      |
+| M4.5 | Executor   | ⬜      |
 
 ---
 
@@ -104,6 +105,33 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M4.0 — Catalog Manager
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `Schema` with column name/type serialization.
+* `TableInfo` storing `table_id`, `table_name`, `heap_root_page`, `index_root_page`, and `schema`.
+* `CatalogManager` class handling `createTable`, `getTable`, `dropTable`, and `listTables`.
+* Persistent catalog page stored in `.hamdb` (metadata page / page 0).
+* Metadata survives database reopen operations.
+
+### Verification
+
+* Tests passing: **337 / 337**
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(catalog): implement catalog manager (M4.0)
+```
+
+---
 
 ## M3.4 — Crash Recovery
 
@@ -586,7 +614,8 @@ Approximately **370+ total tests** after completion.
 | M3.1      | 331           |
 | M3.2      | 332           |
 | M3.3      | 333           |
-| M3.4      | **334**       |
+| M3.4      | 334           |
+| M4.0      | **337**       |
 
 ---
 
