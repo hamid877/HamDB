@@ -10,3 +10,8 @@ add_test(NAME TransactionTest COMMAND transaction_test)
 add_executable(lock_manager_test lock_manager_test.cpp)
 target_link_libraries(lock_manager_test PRIVATE hamdb_core GTest::gtest_main)
 add_test(NAME LockManagerTest COMMAND lock_manager_test)
+
+add_executable(mvcc_manager_test mvcc_manager_test.cpp)
+target_link_libraries(mvcc_manager_test PRIVATE hamdb_core GTest::gtest_main)
+add_test(NAME MvccManagerTest COMMAND mvcc_manager_test)
+

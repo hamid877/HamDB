@@ -73,7 +73,7 @@ Every milestone must satisfy:
 | ---- | -------------------------- | ------ |
 | M3.0 | Transaction Manager Skeleton | ✅ Complete |
 | M3.1 | Lock Manager               | ✅ Complete |
-| M3.2 | Table Metadata Persistence | ⬜      |
+| M3.2 | MVCC (Snapshot Isolation)  | ✅ Complete |
 
 ---
 
@@ -482,21 +482,21 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M2.8 — Delete & Merge
+## M4.0 — SQL Lexer
 
 ### Goal
 
-Implement B+ Tree deletion and page merging logic.
+Implement lexical analysis for SQL statements.
 
 ### Deliverables
 
-* `remove(key)` logic.
-* Leaf and internal node merging.
-* Sibling borrowing (redistribution).
+* Token types.
+* Lexer class.
+* Keyword recognition.
 
 ### Expected Tests
 
-Approximately **329+ total tests** after completion.
+Approximately **370+ total tests** after completion.
 
 ---
 
@@ -523,7 +523,8 @@ Approximately **329+ total tests** after completion.
 | M2.7      | 322           |
 | M2.8      | 329           |
 | M3.0      | 330           |
-| M3.1      | **331**       |
+| M3.1      | 331           |
+| M3.2      | **332**       |
 
 ---
 
@@ -562,6 +563,40 @@ Approximately **329+ total tests** after completion.
 ### Git Commit
 
 feat(buffer): implement LRU-K replacement policy
+
+---
+
+## M3.2 — MVCC (Snapshot Isolation)
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `TupleVersion` struct: `begin_txn_id`, `end_txn_id`, `is_committed`, `is_deleted`, `data`, `prev` version chain pointer.
+* `isVisibleTo(snapshot_ts)` visibility predicate (snapshot isolation: committed + in timestamp range).
+* Version chains per RID stored in `MvccManager::chains_`.
+* `insert` — creates a new uncommitted version head; rejects duplicates and write-write conflicts.
+* `update` — stamps the current head's `end_txn_id`, inserts new uncommitted head with old head as `prev`.
+* `remove` — stamps the current head's `end_txn_id`, inserts a tombstone version.
+* `commit` — stamps `is_committed = true` on all versions owned by the committing txn.
+* `abort` — rebuilds each affected chain, dropping all versions owned by the aborted txn and restoring `end_txn_id` on the new head.
+* `read` — walks chain newest-to-oldest; returns own uncommitted writes or committed versions within snapshot.
+* `exists` / `versionCount` helpers for testing and diagnostics.
+* Write-write conflict detection: rejects writes when another uncommitted txn owns the current head.
+* `mvcc_manager_test.cpp` with 27 tests covering all lifecycle paths.
+
+### Verification
+
+* Tests passing: **332 / 332**
+* Build: ✅
+* Lint: ✅ (`clang-tidy passed`)
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(transaction): implement MVCC snapshot isolation (M3.2)
+```
 
 ---
 
