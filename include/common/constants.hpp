@@ -36,7 +36,7 @@ namespace hamdb
 
     /// Size of the on-disk page header in bytes.
     /// Must match @c PageHeader::kSize.
-    inline constexpr std::size_t kPageHeaderSize = 16;
+    inline constexpr std::size_t kPageHeaderSize = 24;
 
     /// Number of payload bytes available in a page after the header.
     inline constexpr std::size_t kPageBodySize = kPageSize - kPageHeaderSize;

@@ -11,7 +11,7 @@ namespace hamdb
 
     bool PageHeader::operator==(const PageHeader& other) const noexcept
     {
-        return page_id == other.page_id && page_type == other.page_type &&
+        return page_lsn == other.page_lsn && page_id == other.page_id && page_type == other.page_type &&
                free_space_ptr == other.free_space_ptr && slot_count == other.slot_count &&
                checksum == other.checksum;
     }

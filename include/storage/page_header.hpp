@@ -20,20 +20,22 @@ namespace hamdb
      * Layout (all fields are little-endian on disk):
      * | Offset | Size | Field           |
      * |--------|------|-----------------|
-     * |      0 |    4 | page_id         |
-     * |      4 |    1 | page_type       |
-     * |      5 |    2 | free_space_ptr  |
-     * |      7 |    2 | slot_count      |
-     * |      9 |    4 | checksum        |
-     * |     13 |    3 | (reserved)      |
+     * |      0 |    8 | page_lsn        |
+     * |      8 |    4 | page_id         |
+     * |     12 |    1 | page_type       |
+     * |     13 |    2 | free_space_ptr  |
+     * |     15 |    2 | slot_count      |
+     * |     17 |    4 | checksum        |
+     * |     21 |    3 | (reserved)      |
      *
-     * Total size: 16 bytes (== @c kPageHeaderSize).
+     * Total size: 24 bytes (== @c kPageHeaderSize).
      */
     struct PageHeader
     {
         /// Size of the serialised header in bytes.
         static constexpr std::size_t kSize = kPageHeaderSize;
 
+        uint64_t page_lsn = 0;               ///< Log sequence number.
         PageId page_id = kInvalidPageId;     ///< Logical page number.
         PageType page_type = PageType::Free; ///< Content classification.
         std::uint16_t free_space_ptr = 0;    ///< Byte offset to first free byte.

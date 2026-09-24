@@ -15,11 +15,13 @@ void LogManager::flush(lsn_t lsn) {
     if (lsn > persistent_lsn_.load()) {
         persistent_lsn_.store(lsn);
     }
-    // Remove flushed records
+    // Move flushed records to simulated disk
     std::vector<LogRecord> remaining;
     for (const auto& rec : log_buffer_) {
         if (rec.getLSN() > lsn) {
             remaining.push_back(rec);
+        } else {
+            disk_log_buffer_.push_back(rec);
         }
     }
     log_buffer_ = std::move(remaining);
@@ -31,6 +33,9 @@ void LogManager::flushAll() {
         lsn_t highest = log_buffer_.back().getLSN();
         if (highest > persistent_lsn_.load()) {
             persistent_lsn_.store(highest);
+        }
+        for (const auto& rec : log_buffer_) {
+            disk_log_buffer_.push_back(rec);
         }
         log_buffer_.clear();
     }

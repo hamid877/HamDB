@@ -1,6 +1,7 @@
 add_library(hamdb_wal STATIC
     log_record.cpp
     log_manager.cpp
+    recovery_manager.cpp
 )
 
 target_include_directories(hamdb_wal PUBLIC

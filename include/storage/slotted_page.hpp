@@ -162,6 +162,28 @@ namespace hamdb
         [[nodiscard]] Status deleteTuple(SlotId slot_id) noexcept;
 
         /**
+         * @brief Insert a tuple at a specific slot ID.
+         * 
+         * Used for crash recovery.
+         * 
+         * @param slot_id The slot to insert into.
+         * @param tuple The tuple to insert.
+         * @return Status::Ok, or IoError if full.
+         */
+        [[nodiscard]] Status insertTupleAtSlot(SlotId slot_id, const Tuple& tuple) noexcept;
+
+        /**
+         * @brief Update a tuple in place.
+         * 
+         * Used for crash recovery.
+         * 
+         * @param slot_id The slot to update.
+         * @param tuple The new tuple data.
+         * @return Status::Ok, or IoError if full.
+         */
+        [[nodiscard]] Status updateTuple(SlotId slot_id, const Tuple& tuple) noexcept;
+
+        /**
          * @brief Compact the page, reclaiming space from deleted tuples.
          *
          * Active tuples are moved toward the end of the body; slot offsets are

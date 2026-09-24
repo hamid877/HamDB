@@ -16,7 +16,7 @@
 | Testing          | GoogleTest                  |
 | Platform         | Linux (Ubuntu / Linux Mint) |
 | Current Version  | v0.3.0-dev                  |
-| Overall Progress | **57%**                     |
+| Overall Progress | **58%**                     |
 
 ---
 
@@ -75,6 +75,7 @@ Every milestone must satisfy:
 | M3.1 | Lock Manager               | ✅ Complete |
 | M3.2 | MVCC (Snapshot Isolation)  | ✅ Complete |
 | M3.3 | Write-Ahead Logging (WAL)  | ✅ Complete |
+| M3.4 | Crash Recovery             | ✅ Complete |
 
 ---
 
@@ -103,6 +104,35 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M3.4 — Crash Recovery
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `RecoveryManager` class handling ARIES-like crash recovery.
+* Analyzed WAL to reconstruct active transactions.
+* Redo for committed and uncommitted mutation records (`INSERT`, `UPDATE`, `DELETE`).
+* Undo for incomplete transactions using before-images.
+* Idempotent Redo using `PageLSN`.
+* Modified `PageHeader` size to 24 bytes to accommodate `page_lsn`.
+* Modified `SlottedPage` to expose `insertTupleAtSlot` and `updateTuple` for targeted tuple operations during recovery.
+
+### Verification
+
+* Tests passing: **334 / 334**
+* Build: ✅
+* Lint: ✅ (`clang-tidy passed`)
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(wal): implement crash recovery (M3.4)
+```
+
+---
 
 ## M3.3 — Write-Ahead Logging (WAL)
 
@@ -555,7 +585,8 @@ Approximately **370+ total tests** after completion.
 | M3.0      | 330           |
 | M3.1      | 331           |
 | M3.2      | 332           |
-| M3.3      | **333**       |
+| M3.3      | 333           |
+| M3.4      | **334**       |
 
 ---
 

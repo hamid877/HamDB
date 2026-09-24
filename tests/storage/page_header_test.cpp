@@ -35,9 +35,9 @@ namespace hamdb
         EXPECT_NE(a, b);
     }
 
-    TEST(PageHeaderTest, SizeConstantIs16Bytes)
+    TEST(PageHeaderTest, SizeConstantIs24Bytes)
     {
-        EXPECT_EQ(PageHeader::kSize, 16u);
+        EXPECT_EQ(PageHeader::kSize, 24u);
     }
 
 } // namespace hamdb

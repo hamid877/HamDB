@@ -219,6 +219,7 @@ namespace hamdb
 
         Deserializer des(page.data().first(PageHeader::kSize));
         std::uint8_t type_tmp = 0;
+        static_cast<void>(des.readUInt64(page.header().page_lsn));
         static_cast<void>(des.readUInt32(page.header().page_id));
         static_cast<void>(des.readUInt8(type_tmp));
         page.header().page_type = static_cast<PageType>(type_tmp);
@@ -241,6 +242,7 @@ namespace hamdb
         }
 
         Serializer ser(const_cast<Page&>(page).data().first(PageHeader::kSize));
+        static_cast<void>(ser.writeUInt64(page.header().page_lsn));
         static_cast<void>(ser.writeUInt32(page.header().page_id));
         static_cast<void>(ser.writeUInt8(static_cast<std::uint8_t>(page.header().page_type)));
         static_cast<void>(ser.writeUInt16(page.header().free_space_ptr));

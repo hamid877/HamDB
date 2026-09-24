@@ -189,6 +189,81 @@ namespace hamdb
         return Status::Ok;
     }
 
+    Status SlottedPage::insertTupleAtSlot(SlotId slot_id, const Tuple& tuple) noexcept
+    {
+        if (tuple.empty()) return Status::InvalidArg;
+        SlottedPageHeader h = readSpHeader();
+        const auto tuple_len = static_cast<std::uint16_t>(tuple.size());
+        const auto slot_count = page_.header().slot_count;
+        
+        bool requires_new_slot = slot_id >= slot_count;
+        std::size_t needed_slot = requires_new_slot ? TupleSlot::kSize * (slot_id - slot_count + 1) : 0u;
+        std::size_t needed_total = tuple.size() + needed_slot;
+        std::size_t available = h.free_space_end - h.free_space_start;
+        
+        if (needed_total > available) return Status::IoError;
+        
+        const auto new_free_end = static_cast<std::uint16_t>(h.free_space_end - tuple_len);
+        auto body = page_.body();
+        std::span<std::byte> dest(body.data() + new_free_end, tuple_len);
+        Serializer ser(dest);
+        static_cast<void>(ser.writeBytes(tuple.data()));
+        
+        const TupleSlot new_slot(new_free_end, tuple_len);
+        if (requires_new_slot) {
+            for (std::uint16_t i = slot_count; i <= slot_id; ++i) {
+                TupleSlot empty_slot;
+                empty_slot.markDeleted();
+                writeSlot(i, empty_slot);
+            }
+            writeSlot(slot_id, new_slot);
+            h.free_space_start = static_cast<std::uint16_t>(h.free_space_start + TupleSlot::kSize * (slot_id - slot_count + 1));
+            page_.header().slot_count = static_cast<std::uint16_t>(slot_id + 1);
+        } else {
+            TupleSlot old_slot = readSlot(slot_id);
+            if (!old_slot.isDeleted()) {
+                // Should not happen in normal recovery, but if it does, count shouldn't increase
+                h.tuple_count = static_cast<std::uint16_t>(h.tuple_count - 1);
+            }
+            writeSlot(slot_id, new_slot);
+        }
+        
+        h.free_space_end = new_free_end;
+        h.tuple_count = static_cast<std::uint16_t>(h.tuple_count + 1);
+        writeSpHeader(h);
+        page_.header().free_space_ptr = h.free_space_start;
+        return Status::Ok;
+    }
+
+    Status SlottedPage::updateTuple(SlotId slot_id, const Tuple& tuple) noexcept
+    {
+        if (tuple.empty()) return Status::InvalidArg;
+        const auto slot_count = page_.header().slot_count;
+        if (slot_id >= slot_count) return Status::NotFound;
+        
+        TupleSlot old_slot = readSlot(slot_id);
+        if (old_slot.isDeleted()) return Status::InvalidArg;
+        
+        SlottedPageHeader h = readSpHeader();
+        const auto tuple_len = static_cast<std::uint16_t>(tuple.size());
+        
+        std::size_t available = h.free_space_end - h.free_space_start;
+        if (tuple.size() > available) return Status::IoError;
+        
+        const auto new_free_end = static_cast<std::uint16_t>(h.free_space_end - tuple_len);
+        auto body = page_.body();
+        std::span<std::byte> dest(body.data() + new_free_end, tuple_len);
+        Serializer ser(dest);
+        static_cast<void>(ser.writeBytes(tuple.data()));
+        
+        const TupleSlot new_slot(new_free_end, tuple_len);
+        writeSlot(slot_id, new_slot);
+        
+        h.free_space_end = new_free_end;
+        writeSpHeader(h);
+        return Status::Ok;
+    }
+
     Status SlottedPage::deleteTuple(SlotId slot_id) noexcept
     {
         const auto slot_count = page_.header().slot_count;
