@@ -9,26 +9,24 @@ namespace hamdb
     class TableHeapTest : public ::testing::Test
     {
     protected:
-        void SetUp() override
-        {
-            db_path_ = "test_heap.db";
-            if (std::filesystem::exists(db_path_))
-            {
-                std::filesystem::remove(db_path_);
-            }
+        void SetUp() override {
+            auto const* test_info = ::testing::UnitTest::GetInstance()->current_test_info();
+            std::string test_name = test_info ? test_info->name() : "unknown";
+            auto unique = std::to_string(
+                std::chrono::steady_clock::now().time_since_epoch().count());
+
+            db_path_ = std::filesystem::temp_directory_path() /
+                    ("hamdb-tableheap-" + test_name + "-" + unique + ".hamdb");
+
             dm_ = std::make_unique<DiskManager>(db_path_);
             ASSERT_EQ(dm_->createDatabase(), Status::Ok);
             ASSERT_EQ(dm_->openDatabase(), Status::Ok);
         }
 
-        void TearDown() override
-        {
-            (void)dm_->closeDatabase();
+        void TearDown() override {
             dm_.reset();
-            if (std::filesystem::exists(db_path_))
-            {
-                std::filesystem::remove(db_path_);
-            }
+            std::error_code ec;
+            std::filesystem::remove(db_path_, ec);
         }
 
         Tuple createTuple(std::string_view sv)
@@ -45,7 +43,7 @@ namespace hamdb
     {
         auto heap_opt = TableHeap::create(*dm_);
         ASSERT_TRUE(heap_opt.has_value());
-        
+
         auto& heap = heap_opt.value();
         EXPECT_NE(heap.getFirstPageId(), kInvalidPageId);
         EXPECT_EQ(heap.getPageCount(), 1u);
@@ -60,13 +58,13 @@ namespace hamdb
 
         RID rid;
         ASSERT_EQ(heap.insertTuple(createTuple("hello_table_heap"), rid), Status::Ok);
-        
+
         EXPECT_EQ(heap.getTupleCount(), 1u);
         EXPECT_EQ(heap.getPageCount(), 1u);
-        
+
         Tuple out;
         ASSERT_EQ(heap.readTuple(rid, out), Status::Ok);
-        
+
         auto s = out.data();
         std::string_view sv{reinterpret_cast<const char*>(s.data()), s.size()}; // NOLINT
         EXPECT_EQ(sv, "hello_table_heap");
