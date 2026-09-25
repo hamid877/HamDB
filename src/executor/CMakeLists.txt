@@ -14,6 +14,7 @@ add_library(hamdb_executor STATIC
     aggregation_executor.cpp
     sort_executor.cpp
     limit_executor.cpp
+    values_executor.cpp
 )
 
 target_link_libraries(hamdb_executor PUBLIC

@@ -95,10 +95,11 @@ Every milestone must satisfy:
 | M4.9 | Aggregation Executor | ✅ Complete |
 | M4.10 | Sort Executor | ✅ Complete |
 | M4.11 | Limit Executor | ✅ Complete |
-| M4.12 | SQL Parser | ⬜      |
-| M4.13 | AST        | ⬜      |
-| M4.14 | Planner    | ⬜      |
-| M4.15 | Executor   | ⬜      |
+| M4.12 | Values Executor | ✅ Complete |
+| M4.13 | SQL Parser | ⬜      |
+| M4.14 | AST        | ⬜      |
+| M4.15 | Planner    | ⬜      |
+| M4.16 | Executor   | ⬜      |
 
 ---
 
@@ -115,6 +116,33 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M4.12 — Values Executor
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `ValuesExecutor` implementing the executor lifecycle (`init()`, `next()`, `outputSchema()`).
+* Production of tuples from constant expressions without a child executor.
+* Emitting tuples sequentially.
+* Evaluation of values using the `Expression` system dynamically.
+* Dynamically build output schema.
+
+### Verification
+
+* Tests passing: **338 / 338** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement values executor (M4.12)
+```
+
+---
 
 ## M4.11 — Limit Executor
 
