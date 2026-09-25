@@ -7,6 +7,7 @@ add_executable(hamdb_executor_test
     update_executor_test.cpp
     filter_executor_test.cpp
     projection_executor_test.cpp
+    nested_loop_join_executor_test.cpp
 )
 
 target_link_libraries(hamdb_executor_test PRIVATE

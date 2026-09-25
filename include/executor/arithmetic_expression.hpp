@@ -16,8 +16,12 @@ public:
     }
 
     [[nodiscard]] Value evaluate(const Tuple& tuple, const Schema& schema) const override {
-        Value left = children_[0]->evaluate(tuple, schema);
-        Value right = children_[1]->evaluate(tuple, schema);
+        return evaluateJoin(&tuple, &schema, nullptr, nullptr);
+    }
+
+    [[nodiscard]] Value evaluateJoin(const Tuple* left_tuple, const Schema* left_schema, const Tuple* right_tuple, const Schema* right_schema) const override {
+        Value left = children_[0]->evaluateJoin(left_tuple, left_schema, right_tuple, right_schema);
+        Value right = children_[1]->evaluateJoin(left_tuple, left_schema, right_tuple, right_schema);
         
         switch (arith_type_) {
             case ArithmeticType::Add: return left.add(right);

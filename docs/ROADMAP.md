@@ -91,11 +91,12 @@ Every milestone must satisfy:
 | M4.5 | Update Executor | ✅ Complete |
 | M4.6 | Filter Executor | ✅ Complete |
 | M4.7 | Projection Executor | ✅ Complete |
-| M4.8 | SQL Lexer  | ⬜      |
-| M4.9 | SQL Parser | ⬜      |
-| M4.10 | AST        | ⬜      |
-| M4.11 | Planner    | ⬜      |
-| M4.12 | Executor   | ⬜      |
+| M4.8 | Nested Loop Join Executor | ✅ Complete |
+| M4.9 | SQL Lexer  | ⬜      |
+| M4.10 | SQL Parser | ⬜      |
+| M4.11 | AST        | ⬜      |
+| M4.12 | Planner    | ⬜      |
+| M4.13 | Executor   | ⬜      |
 
 ---
 
@@ -112,6 +113,36 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M4.8 — Nested Loop Join Executor
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `NestedLoopJoinExecutor` implementing the executor lifecycle (`init()`, `next()`, `outputSchema()`).
+* Wrap two child executors (left and right).
+* Iterate left tuples, restarting the right executor for each left tuple.
+* Evaluate join predicate using the `Expression` system, passing both left and right tuples via `evaluateJoin()`.
+* Concatenate left and right tuple data to produce combined output tuples.
+* Dynamically build combined output schema.
+* Preserve RID propagation from the left child.
+* Updated `Expression` tree to support dual-tuple evaluation (`evaluateJoin()`), adding `TupleSource` to `ColumnValueExpression`.
+
+### Verification
+
+* Tests passing: **338 / 338** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement nested loop join executor (M4.8)
+```
+
+---
 
 ## M4.7 — Projection Executor
 
@@ -774,7 +805,7 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M4.8 — SQL Lexer
+## M4.9 — SQL Lexer
 
 ### Goal
 
@@ -788,7 +819,7 @@ Implement lexical analysis for SQL statements.
 
 ### Expected Tests
 
-Approximately **370+ total tests** after completion.
+Approximately **372+ total tests** after completion.
 
 ---
 

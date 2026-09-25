@@ -49,4 +49,13 @@ Value ColumnValueExpression::evaluate(const Tuple& tuple, const Schema& schema) 
     throw std::runtime_error("Should not reach here");
 }
 
+Value ColumnValueExpression::evaluateJoin(const Tuple* left_tuple, const Schema* left_schema, const Tuple* right_tuple, const Schema* right_schema) const {
+    if (tuple_source_ == TupleSource::Left) {
+        return evaluate(*left_tuple, *left_schema);
+    } else if (tuple_source_ == TupleSource::Right) {
+        return evaluate(*right_tuple, *right_schema);
+    }
+    return evaluate(left_tuple ? *left_tuple : *right_tuple, left_schema ? *left_schema : *right_schema);
+}
+
 } // namespace hamdb
