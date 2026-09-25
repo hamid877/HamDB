@@ -136,10 +136,10 @@ namespace hamdb
         [[nodiscard]] Status sync();
 
     private:
-        std::filesystem::path path_;       ///< Path to the .hamdb file.
-        std::fstream          stream_;     ///< Binary file stream.
-        std::size_t           page_count_; ///< Cached page count from metadata.
-        bool                  is_open_;    ///< True when a file is open.
+        std::filesystem::path path_; ///< Path to the .hamdb file.
+        std::fstream stream_;        ///< Binary file stream.
+        std::size_t page_count_;     ///< Cached page count from metadata.
+        bool is_open_;               ///< True when a file is open.
     };
 
 } // namespace hamdb

@@ -1,128 +1,144 @@
-#include "executor/nested_loop_join_executor.hpp"
-#include "executor/constant_expression.hpp"
 #include "executor/column_value_expression.hpp"
 #include "executor/comparison_expression.hpp"
+#include "executor/constant_expression.hpp"
+#include "executor/nested_loop_join_executor.hpp"
 
 #include <gtest/gtest.h>
 #include <vector>
 
-namespace hamdb {
-namespace {
+namespace hamdb
+{
+    namespace
+    {
 
-std::vector<std::byte> makePayload(std::string_view s) {
-    std::vector<std::byte> out;
-    out.reserve(s.size());
-    for (char c : s) {
-        out.push_back(static_cast<std::byte>(c));
-    }
-    return out;
-}
-
-class MockExecutor : public AbstractExecutor {
-public:
-    MockExecutor(Schema schema, std::vector<Tuple> tuples)
-        : schema_(std::move(schema)), tuples_(std::move(tuples)) {}
-
-    void init() override {
-        idx_ = 0;
-    }
-
-    bool next(Tuple* tuple, RID* rid) override {
-        if (idx_ < tuples_.size()) {
-            *tuple = tuples_[idx_];
-            *rid = RID(0, idx_);
-            idx_++;
-            return true;
+        std::vector<std::byte> makePayload(std::string_view s)
+        {
+            std::vector<std::byte> out;
+            out.reserve(s.size());
+            for (char c : s)
+            {
+                out.push_back(static_cast<std::byte>(c));
+            }
+            return out;
         }
-        return false;
-    }
 
-    const Schema& outputSchema() const override {
-        return schema_;
-    }
+        class MockExecutor : public AbstractExecutor
+        {
+        public:
+            MockExecutor(Schema schema, std::vector<Tuple> tuples)
+                : schema_(std::move(schema)), tuples_(std::move(tuples))
+            {
+            }
 
-private:
-    Schema schema_;
-    std::vector<Tuple> tuples_;
-    size_t idx_{0};
-};
+            void init() override
+            {
+                idx_ = 0;
+            }
 
-class NestedLoopJoinExecutorTest : public ::testing::Test {
-protected:
-    void SetUp() override {
-        std::vector<Column> left_cols;
-        left_cols.emplace_back("left_col", ColumnType::Integer);
-        left_schema_ = std::make_unique<Schema>(std::move(left_cols));
+            bool next(Tuple* tuple, RID* rid) override
+            {
+                if (idx_ < tuples_.size())
+                {
+                    *tuple = tuples_[idx_];
+                    *rid = RID(0, idx_);
+                    idx_++;
+                    return true;
+                }
+                return false;
+            }
 
-        std::vector<Column> right_cols;
-        right_cols.emplace_back("right_col", ColumnType::Integer);
-        right_schema_ = std::make_unique<Schema>(std::move(right_cols));
-    }
+            const Schema& outputSchema() const override
+            {
+                return schema_;
+            }
 
-    std::unique_ptr<Schema> left_schema_;
-    std::unique_ptr<Schema> right_schema_;
-};
+        private:
+            Schema schema_;
+            std::vector<Tuple> tuples_;
+            size_t idx_{0};
+        };
 
-TEST_F(NestedLoopJoinExecutorTest, CrossJoinNoPredicate) {
-    std::vector<Tuple> left_tuples;
-    left_tuples.emplace_back(makePayload("A"));
-    left_tuples.emplace_back(makePayload("B"));
+        class NestedLoopJoinExecutorTest : public ::testing::Test
+        {
+        protected:
+            void SetUp() override
+            {
+                std::vector<Column> left_cols;
+                left_cols.emplace_back("left_col", ColumnType::Integer);
+                left_schema_ = std::make_unique<Schema>(std::move(left_cols));
 
-    std::vector<Tuple> right_tuples;
-    right_tuples.emplace_back(makePayload("1"));
-    right_tuples.emplace_back(makePayload("2"));
+                std::vector<Column> right_cols;
+                right_cols.emplace_back("right_col", ColumnType::Integer);
+                right_schema_ = std::make_unique<Schema>(std::move(right_cols));
+            }
 
-    auto left_child = std::make_unique<MockExecutor>(*left_schema_, left_tuples);
-    auto right_child = std::make_unique<MockExecutor>(*right_schema_, right_tuples);
+            std::unique_ptr<Schema> left_schema_;
+            std::unique_ptr<Schema> right_schema_;
+        };
 
-    NestedLoopJoinExecutor join(std::move(left_child), std::move(right_child), nullptr);
-    join.init();
+        TEST_F(NestedLoopJoinExecutorTest, CrossJoinNoPredicate)
+        {
+            std::vector<Tuple> left_tuples;
+            left_tuples.emplace_back(makePayload("A"));
+            left_tuples.emplace_back(makePayload("B"));
 
-    EXPECT_EQ(join.outputSchema().getColumnCount(), 2);
-    EXPECT_EQ(join.outputSchema().getColumn(0).getName(), "left_col");
-    EXPECT_EQ(join.outputSchema().getColumn(1).getName(), "right_col");
+            std::vector<Tuple> right_tuples;
+            right_tuples.emplace_back(makePayload("1"));
+            right_tuples.emplace_back(makePayload("2"));
 
-    Tuple tuple;
-    RID rid;
-    
-    ASSERT_TRUE(join.next(&tuple, &rid));
-    EXPECT_EQ(tuple.size(), 2); // "A1"
-    
-    ASSERT_TRUE(join.next(&tuple, &rid));
-    EXPECT_EQ(tuple.size(), 2); // "A2"
-    
-    ASSERT_TRUE(join.next(&tuple, &rid));
-    EXPECT_EQ(tuple.size(), 2); // "B1"
-    
-    ASSERT_TRUE(join.next(&tuple, &rid));
-    EXPECT_EQ(tuple.size(), 2); // "B2"
-    
-    EXPECT_FALSE(join.next(&tuple, &rid));
-}
+            auto left_child = std::make_unique<MockExecutor>(*left_schema_, left_tuples);
+            auto right_child = std::make_unique<MockExecutor>(*right_schema_, right_tuples);
 
-TEST_F(NestedLoopJoinExecutorTest, InnerJoinWithPredicate) {
-    std::vector<Tuple> left_tuples;
-    left_tuples.emplace_back(makePayload("A"));
-    left_tuples.emplace_back(makePayload("B"));
+            NestedLoopJoinExecutor join(std::move(left_child), std::move(right_child), nullptr);
+            join.init();
 
-    std::vector<Tuple> right_tuples;
-    right_tuples.emplace_back(makePayload("1"));
-    right_tuples.emplace_back(makePayload("2"));
+            EXPECT_EQ(join.outputSchema().getColumnCount(), 2);
+            EXPECT_EQ(join.outputSchema().getColumn(0).getName(), "left_col");
+            EXPECT_EQ(join.outputSchema().getColumn(1).getName(), "right_col");
 
-    auto left_child = std::make_unique<MockExecutor>(*left_schema_, left_tuples);
-    auto right_child = std::make_unique<MockExecutor>(*right_schema_, right_tuples);
+            Tuple tuple;
+            RID rid;
 
-    auto false_predicate = std::make_unique<ConstantExpression>(Value(false));
+            ASSERT_TRUE(join.next(&tuple, &rid));
+            EXPECT_EQ(tuple.size(), 2); // "A1"
 
-    NestedLoopJoinExecutor join(std::move(left_child), std::move(right_child), std::move(false_predicate));
-    join.init();
+            ASSERT_TRUE(join.next(&tuple, &rid));
+            EXPECT_EQ(tuple.size(), 2); // "A2"
 
-    Tuple tuple;
-    RID rid;
-    
-    // Everything is filtered out
-    EXPECT_FALSE(join.next(&tuple, &rid));
-}
+            ASSERT_TRUE(join.next(&tuple, &rid));
+            EXPECT_EQ(tuple.size(), 2); // "B1"
 
-} // namespace
+            ASSERT_TRUE(join.next(&tuple, &rid));
+            EXPECT_EQ(tuple.size(), 2); // "B2"
+
+            EXPECT_FALSE(join.next(&tuple, &rid));
+        }
+
+        TEST_F(NestedLoopJoinExecutorTest, InnerJoinWithPredicate)
+        {
+            std::vector<Tuple> left_tuples;
+            left_tuples.emplace_back(makePayload("A"));
+            left_tuples.emplace_back(makePayload("B"));
+
+            std::vector<Tuple> right_tuples;
+            right_tuples.emplace_back(makePayload("1"));
+            right_tuples.emplace_back(makePayload("2"));
+
+            auto left_child = std::make_unique<MockExecutor>(*left_schema_, left_tuples);
+            auto right_child = std::make_unique<MockExecutor>(*right_schema_, right_tuples);
+
+            auto false_predicate = std::make_unique<ConstantExpression>(Value(false));
+
+            NestedLoopJoinExecutor join(std::move(left_child), std::move(right_child),
+                                        std::move(false_predicate));
+            join.init();
+
+            Tuple tuple;
+            RID rid;
+
+            // Everything is filtered out
+            EXPECT_FALSE(join.next(&tuple, &rid));
+        }
+
+    } // namespace
 } // namespace hamdb

@@ -42,7 +42,7 @@ namespace hamdb
     struct InternalEntry
     {
         int64_t key{0};
-        PageId  page_id{kInvalidPageId};
+        PageId page_id{kInvalidPageId};
     };
 
     /**
@@ -56,8 +56,7 @@ namespace hamdb
         static constexpr std::size_t kHeaderSize = BTreePage::kHeaderSize; // 16
         static constexpr std::size_t kEntrySize = 8 + 4;                   // 12
 
-        static constexpr std::size_t kMaxEntries =
-            (kPageBodySize - kHeaderSize) / kEntrySize;
+        static constexpr std::size_t kMaxEntries = (kPageBodySize - kHeaderSize) / kEntrySize;
 
         // ── Construction ───────────────────────────────────────────────────────────
 
@@ -85,7 +84,6 @@ namespace hamdb
         /// Return the minimum number of child pointers this page must hold.
         [[nodiscard]] uint16_t minSize() const noexcept;
 
-
         /// Return @c true when no children are stored.
         [[nodiscard]] bool isEmpty() const noexcept;
 
@@ -111,7 +109,6 @@ namespace hamdb
          * @brief Set the key stored at slot @p index.
          */
         void setKeyAt(uint16_t index, int64_t key) noexcept;
-
 
         /**
          * @brief Return the child PageId stored at slot @p index.
@@ -165,9 +162,9 @@ namespace hamdb
 
         /**
          * @brief Move the upper half of the entries to a recipient page.
-         * 
+         *
          * The median key is returned and removed from both pages.
-         * 
+         *
          * @param recipient The sibling page that will receive the upper half.
          * @return The median key that should be promoted to the parent.
          */
@@ -193,8 +190,6 @@ namespace hamdb
          */
         [[nodiscard]] int findChildIndex(PageId child_page_id) const noexcept;
 
-
-
         // ── Serialisation ──────────────────────────────────────────────────────────
 
         /**
@@ -211,7 +206,7 @@ namespace hamdb
         static Status serializeEntry(Serializer& ser, const InternalEntry& entry) noexcept;
         static Status deserializeEntry(Deserializer& de, InternalEntry& entry) noexcept;
 
-        BTreePage  header_{};
+        BTreePage header_{};
         std::array<InternalEntry, kMaxEntries> entries_{};
     };
 

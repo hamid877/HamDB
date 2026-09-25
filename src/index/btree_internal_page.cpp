@@ -28,7 +28,6 @@ namespace hamdb
         return header_.minSize();
     }
 
-
     bool BTreeInternalPage::isEmpty() const noexcept
     {
         return size() == 0;
@@ -60,7 +59,6 @@ namespace hamdb
         entries_[index].key = key;
     }
 
-
     PageId BTreeInternalPage::childAt(uint16_t index) const noexcept
     {
         return entries_[index].page_id;
@@ -73,16 +71,16 @@ namespace hamdb
             return kInvalidPageId;
         }
 
-        int32_t left  = 1;
+        int32_t left = 1;
         int32_t right = static_cast<int32_t>(size()) - 1;
-        int32_t ans   = static_cast<int32_t>(size());
+        int32_t ans = static_cast<int32_t>(size());
 
         while (left <= right)
         {
             int32_t mid = left + (right - left) / 2;
             if (entries_[mid].key > key)
             {
-                ans   = mid;
+                ans = mid;
                 right = mid - 1;
             }
             else
@@ -94,10 +92,11 @@ namespace hamdb
         return entries_[ans - 1].page_id;
     }
 
-    void BTreeInternalPage::populateNewRoot(PageId left_child, int64_t key, PageId right_child) noexcept
+    void BTreeInternalPage::populateNewRoot(PageId left_child, int64_t key,
+                                            PageId right_child) noexcept
     {
         entries_[0].page_id = left_child;
-        entries_[1].key     = key;
+        entries_[1].key = key;
         entries_[1].page_id = right_child;
         header_.setCurrentSize(2);
     }
@@ -109,9 +108,9 @@ namespace hamdb
             return Status::InvalidArg;
         }
 
-        int32_t left  = 1;
+        int32_t left = 1;
         int32_t right = static_cast<int32_t>(size()) - 1;
-        int32_t idx   = static_cast<int32_t>(size());
+        int32_t idx = static_cast<int32_t>(size());
 
         while (left <= right)
         {
@@ -122,7 +121,7 @@ namespace hamdb
             }
             if (entries_[mid].key > key)
             {
-                idx   = mid;
+                idx = mid;
                 right = mid - 1;
             }
             else
@@ -136,7 +135,7 @@ namespace hamdb
             entries_[i] = entries_[i - 1];
         }
 
-        entries_[idx].key     = key;
+        entries_[idx].key = key;
         entries_[idx].page_id = child_page_id;
         header_.setCurrentSize(size() + 1);
         return Status::Ok;
@@ -149,8 +148,8 @@ namespace hamdb
             return Status::NotFound;
         }
 
-        int32_t left       = 1;
-        int32_t right      = static_cast<int32_t>(size()) - 1;
+        int32_t left = 1;
+        int32_t right = static_cast<int32_t>(size()) - 1;
         int32_t target_idx = -1;
 
         while (left <= right)
@@ -209,9 +208,18 @@ namespace hamdb
         uint32_t hi = 0;
         uint32_t pid = 0;
 
-        if (de.readUInt32(lo) != Status::Ok) { return Status::IoError; }
-        if (de.readUInt32(hi) != Status::Ok) { return Status::IoError; }
-        if (de.readUInt32(pid) != Status::Ok) { return Status::IoError; }
+        if (de.readUInt32(lo) != Status::Ok)
+        {
+            return Status::IoError;
+        }
+        if (de.readUInt32(hi) != Status::Ok)
+        {
+            return Status::IoError;
+        }
+        if (de.readUInt32(pid) != Status::Ok)
+        {
+            return Status::IoError;
+        }
 
         const uint64_t raw_key = (static_cast<uint64_t>(hi) << 32u) | lo;
         entry.key = static_cast<int64_t>(raw_key);
@@ -290,7 +298,8 @@ namespace hamdb
         return median_key;
     }
 
-    int64_t BTreeInternalPage::moveFirstToEndOf(BTreeInternalPage& recipient, int64_t middle_key) noexcept
+    int64_t BTreeInternalPage::moveFirstToEndOf(BTreeInternalPage& recipient,
+                                                int64_t middle_key) noexcept
     {
         PageId child_id = entries_[0].page_id;
         recipient.entries_[recipient.size()].key = middle_key;
@@ -298,21 +307,22 @@ namespace hamdb
         recipient.header_.setCurrentSize(recipient.size() + 1);
 
         int64_t new_middle_key = entries_[1].key;
-        
+
         for (uint16_t i = 0; i < size() - 1; ++i)
         {
             entries_[i] = entries_[i + 1];
         }
         header_.setCurrentSize(size() - 1);
-        
+
         return new_middle_key;
     }
 
-    int64_t BTreeInternalPage::moveLastToFrontOf(BTreeInternalPage& recipient, int64_t middle_key) noexcept
+    int64_t BTreeInternalPage::moveLastToFrontOf(BTreeInternalPage& recipient,
+                                                 int64_t middle_key) noexcept
     {
         int64_t new_middle_key = entries_[size() - 1].key;
         PageId child_id = entries_[size() - 1].page_id;
-        
+
         for (int i = recipient.size(); i > 0; --i)
         {
             recipient.entries_[i] = recipient.entries_[i - 1];
@@ -320,9 +330,9 @@ namespace hamdb
         recipient.entries_[1].key = middle_key;
         recipient.entries_[0].page_id = child_id;
         recipient.header_.setCurrentSize(recipient.size() + 1);
-        
+
         header_.setCurrentSize(size() - 1);
-        
+
         return new_middle_key;
     }
 
@@ -330,13 +340,13 @@ namespace hamdb
     {
         recipient.entries_[recipient.size()].key = middle_key;
         recipient.entries_[recipient.size()].page_id = entries_[0].page_id;
-        
+
         uint16_t start_idx = recipient.size() + 1;
         for (uint16_t i = 1; i < size(); ++i)
         {
             recipient.entries_[start_idx + i - 1] = entries_[i];
         }
-        
+
         recipient.header_.setCurrentSize(recipient.size() + size());
         header_.setCurrentSize(0);
     }
@@ -352,7 +362,5 @@ namespace hamdb
         }
         return -1;
     }
-
-
 
 } // namespace hamdb

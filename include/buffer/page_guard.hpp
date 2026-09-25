@@ -41,8 +41,7 @@ namespace hamdb
          * @param frame The pinned frame to guard.
          * @param dirty If true, the page will be unpinned as dirty.
          */
-        BasicPageGuard(BufferPoolManager* bpm, BufferFrame* frame,
-                       bool dirty = false) noexcept;
+        BasicPageGuard(BufferPoolManager* bpm, BufferFrame* frame, bool dirty = false) noexcept;
 
         // Non-copyable
         BasicPageGuard(const BasicPageGuard&) = delete;
@@ -87,10 +86,10 @@ namespace hamdb
         void drop();
 
     private:
-        BufferPoolManager* bpm_{nullptr};  ///< Non-owning pointer to the BPM.
-        BufferFrame*       frame_{nullptr}; ///< Non-owning pointer to the frame.
-        PageId             page_id_{kInvalidPageId}; ///< Cached page ID.
-        bool               dirty_{false};  ///< Accumulated dirty flag.
+        BufferPoolManager* bpm_{nullptr}; ///< Non-owning pointer to the BPM.
+        BufferFrame* frame_{nullptr};     ///< Non-owning pointer to the frame.
+        PageId page_id_{kInvalidPageId};  ///< Cached page ID.
+        bool dirty_{false};               ///< Accumulated dirty flag.
     };
 
     // =========================================================================

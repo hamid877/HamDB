@@ -15,14 +15,12 @@ namespace hamdb
     // ─────────────────────────────────────────────────────────────────────────
 
     /// Create a fixed-size buffer, return a Serializer over it.
-    template <std::size_t N>
-    static Serializer makeSer(std::array<std::byte, N>& buf)
+    template <std::size_t N> static Serializer makeSer(std::array<std::byte, N>& buf)
     {
         return Serializer(std::span<std::byte>(buf));
     }
 
-    template <std::size_t N>
-    static Deserializer makeDes(const std::array<std::byte, N>& buf)
+    template <std::size_t N> static Deserializer makeDes(const std::array<std::byte, N>& buf)
     {
         return Deserializer(std::span<const std::byte>(buf));
     }
@@ -194,8 +192,8 @@ namespace hamdb
         std::array<std::byte, 4> buf{};
         auto ser = makeSer(buf);
 
-        const std::array<std::byte, 4> src = {
-            std::byte{0xDE}, std::byte{0xAD}, std::byte{0xBE}, std::byte{0xEF}};
+        const std::array<std::byte, 4> src = {std::byte{0xDE}, std::byte{0xAD}, std::byte{0xBE},
+                                              std::byte{0xEF}};
         ASSERT_EQ(ser.writeBytes(src), Status::Ok);
         EXPECT_EQ(buf, src);
     }
@@ -318,8 +316,8 @@ namespace hamdb
 
     TEST(DeserializerTest, ReadUInt32LittleEndian)
     {
-        std::array<std::byte, 4> buf{
-            std::byte{0x04}, std::byte{0x03}, std::byte{0x02}, std::byte{0x01}};
+        std::array<std::byte, 4> buf{std::byte{0x04}, std::byte{0x03}, std::byte{0x02},
+                                     std::byte{0x01}};
         auto des = makeDes(buf);
         std::uint32_t v = 0;
         ASSERT_EQ(des.readUInt32(v), Status::Ok);
@@ -328,9 +326,9 @@ namespace hamdb
 
     TEST(DeserializerTest, ReadUInt64LittleEndian)
     {
-        std::array<std::byte, 8> buf{
-            std::byte{0x08}, std::byte{0x07}, std::byte{0x06}, std::byte{0x05},
-            std::byte{0x04}, std::byte{0x03}, std::byte{0x02}, std::byte{0x01}};
+        std::array<std::byte, 8> buf{std::byte{0x08}, std::byte{0x07}, std::byte{0x06},
+                                     std::byte{0x05}, std::byte{0x04}, std::byte{0x03},
+                                     std::byte{0x02}, std::byte{0x01}};
         auto des = makeDes(buf);
         std::uint64_t v = 0;
         ASSERT_EQ(des.readUInt64(v), Status::Ok);
@@ -339,8 +337,8 @@ namespace hamdb
 
     TEST(DeserializerTest, ReadInt32Negative)
     {
-        std::array<std::byte, 4> buf{
-            std::byte{0xFF}, std::byte{0xFF}, std::byte{0xFF}, std::byte{0xFF}};
+        std::array<std::byte, 4> buf{std::byte{0xFF}, std::byte{0xFF}, std::byte{0xFF},
+                                     std::byte{0xFF}};
         auto des = makeDes(buf);
         std::int32_t v = 0;
         ASSERT_EQ(des.readInt32(v), Status::Ok);
@@ -373,17 +371,22 @@ namespace hamdb
     {
         std::array<std::byte, 16> buf{};
         auto des = makeDes(buf);
-        std::uint8_t  u8  = 0;
+        std::uint8_t u8 = 0;
         std::uint16_t u16 = 0;
         std::uint32_t u32 = 0;
         std::uint64_t u64 = 0;
-        bool          b   = false;
+        bool b = false;
 
-        ASSERT_EQ(des.readUInt8(u8),   Status::Ok); EXPECT_EQ(des.position(),  1u);
-        ASSERT_EQ(des.readUInt16(u16), Status::Ok); EXPECT_EQ(des.position(),  3u);
-        ASSERT_EQ(des.readUInt32(u32), Status::Ok); EXPECT_EQ(des.position(),  7u);
-        ASSERT_EQ(des.readUInt64(u64), Status::Ok); EXPECT_EQ(des.position(), 15u);
-        ASSERT_EQ(des.readBool(b),     Status::Ok); EXPECT_EQ(des.position(), 16u);
+        ASSERT_EQ(des.readUInt8(u8), Status::Ok);
+        EXPECT_EQ(des.position(), 1u);
+        ASSERT_EQ(des.readUInt16(u16), Status::Ok);
+        EXPECT_EQ(des.position(), 3u);
+        ASSERT_EQ(des.readUInt32(u32), Status::Ok);
+        EXPECT_EQ(des.position(), 7u);
+        ASSERT_EQ(des.readUInt64(u64), Status::Ok);
+        EXPECT_EQ(des.position(), 15u);
+        ASSERT_EQ(des.readBool(b), Status::Ok);
+        EXPECT_EQ(des.position(), 16u);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -424,8 +427,8 @@ namespace hamdb
 
     TEST(DeserializerTest, ReadBytesReturnsSubspan)
     {
-        std::array<std::byte, 4> buf{
-            std::byte{0x01}, std::byte{0x02}, std::byte{0x03}, std::byte{0x04}};
+        std::array<std::byte, 4> buf{std::byte{0x01}, std::byte{0x02}, std::byte{0x03},
+                                     std::byte{0x04}};
         auto des = makeDes(buf);
         std::span<const std::byte> out;
         ASSERT_EQ(des.readBytes(4, out), Status::Ok);
@@ -599,29 +602,35 @@ namespace hamdb
     {
         std::array<std::byte, 128> buf{};
         auto ser = makeSer(buf);
-        ASSERT_EQ(ser.writeUInt8(7u),              Status::Ok);
-        ASSERT_EQ(ser.writeUInt32(0xDEADBEEFu),    Status::Ok);
-        ASSERT_EQ(ser.writeBool(true),             Status::Ok);
-        ASSERT_EQ(ser.writeString("hamdb"),        Status::Ok);
+        ASSERT_EQ(ser.writeUInt8(7u), Status::Ok);
+        ASSERT_EQ(ser.writeUInt32(0xDEADBEEFu), Status::Ok);
+        ASSERT_EQ(ser.writeBool(true), Status::Ok);
+        ASSERT_EQ(ser.writeString("hamdb"), Status::Ok);
         ASSERT_EQ(ser.writeUInt64(0xCAFEBABEDEADBEEFULL), Status::Ok);
-        ASSERT_EQ(ser.writeInt32(-1),              Status::Ok);
+        ASSERT_EQ(ser.writeInt32(-1), Status::Ok);
 
         const std::size_t total = ser.position();
 
         auto des = makeDes(buf);
-        std::uint8_t  u8  = 0;
+        std::uint8_t u8 = 0;
         std::uint32_t u32 = 0;
-        bool          b   = false;
-        std::string   str;
+        bool b = false;
+        std::string str;
         std::uint64_t u64 = 0;
-        std::int32_t  i32 = 0;
+        std::int32_t i32 = 0;
 
-        ASSERT_EQ(des.readUInt8(u8),   Status::Ok); EXPECT_EQ(u8,  7u);
-        ASSERT_EQ(des.readUInt32(u32), Status::Ok); EXPECT_EQ(u32, 0xDEADBEEFu);
-        ASSERT_EQ(des.readBool(b),     Status::Ok); EXPECT_TRUE(b);
-        ASSERT_EQ(des.readString(str), Status::Ok); EXPECT_EQ(str, "hamdb");
-        ASSERT_EQ(des.readUInt64(u64), Status::Ok); EXPECT_EQ(u64, 0xCAFEBABEDEADBEEFULL);
-        ASSERT_EQ(des.readInt32(i32),  Status::Ok); EXPECT_EQ(i32, -1);
+        ASSERT_EQ(des.readUInt8(u8), Status::Ok);
+        EXPECT_EQ(u8, 7u);
+        ASSERT_EQ(des.readUInt32(u32), Status::Ok);
+        EXPECT_EQ(u32, 0xDEADBEEFu);
+        ASSERT_EQ(des.readBool(b), Status::Ok);
+        EXPECT_TRUE(b);
+        ASSERT_EQ(des.readString(str), Status::Ok);
+        EXPECT_EQ(str, "hamdb");
+        ASSERT_EQ(des.readUInt64(u64), Status::Ok);
+        EXPECT_EQ(u64, 0xCAFEBABEDEADBEEFULL);
+        ASSERT_EQ(des.readInt32(i32), Status::Ok);
+        EXPECT_EQ(i32, -1);
         EXPECT_EQ(des.position(), total);
     }
 

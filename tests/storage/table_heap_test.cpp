@@ -1,6 +1,6 @@
 #include "storage/table_heap.hpp"
-#include <gtest/gtest.h>
 #include <filesystem>
+#include <gtest/gtest.h>
 #include <vector>
 
 namespace hamdb
@@ -9,21 +9,23 @@ namespace hamdb
     class TableHeapTest : public ::testing::Test
     {
     protected:
-        void SetUp() override {
+        void SetUp() override
+        {
             auto const* test_info = ::testing::UnitTest::GetInstance()->current_test_info();
             std::string test_name = test_info ? test_info->name() : "unknown";
-            auto unique = std::to_string(
-                std::chrono::steady_clock::now().time_since_epoch().count());
+            auto unique =
+                std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
 
             db_path_ = std::filesystem::temp_directory_path() /
-                    ("hamdb-tableheap-" + test_name + "-" + unique + ".hamdb");
+                       ("hamdb-tableheap-" + test_name + "-" + unique + ".hamdb");
 
             dm_ = std::make_unique<DiskManager>(db_path_);
             ASSERT_EQ(dm_->createDatabase(), Status::Ok);
             ASSERT_EQ(dm_->openDatabase(), Status::Ok);
         }
 
-        void TearDown() override {
+        void TearDown() override
+        {
             dm_.reset();
             std::error_code ec;
             std::filesystem::remove(db_path_, ec);
@@ -31,7 +33,8 @@ namespace hamdb
 
         Tuple createTuple(std::string_view sv)
         {
-            std::span<const std::byte> span{reinterpret_cast<const std::byte*>(sv.data()), sv.size()}; // NOLINT
+            std::span<const std::byte> span{reinterpret_cast<const std::byte*>(sv.data()),
+                                            sv.size()}; // NOLINT
             return Tuple(span);
         }
 

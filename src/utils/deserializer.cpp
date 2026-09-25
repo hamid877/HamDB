@@ -112,8 +112,7 @@ namespace hamdb
 
     // ── Composite readers ─────────────────────────────────────────────────────
 
-    Status Deserializer::readBytes(std::size_t length,
-                                   std::span<const std::byte>& out) noexcept
+    Status Deserializer::readBytes(std::size_t length, std::span<const std::byte>& out) noexcept
     {
         if (length > buffer_.size() - cursor_)
         {

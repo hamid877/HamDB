@@ -26,14 +26,20 @@ namespace hamdb
         SlottedPageHeader h;
         std::uint16_t tmp = 0;
 
-        static_cast<void>(des.readUInt16(tmp)); h.tuple_count      = tmp;
-        static_cast<void>(des.readUInt16(tmp)); h.free_space_start = tmp;
-        static_cast<void>(des.readUInt16(tmp)); h.free_space_end   = tmp;
-        static_cast<void>(des.readUInt16(tmp)); h.reserved         = tmp;
-        
+        static_cast<void>(des.readUInt16(tmp));
+        h.tuple_count = tmp;
+        static_cast<void>(des.readUInt16(tmp));
+        h.free_space_start = tmp;
+        static_cast<void>(des.readUInt16(tmp));
+        h.free_space_end = tmp;
+        static_cast<void>(des.readUInt16(tmp));
+        h.reserved = tmp;
+
         std::uint32_t page_id_tmp = 0;
-        static_cast<void>(des.readUInt32(page_id_tmp)); h.prev_page_id = page_id_tmp;
-        static_cast<void>(des.readUInt32(page_id_tmp)); h.next_page_id = page_id_tmp;
+        static_cast<void>(des.readUInt32(page_id_tmp));
+        h.prev_page_id = page_id_tmp;
+        static_cast<void>(des.readUInt32(page_id_tmp));
+        h.next_page_id = page_id_tmp;
 
         return h;
     }
@@ -63,10 +69,14 @@ namespace hamdb
 
         TupleSlot slot;
         std::uint16_t tmp = 0;
-        static_cast<void>(des.readUInt16(tmp)); slot.offset   = tmp;
-        static_cast<void>(des.readUInt16(tmp)); slot.length   = tmp;
-        static_cast<void>(des.readUInt16(tmp)); slot.flags    = tmp;
-        static_cast<void>(des.readUInt16(tmp)); slot.reserved = tmp;
+        static_cast<void>(des.readUInt16(tmp));
+        slot.offset = tmp;
+        static_cast<void>(des.readUInt16(tmp));
+        slot.length = tmp;
+        static_cast<void>(des.readUInt16(tmp));
+        slot.flags = tmp;
+        static_cast<void>(des.readUInt16(tmp));
+        slot.reserved = tmp;
 
         return slot;
     }
@@ -99,16 +109,16 @@ namespace hamdb
         // right after the SlottedPageHeader.
         // Tuples grow from the bottom; freeSpaceEnd starts at body size.
         SlottedPageHeader h;
-        h.tuple_count      = 0;
+        h.tuple_count = 0;
         h.free_space_start = static_cast<std::uint16_t>(SlottedPageHeader::kSize);
-        h.free_space_end   = static_cast<std::uint16_t>(kBodySize);
-        h.reserved         = 0;
-        h.prev_page_id     = kInvalidPageId;
-        h.next_page_id     = kInvalidPageId;
+        h.free_space_end = static_cast<std::uint16_t>(kBodySize);
+        h.reserved = 0;
+        h.prev_page_id = kInvalidPageId;
+        h.next_page_id = kInvalidPageId;
         writeSpHeader(h);
 
         // Sync PageHeader fields
-        page_.header().slot_count     = 0;
+        page_.header().slot_count = 0;
         page_.header().free_space_ptr = h.free_space_start;
 
         return Status::Ok;
@@ -116,8 +126,7 @@ namespace hamdb
 
     // ── Mutation ──────────────────────────────────────────────────────────────
 
-    Status SlottedPage::insertTuple(const Tuple& tuple,
-                                    SlotId& slot_id) noexcept
+    Status SlottedPage::insertTuple(const Tuple& tuple, SlotId& slot_id) noexcept
     {
         if (tuple.empty())
         {
@@ -126,7 +135,7 @@ namespace hamdb
 
         SlottedPageHeader h = readSpHeader();
         const auto slot_count = page_.header().slot_count;
-        const auto tuple_len  = static_cast<std::uint16_t>(tuple.size());
+        const auto tuple_len = static_cast<std::uint16_t>(tuple.size());
 
         // Check whether a deleted slot can be reused (avoids growing the dir)
         bool reuse = false;
@@ -136,7 +145,7 @@ namespace hamdb
             TupleSlot s = readSlot(i);
             if (s.isDeleted())
             {
-                reuse     = true;
+                reuse = true;
                 reuse_idx = i;
                 break;
             }
@@ -146,7 +155,7 @@ namespace hamdb
         const std::size_t needed_slot = reuse ? 0u : TupleSlot::kSize;
         const std::size_t tuple_size = tuple.size();
         const std::size_t needed_total = tuple_size + needed_slot;
-        const std::size_t available    = h.free_space_end - h.free_space_start;
+        const std::size_t available = h.free_space_end - h.free_space_start;
 
         if (needed_total > available)
         {
@@ -176,13 +185,12 @@ namespace hamdb
             slot_id = slot_count;
             writeSlot(slot_count, new_slot);
             // Grow the slot directory
-            h.free_space_start = static_cast<std::uint16_t>(
-                h.free_space_start + TupleSlot::kSize);
+            h.free_space_start = static_cast<std::uint16_t>(h.free_space_start + TupleSlot::kSize);
             page_.header().slot_count = static_cast<std::uint16_t>(slot_count + 1);
         }
 
         h.free_space_end = new_free_end;
-        h.tuple_count    = static_cast<std::uint16_t>(h.tuple_count + 1);
+        h.tuple_count = static_cast<std::uint16_t>(h.tuple_count + 1);
         writeSpHeader(h);
         page_.header().free_space_ptr = h.free_space_start;
 
@@ -191,43 +199,52 @@ namespace hamdb
 
     Status SlottedPage::insertTupleAtSlot(SlotId slot_id, const Tuple& tuple) noexcept
     {
-        if (tuple.empty()) return Status::InvalidArg;
+        if (tuple.empty())
+            return Status::InvalidArg;
         SlottedPageHeader h = readSpHeader();
         const auto tuple_len = static_cast<std::uint16_t>(tuple.size());
         const auto slot_count = page_.header().slot_count;
-        
+
         bool requires_new_slot = slot_id >= slot_count;
-        std::size_t needed_slot = requires_new_slot ? TupleSlot::kSize * (slot_id - slot_count + 1) : 0u;
+        std::size_t needed_slot =
+            requires_new_slot ? TupleSlot::kSize * (slot_id - slot_count + 1) : 0u;
         std::size_t needed_total = tuple.size() + needed_slot;
         std::size_t available = h.free_space_end - h.free_space_start;
-        
-        if (needed_total > available) return Status::IoError;
-        
+
+        if (needed_total > available)
+            return Status::IoError;
+
         const auto new_free_end = static_cast<std::uint16_t>(h.free_space_end - tuple_len);
         auto body = page_.body();
         std::span<std::byte> dest(body.data() + new_free_end, tuple_len);
         Serializer ser(dest);
         static_cast<void>(ser.writeBytes(tuple.data()));
-        
+
         const TupleSlot new_slot(new_free_end, tuple_len);
-        if (requires_new_slot) {
-            for (std::uint16_t i = slot_count; i <= slot_id; ++i) {
+        if (requires_new_slot)
+        {
+            for (std::uint16_t i = slot_count; i <= slot_id; ++i)
+            {
                 TupleSlot empty_slot;
                 empty_slot.markDeleted();
                 writeSlot(i, empty_slot);
             }
             writeSlot(slot_id, new_slot);
-            h.free_space_start = static_cast<std::uint16_t>(h.free_space_start + TupleSlot::kSize * (slot_id - slot_count + 1));
+            h.free_space_start = static_cast<std::uint16_t>(
+                h.free_space_start + TupleSlot::kSize * (slot_id - slot_count + 1));
             page_.header().slot_count = static_cast<std::uint16_t>(slot_id + 1);
-        } else {
+        }
+        else
+        {
             TupleSlot old_slot = readSlot(slot_id);
-            if (!old_slot.isDeleted()) {
+            if (!old_slot.isDeleted())
+            {
                 // Should not happen in normal recovery, but if it does, count shouldn't increase
                 h.tuple_count = static_cast<std::uint16_t>(h.tuple_count - 1);
             }
             writeSlot(slot_id, new_slot);
         }
-        
+
         h.free_space_end = new_free_end;
         h.tuple_count = static_cast<std::uint16_t>(h.tuple_count + 1);
         writeSpHeader(h);
@@ -237,28 +254,32 @@ namespace hamdb
 
     Status SlottedPage::updateTuple(SlotId slot_id, const Tuple& tuple) noexcept
     {
-        if (tuple.empty()) return Status::InvalidArg;
+        if (tuple.empty())
+            return Status::InvalidArg;
         const auto slot_count = page_.header().slot_count;
-        if (slot_id >= slot_count) return Status::NotFound;
-        
+        if (slot_id >= slot_count)
+            return Status::NotFound;
+
         TupleSlot old_slot = readSlot(slot_id);
-        if (old_slot.isDeleted()) return Status::InvalidArg;
-        
+        if (old_slot.isDeleted())
+            return Status::InvalidArg;
+
         SlottedPageHeader h = readSpHeader();
         const auto tuple_len = static_cast<std::uint16_t>(tuple.size());
-        
+
         std::size_t available = h.free_space_end - h.free_space_start;
-        if (tuple.size() > available) return Status::IoError;
-        
+        if (tuple.size() > available)
+            return Status::IoError;
+
         const auto new_free_end = static_cast<std::uint16_t>(h.free_space_end - tuple_len);
         auto body = page_.body();
         std::span<std::byte> dest(body.data() + new_free_end, tuple_len);
         Serializer ser(dest);
         static_cast<void>(ser.writeBytes(tuple.data()));
-        
+
         const TupleSlot new_slot(new_free_end, tuple_len);
         writeSlot(slot_id, new_slot);
-        
+
         h.free_space_end = new_free_end;
         writeSpHeader(h);
         return Status::Ok;
@@ -291,7 +312,7 @@ namespace hamdb
     Status SlottedPage::compact(std::size_t& reclaimed_bytes) noexcept
     {
         const auto slot_count = page_.header().slot_count;
-        SlottedPageHeader h   = readSpHeader();
+        SlottedPageHeader h = readSpHeader();
 
         // Scratch buffer for the compacted tuple area — stack allocation only.
         // Maximum usable body is kBodySize bytes; we compact into a local buffer.
@@ -325,8 +346,8 @@ namespace hamdb
         // The bytes reclaimed equal the gap between the old freeSpaceEnd and
         // the new write pointer.
         const std::uint16_t old_end = h.free_space_end;
-        reclaimed_bytes = (write_ptr >= old_end) ? static_cast<std::size_t>(write_ptr - old_end)
-                                                  : 0u;
+        reclaimed_bytes =
+            (write_ptr >= old_end) ? static_cast<std::size_t>(write_ptr - old_end) : 0u;
 
         // Write compacted tuples back into the body
         auto body = page_.body();
@@ -344,8 +365,7 @@ namespace hamdb
 
     // ── Queries ───────────────────────────────────────────────────────────────
 
-    Status SlottedPage::readTuple(SlotId slot_id,
-                                  Tuple& tuple) const noexcept
+    Status SlottedPage::readTuple(SlotId slot_id, Tuple& tuple) const noexcept
     {
         const auto slot_count = page_.header().slot_count;
         if (slot_id >= slot_count)
@@ -387,7 +407,7 @@ namespace hamdb
         // Even if a deleted slot exists (no slot-dir growth needed), we still
         // need space for the tuple payload.
         const std::size_t free = freeSpace();
-        const auto slot_count  = page_.header().slot_count;
+        const auto slot_count = page_.header().slot_count;
 
         // Check if any deleted slot can be reused
         bool has_deleted = false;

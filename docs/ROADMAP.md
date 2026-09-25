@@ -16,7 +16,7 @@
 | Testing          | GoogleTest                  |
 | Platform         | Linux (Ubuntu / Linux Mint) |
 | Current Version  | v0.3.0-dev                  |
-| Overall Progress | **59%**                     |
+| Overall Progress | **60%**                     |
 
 ---
 
@@ -93,10 +93,11 @@ Every milestone must satisfy:
 | M4.7 | Projection Executor | ✅ Complete |
 | M4.8 | Nested Loop Join Executor | ✅ Complete |
 | M4.9 | Aggregation Executor | ✅ Complete |
-| M4.10 | SQL Parser | ⬜      |
-| M4.11 | AST        | ⬜      |
-| M4.12 | Planner    | ⬜      |
-| M4.13 | Executor   | ⬜      |
+| M4.10 | Sort Executor | ✅ Complete |
+| M4.11 | SQL Parser | ⬜      |
+| M4.12 | AST        | ⬜      |
+| M4.13 | Planner    | ⬜      |
+| M4.14 | Executor   | ⬜      |
 
 ---
 
@@ -113,6 +114,37 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M4.10 — Sort Executor
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `SortExecutor` implementing the executor lifecycle (`init()`, `next()`, `outputSchema()`).
+* Wrapping of any child executor.
+* `OrderByType` enum with `ASC` and `DESC`.
+* Materialization of all tuples from the child executor inside `init()`.
+* In-memory sorting using `std::sort` based on multiple target keys.
+* Independent sort direction support (`ASC` and `DESC`).
+* Reusing the `Expression` system (e.g., `ColumnValueExpression`) to evaluate values dynamically.
+* Emitting tuples sequentially after sorting via `next()`.
+* Preservation of `RID` propagation from the child tuple.
+
+### Verification
+
+* Tests passing: **338 / 338** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement sort executor (M4.10)
+```
+
+---
 
 ## M4.8 — Nested Loop Join Executor
 

@@ -135,7 +135,7 @@ namespace hamdb
 
     private:
         std::span<const std::byte> buffer_; ///< Caller-owned backing storage.
-        std::size_t                cursor_; ///< Current read position (bytes from start).
+        std::size_t cursor_;                ///< Current read position (bytes from start).
 
         /// Copy exactly @p n bytes from the buffer at @c cursor_ into @p dst,
         /// advancing @c cursor_ by @p n.  Returns @c Status::IoError on underflow.

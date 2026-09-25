@@ -11,14 +11,9 @@ namespace hamdb
 
     // ── Construction ──────────────────────────────────────────────────────────
 
-    BTreePage::BTreePage(PageType type,
-                         PageId   page_id,
-                         PageId   parent_page_id,
+    BTreePage::BTreePage(PageType type, PageId page_id, PageId parent_page_id,
                          uint16_t max_size) noexcept
-        : page_type_(type),
-          current_size_(0),
-          max_size_(max_size),
-          parent_page_id_(parent_page_id),
+        : page_type_(type), current_size_(0), max_size_(max_size), parent_page_id_(parent_page_id),
           page_id_(page_id)
     {
     }
@@ -48,7 +43,6 @@ namespace hamdb
         }
         return (max_size_ + 1) / 2;
     }
-
 
     PageId BTreePage::parentPageId() const noexcept
     {
@@ -140,8 +134,7 @@ namespace hamdb
 
         // Bytes 13-15: reserved — zero-fill (3 bytes)
         constexpr std::array<uint8_t, 3> kReserved = {0, 0, 0};
-        const auto reserved_bytes =
-            std::as_bytes(std::span<const uint8_t, 3>{kReserved});
+        const auto reserved_bytes = std::as_bytes(std::span<const uint8_t, 3>{kReserved});
         if (ser.writeBytes(reserved_bytes) != Status::Ok)
         {
             return Status::IoError;
@@ -159,11 +152,11 @@ namespace hamdb
 
         Deserializer de(src.subspan(0, kHeaderSize));
 
-        uint8_t  raw_type   = 0;
-        uint16_t cur_size   = 0;
-        uint16_t max_sz     = 0;
-        uint32_t parent_id  = 0;
-        uint32_t pid        = 0;
+        uint8_t raw_type = 0;
+        uint16_t cur_size = 0;
+        uint16_t max_sz = 0;
+        uint32_t parent_id = 0;
+        uint32_t pid = 0;
 
         if (de.readUInt8(raw_type) != Status::Ok)
         {
@@ -193,11 +186,11 @@ namespace hamdb
         }
 
         // Commit only after all reads succeed.
-        page_type_      = static_cast<PageType>(raw_type);
-        current_size_   = cur_size;
-        max_size_        = max_sz;
+        page_type_ = static_cast<PageType>(raw_type);
+        current_size_ = cur_size;
+        max_size_ = max_sz;
         parent_page_id_ = static_cast<PageId>(parent_id);
-        page_id_        = static_cast<PageId>(pid);
+        page_id_ = static_cast<PageId>(pid);
 
         return Status::Ok;
     }
@@ -206,11 +199,9 @@ namespace hamdb
 
     bool BTreePage::operator==(const BTreePage& other) const noexcept
     {
-        return page_type_      == other.page_type_      &&
-               current_size_   == other.current_size_   &&
-               max_size_        == other.max_size_        &&
-               parent_page_id_ == other.parent_page_id_ &&
-               page_id_        == other.page_id_;
+        return page_type_ == other.page_type_ && current_size_ == other.current_size_ &&
+               max_size_ == other.max_size_ && parent_page_id_ == other.parent_page_id_ &&
+               page_id_ == other.page_id_;
     }
 
     bool BTreePage::operator!=(const BTreePage& other) const noexcept

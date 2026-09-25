@@ -43,7 +43,7 @@ namespace hamdb
         {
             return {};
         }
-        
+
         SlottedPage sp(const_cast<Page&>(cached_page_.value()));
         Tuple tuple;
         if (sp.readTuple(current_slot_id_, tuple) == Status::Ok)
@@ -63,7 +63,7 @@ namespace hamdb
         while (current_page_id_ != kInvalidPageId && cached_page_.has_value())
         {
             SlottedPage sp(cached_page_.value());
-            
+
             while (current_slot_id_ < sp.slotCount())
             {
                 Tuple tmp;
@@ -79,7 +79,7 @@ namespace hamdb
             // Exhausted current page, move to next
             current_page_id_ = sp.getNextPageId();
             current_slot_id_ = 0;
-            
+
             if (current_page_id_ != kInvalidPageId)
             {
                 loadPage(current_page_id_);

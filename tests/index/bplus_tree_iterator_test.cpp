@@ -1,6 +1,6 @@
+#include "buffer/buffer_pool_manager.hpp"
 #include "index/bplus_tree.hpp"
 #include "index/bplus_tree_iterator.hpp"
-#include "buffer/buffer_pool_manager.hpp"
 #include "storage/disk_manager.hpp"
 #include <filesystem>
 #include <gtest/gtest.h>
@@ -10,7 +10,8 @@ namespace hamdb
     class BPlusTreeIteratorTest : public ::testing::Test
     {
     protected:
-        std::filesystem::path db_path_ = std::filesystem::temp_directory_path() / "bplus_tree_iter_test.db";
+        std::filesystem::path db_path_ =
+            std::filesystem::temp_directory_path() / "bplus_tree_iter_test.db";
         std::unique_ptr<DiskManager> dm_;
         std::unique_ptr<BufferPoolManager> bpm_;
 
@@ -122,4 +123,4 @@ namespace hamdb
             ++it4;
         }
     }
-}
+} // namespace hamdb

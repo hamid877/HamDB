@@ -6,10 +6,7 @@
 namespace hamdb
 {
 
-    BPlusTree::BPlusTree(BufferPoolManager& bpm) noexcept
-        : bpm_(bpm)
-    {
-    }
+    BPlusTree::BPlusTree(BufferPoolManager& bpm) noexcept : bpm_(bpm) {}
 
     void BPlusTree::create() noexcept
     {
@@ -67,7 +64,7 @@ namespace hamdb
                 {
                     return std::nullopt;
                 }
-                
+
                 PageId next_page_id = internal.lookup(key);
                 if (next_page_id == kInvalidPageId)
                 {
@@ -100,15 +97,15 @@ namespace hamdb
             BTreeLeafPage leaf;
             leaf.init(new_page_id, kInvalidPageId);
             Status status = leaf.insert(key, rid);
-            
+
             if (leaf.serialize(guard.pageMut().body()) != Status::Ok)
             {
                 return Status::IoError;
             }
-            
+
             root_page_id_ = new_page_id;
             guard.markDirty();
-            
+
             return status;
         }
 
@@ -237,7 +234,8 @@ namespace hamdb
             sibling_guard.markDirty();
             sibling_guard.drop();
 
-            Status insert_status = insertIntoParent(leaf_page_id, sibling_leaf.keyAt(0), sibling_page_id);
+            Status insert_status =
+                insertIntoParent(leaf_page_id, sibling_leaf.keyAt(0), sibling_page_id);
             if (insert_status != Status::Ok)
             {
                 return insert_status;
@@ -387,7 +385,6 @@ namespace hamdb
         if (key < median_key)
         {
             insert_status = parent.insert(key, new_node_id);
-
         }
         else
         {
@@ -507,10 +504,10 @@ namespace hamdb
             return Status::IoError;
         }
         write_guard.markDirty();
-        
+
         bool underflow = leaf.size() < leaf.minSize();
         bool is_empty_root = leaf_page_id == root_page_id_ && leaf.isEmpty();
-        
+
         write_guard.drop();
 
         if (is_empty_root)
@@ -599,7 +596,8 @@ namespace hamdb
         }
 
         PageId left_sibling_id = child_idx > 0 ? parent.childAt(child_idx - 1) : kInvalidPageId;
-        PageId right_sibling_id = child_idx < parent.size() - 1 ? parent.childAt(child_idx + 1) : kInvalidPageId;
+        PageId right_sibling_id =
+            child_idx < parent.size() - 1 ? parent.childAt(child_idx + 1) : kInvalidPageId;
 
         // Try to borrow from left sibling
         if (left_sibling_id != kInvalidPageId)
@@ -615,22 +613,29 @@ namespace hamdb
                         if (node_header.pageType() == PageType::BTreeLeaf)
                         {
                             BTreeLeafPage node, sibling;
-                            if (node.deserialize(node_guard.page().body()) != Status::Ok) return Status::IoError;
-                            if (sibling.deserialize(sibling_guard.page().body()) != Status::Ok) return Status::IoError;
+                            if (node.deserialize(node_guard.page().body()) != Status::Ok)
+                                return Status::IoError;
+                            if (sibling.deserialize(sibling_guard.page().body()) != Status::Ok)
+                                return Status::IoError;
 
                             sibling.moveLastToFrontOf(node);
                             parent.setKeyAt(child_idx, node.keyAt(0));
 
-                            if (node.serialize(node_guard.pageMut().body()) != Status::Ok) return Status::IoError;
-                            if (sibling.serialize(sibling_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                            if (node.serialize(node_guard.pageMut().body()) != Status::Ok)
+                                return Status::IoError;
+                            if (sibling.serialize(sibling_guard.pageMut().body()) != Status::Ok)
+                                return Status::IoError;
                         }
                         else
                         {
                             BTreeInternalPage node, sibling;
-                            if (node.deserialize(node_guard.page().body()) != Status::Ok) return Status::IoError;
-                            if (sibling.deserialize(sibling_guard.page().body()) != Status::Ok) return Status::IoError;
+                            if (node.deserialize(node_guard.page().body()) != Status::Ok)
+                                return Status::IoError;
+                            if (sibling.deserialize(sibling_guard.page().body()) != Status::Ok)
+                                return Status::IoError;
 
-                            int64_t new_middle = sibling.moveLastToFrontOf(node, parent.keyAt(child_idx));
+                            int64_t new_middle =
+                                sibling.moveLastToFrontOf(node, parent.keyAt(child_idx));
                             parent.setKeyAt(child_idx, new_middle);
 
                             PageId moved_child = node.childAt(0);
@@ -638,18 +643,24 @@ namespace hamdb
                             if (bpm_.fetchPageWrite(moved_child, moved_guard) == Status::Ok)
                             {
                                 BTreePage moved_header;
-                                if (moved_header.deserialize(moved_guard.page().body()) == Status::Ok)
+                                if (moved_header.deserialize(moved_guard.page().body()) ==
+                                    Status::Ok)
                                 {
                                     moved_header.setParentPageId(page_id);
-                                    if (moved_header.serialize(moved_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                                    if (moved_header.serialize(moved_guard.pageMut().body()) !=
+                                        Status::Ok)
+                                        return Status::IoError;
                                     moved_guard.markDirty();
                                 }
                             }
 
-                            if (node.serialize(node_guard.pageMut().body()) != Status::Ok) return Status::IoError;
-                            if (sibling.serialize(sibling_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                            if (node.serialize(node_guard.pageMut().body()) != Status::Ok)
+                                return Status::IoError;
+                            if (sibling.serialize(sibling_guard.pageMut().body()) != Status::Ok)
+                                return Status::IoError;
                         }
-                        if (parent.serialize(parent_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                        if (parent.serialize(parent_guard.pageMut().body()) != Status::Ok)
+                            return Status::IoError;
                         node_guard.markDirty();
                         sibling_guard.markDirty();
                         parent_guard.markDirty();
@@ -673,22 +684,29 @@ namespace hamdb
                         if (node_header.pageType() == PageType::BTreeLeaf)
                         {
                             BTreeLeafPage node, sibling;
-                            if (node.deserialize(node_guard.page().body()) != Status::Ok) return Status::IoError;
-                            if (sibling.deserialize(sibling_guard.page().body()) != Status::Ok) return Status::IoError;
+                            if (node.deserialize(node_guard.page().body()) != Status::Ok)
+                                return Status::IoError;
+                            if (sibling.deserialize(sibling_guard.page().body()) != Status::Ok)
+                                return Status::IoError;
 
                             sibling.moveFirstToEndOf(node);
                             parent.setKeyAt(child_idx + 1, sibling.keyAt(0));
 
-                            if (node.serialize(node_guard.pageMut().body()) != Status::Ok) return Status::IoError;
-                            if (sibling.serialize(sibling_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                            if (node.serialize(node_guard.pageMut().body()) != Status::Ok)
+                                return Status::IoError;
+                            if (sibling.serialize(sibling_guard.pageMut().body()) != Status::Ok)
+                                return Status::IoError;
                         }
                         else
                         {
                             BTreeInternalPage node, sibling;
-                            if (node.deserialize(node_guard.page().body()) != Status::Ok) return Status::IoError;
-                            if (sibling.deserialize(sibling_guard.page().body()) != Status::Ok) return Status::IoError;
+                            if (node.deserialize(node_guard.page().body()) != Status::Ok)
+                                return Status::IoError;
+                            if (sibling.deserialize(sibling_guard.page().body()) != Status::Ok)
+                                return Status::IoError;
 
-                            int64_t new_middle = sibling.moveFirstToEndOf(node, parent.keyAt(child_idx + 1));
+                            int64_t new_middle =
+                                sibling.moveFirstToEndOf(node, parent.keyAt(child_idx + 1));
                             parent.setKeyAt(child_idx + 1, new_middle);
 
                             PageId moved_child = node.childAt(node.size() - 1);
@@ -696,18 +714,24 @@ namespace hamdb
                             if (bpm_.fetchPageWrite(moved_child, moved_guard) == Status::Ok)
                             {
                                 BTreePage moved_header;
-                                if (moved_header.deserialize(moved_guard.page().body()) == Status::Ok)
+                                if (moved_header.deserialize(moved_guard.page().body()) ==
+                                    Status::Ok)
                                 {
                                     moved_header.setParentPageId(page_id);
-                                    if (moved_header.serialize(moved_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                                    if (moved_header.serialize(moved_guard.pageMut().body()) !=
+                                        Status::Ok)
+                                        return Status::IoError;
                                     moved_guard.markDirty();
                                 }
                             }
 
-                            if (node.serialize(node_guard.pageMut().body()) != Status::Ok) return Status::IoError;
-                            if (sibling.serialize(sibling_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                            if (node.serialize(node_guard.pageMut().body()) != Status::Ok)
+                                return Status::IoError;
+                            if (sibling.serialize(sibling_guard.pageMut().body()) != Status::Ok)
+                                return Status::IoError;
                         }
-                        if (parent.serialize(parent_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                        if (parent.serialize(parent_guard.pageMut().body()) != Status::Ok)
+                            return Status::IoError;
                         node_guard.markDirty();
                         sibling_guard.markDirty();
                         parent_guard.markDirty();
@@ -732,7 +756,6 @@ namespace hamdb
             right_node_idx = child_idx + 1;
         }
 
-
         WritePageGuard sibling_guard;
         PageId merge_sibling_id = merged_with_left ? left_sibling_id : right_sibling_id;
         if (bpm_.fetchPageWrite(merge_sibling_id, sibling_guard) != Status::Ok)
@@ -740,14 +763,18 @@ namespace hamdb
             return Status::IoError;
         }
 
-        std::span<std::byte> left_body = merged_with_left ? sibling_guard.pageMut().body() : node_guard.pageMut().body();
-        std::span<std::byte> right_body = merged_with_left ? node_guard.pageMut().body() : sibling_guard.pageMut().body();
+        std::span<std::byte> left_body =
+            merged_with_left ? sibling_guard.pageMut().body() : node_guard.pageMut().body();
+        std::span<std::byte> right_body =
+            merged_with_left ? node_guard.pageMut().body() : sibling_guard.pageMut().body();
 
         if (node_header.pageType() == PageType::BTreeLeaf)
         {
             BTreeLeafPage left, right;
-            if (left.deserialize(left_body) != Status::Ok) return Status::IoError;
-            if (right.deserialize(right_body) != Status::Ok) return Status::IoError;
+            if (left.deserialize(left_body) != Status::Ok)
+                return Status::IoError;
+            if (right.deserialize(right_body) != Status::Ok)
+                return Status::IoError;
 
             right.moveAllTo(left);
             left.setNextPageId(right.nextPageId());
@@ -761,20 +788,25 @@ namespace hamdb
                     if (next_leaf.deserialize(next_guard.page().body()) == Status::Ok)
                     {
                         next_leaf.setPrevPageId(left.pageId());
-                        if (next_leaf.serialize(next_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                        if (next_leaf.serialize(next_guard.pageMut().body()) != Status::Ok)
+                            return Status::IoError;
                         next_guard.markDirty();
                     }
                 }
             }
 
-            if (left.serialize(left_body) != Status::Ok) return Status::IoError;
-            if (right.serialize(right_body) != Status::Ok) return Status::IoError;
+            if (left.serialize(left_body) != Status::Ok)
+                return Status::IoError;
+            if (right.serialize(right_body) != Status::Ok)
+                return Status::IoError;
         }
         else
         {
             BTreeInternalPage left, right;
-            if (left.deserialize(left_body) != Status::Ok) return Status::IoError;
-            if (right.deserialize(right_body) != Status::Ok) return Status::IoError;
+            if (left.deserialize(left_body) != Status::Ok)
+                return Status::IoError;
+            if (right.deserialize(right_body) != Status::Ok)
+                return Status::IoError;
 
             uint16_t right_orig_size = right.size();
             right.moveAllTo(left, parent.keyAt(right_node_idx));
@@ -789,18 +821,23 @@ namespace hamdb
                     if (moved_header.deserialize(moved_guard.page().body()) == Status::Ok)
                     {
                         moved_header.setParentPageId(left.pageId());
-                        if (moved_header.serialize(moved_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+                        if (moved_header.serialize(moved_guard.pageMut().body()) != Status::Ok)
+                            return Status::IoError;
                         moved_guard.markDirty();
                     }
                 }
             }
 
-            if (left.serialize(left_body) != Status::Ok) return Status::IoError;
-            if (right.serialize(right_body) != Status::Ok) return Status::IoError;
+            if (left.serialize(left_body) != Status::Ok)
+                return Status::IoError;
+            if (right.serialize(right_body) != Status::Ok)
+                return Status::IoError;
         }
 
-        if (parent.remove(parent.keyAt(right_node_idx)) != Status::Ok) return Status::IoError;
-        if (parent.serialize(parent_guard.pageMut().body()) != Status::Ok) return Status::IoError;
+        if (parent.remove(parent.keyAt(right_node_idx)) != Status::Ok)
+            return Status::IoError;
+        if (parent.serialize(parent_guard.pageMut().body()) != Status::Ok)
+            return Status::IoError;
 
         node_guard.markDirty();
         sibling_guard.markDirty();
@@ -808,7 +845,7 @@ namespace hamdb
 
         node_guard.drop();
         sibling_guard.drop();
-        
+
         bool parent_underflow = parent.size() < parent.minSize();
         bool parent_is_empty_root = parent_id == root_page_id_ && parent.size() == 1;
 
@@ -825,7 +862,6 @@ namespace hamdb
 
         return Status::Ok;
     }
-
 
     BPlusTreeIterator BPlusTree::begin() noexcept
     {

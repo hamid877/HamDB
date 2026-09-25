@@ -2,8 +2,8 @@
 #include "storage/page.hpp"
 #include "storage/page_header.hpp"
 #include "storage/slotted_page.hpp"
-#include "storage/tuple_slot.hpp"
 #include "storage/tuple.hpp"
+#include "storage/tuple_slot.hpp"
 #include <array>
 #include <cstddef>
 #include <gtest/gtest.h>
@@ -21,7 +21,8 @@ namespace hamdb
     /// Convert a string_view to a Tuple (safe, no UB — char is aliasable).
     static Tuple toTuple(std::string_view sv) noexcept
     {
-        std::span<const std::byte> span{reinterpret_cast<const std::byte*>(sv.data()), sv.size()}; // NOLINT
+        std::span<const std::byte> span{reinterpret_cast<const std::byte*>(sv.data()),
+                                        sv.size()}; // NOLINT
         return Tuple(span);
     }
 
@@ -42,11 +43,11 @@ namespace hamdb
         void SetUp() override
         {
             page_ = std::make_unique<Page>(PageHeader(1, PageType::Table));
-            sp_   = std::make_unique<SlottedPage>(*page_);
+            sp_ = std::make_unique<SlottedPage>(*page_);
             ASSERT_EQ(sp_->initialize(), Status::Ok);
         }
 
-        std::unique_ptr<Page>        page_;
+        std::unique_ptr<Page> page_;
         std::unique_ptr<SlottedPage> sp_;
     };
 
@@ -183,7 +184,7 @@ namespace hamdb
             ASSERT_EQ(sp_->insertTuple(toTuple(tuples[i]), id), Status::Ok);
             EXPECT_EQ(id, static_cast<SlotId>(i));
         }
-        EXPECT_EQ(sp_->slotCount(),  4u);
+        EXPECT_EQ(sp_->slotCount(), 4u);
         EXPECT_EQ(sp_->tupleCount(), 4u);
     }
 
@@ -219,7 +220,7 @@ namespace hamdb
         SlotId id = kInvalidSlotId;
         ASSERT_EQ(sp_->insertTuple(toTuple("x"), id), Status::Ok);
         ASSERT_EQ(sp_->deleteTuple(id), Status::Ok);
-        EXPECT_EQ(sp_->slotCount(),  1u); // slot dir entry remains
+        EXPECT_EQ(sp_->slotCount(), 1u);  // slot dir entry remains
         EXPECT_EQ(sp_->tupleCount(), 0u); // live tuple count drops
     }
 
@@ -346,9 +347,9 @@ namespace hamdb
         SlotId id0 = kInvalidSlotId;
         SlotId id1 = kInvalidSlotId;
         SlotId id2 = kInvalidSlotId;
-        ASSERT_EQ(sp_->insertTuple(toTuple("keep_a"),  id0), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("keep_a"), id0), Status::Ok);
         ASSERT_EQ(sp_->insertTuple(toTuple("delete_b"), id1), Status::Ok);
-        ASSERT_EQ(sp_->insertTuple(toTuple("keep_c"),  id2), Status::Ok);
+        ASSERT_EQ(sp_->insertTuple(toTuple("keep_c"), id2), Status::Ok);
         ASSERT_EQ(sp_->deleteTuple(id1), Status::Ok);
 
         std::size_t reclaimed = 0;

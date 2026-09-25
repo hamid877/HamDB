@@ -71,10 +71,7 @@ namespace hamdb
          *                       @c kInvalidPageId for the root.
          * @param max_size       Maximum number of entries this page can hold.
          */
-        BTreePage(PageType type,
-                  PageId   page_id,
-                  PageId   parent_page_id,
-                  uint16_t max_size) noexcept;
+        BTreePage(PageType type, PageId page_id, PageId parent_page_id, uint16_t max_size) noexcept;
 
         // ── Getters ───────────────────────────────────────────────────────────────
 
@@ -105,7 +102,6 @@ namespace hamdb
          * Follows B+ Tree occupancy rules.
          */
         [[nodiscard]] uint16_t minSize() const noexcept;
-
 
         /**
          * @brief Return the logical page ID of the parent node.
@@ -197,11 +193,11 @@ namespace hamdb
         [[nodiscard]] bool operator!=(const BTreePage& other) const noexcept;
 
     private:
-        PageType page_type_      = PageType::BTreeLeaf; ///< Internal or leaf node.
-        uint16_t current_size_   = 0;                   ///< Current entry count.
-        uint16_t max_size_       = 0;                   ///< Maximum entry capacity.
-        PageId   parent_page_id_ = kInvalidPageId;      ///< Parent node ID.
-        PageId   page_id_        = kInvalidPageId;      ///< This node's page ID.
+        PageType page_type_ = PageType::BTreeLeaf; ///< Internal or leaf node.
+        uint16_t current_size_ = 0;                ///< Current entry count.
+        uint16_t max_size_ = 0;                    ///< Maximum entry capacity.
+        PageId parent_page_id_ = kInvalidPageId;   ///< Parent node ID.
+        PageId page_id_ = kInvalidPageId;          ///< This node's page ID.
     };
 
 } // namespace hamdb

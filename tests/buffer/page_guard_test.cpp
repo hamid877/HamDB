@@ -59,8 +59,8 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId       page_id = kInvalidPageId;
-        BufferFrame* frame   = nullptr;
+        PageId page_id = kInvalidPageId;
+        BufferFrame* frame = nullptr;
         ASSERT_EQ(bpm.newPage(page_id, frame), Status::Ok);
         ASSERT_NE(frame, nullptr);
         EXPECT_EQ(frame->pinCount(), 1);
@@ -84,8 +84,8 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId       page_id = kInvalidPageId;
-        BufferFrame* frame   = nullptr;
+        PageId page_id = kInvalidPageId;
+        BufferFrame* frame = nullptr;
         ASSERT_EQ(bpm.newPage(page_id, frame), Status::Ok);
 
         BasicPageGuard src(&bpm, frame);
@@ -107,8 +107,8 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId       pid1   = kInvalidPageId;
-        PageId       pid2   = kInvalidPageId;
+        PageId pid1 = kInvalidPageId;
+        PageId pid2 = kInvalidPageId;
         BufferFrame* frame1 = nullptr;
         BufferFrame* frame2 = nullptr;
         ASSERT_EQ(bpm.newPage(pid1, frame1), Status::Ok);
@@ -133,8 +133,8 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId       page_id = kInvalidPageId;
-        BufferFrame* frame   = nullptr;
+        PageId page_id = kInvalidPageId;
+        BufferFrame* frame = nullptr;
         ASSERT_EQ(bpm.newPage(page_id, frame), Status::Ok);
 
         BasicPageGuard guard(&bpm, frame);
@@ -158,8 +158,8 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId       page_id = kInvalidPageId;
-        BufferFrame* frame   = nullptr;
+        PageId page_id = kInvalidPageId;
+        BufferFrame* frame = nullptr;
         ASSERT_EQ(bpm.newPage(page_id, frame), Status::Ok);
 
         {
@@ -181,8 +181,8 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId       page_id = kInvalidPageId;
-        BufferFrame* frame   = nullptr;
+        PageId page_id = kInvalidPageId;
+        BufferFrame* frame = nullptr;
         ASSERT_EQ(bpm.newPage(page_id, frame), Status::Ok);
 
         BasicPageGuard guard(&bpm, frame);
@@ -202,10 +202,10 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId       pid_outer = kInvalidPageId;
-        PageId       pid_inner = kInvalidPageId;
-        BufferFrame* f_outer   = nullptr;
-        BufferFrame* f_inner   = nullptr;
+        PageId pid_outer = kInvalidPageId;
+        PageId pid_inner = kInvalidPageId;
+        BufferFrame* f_outer = nullptr;
+        BufferFrame* f_inner = nullptr;
 
         ASSERT_EQ(bpm.newPage(pid_outer, f_outer), Status::Ok);
 
@@ -263,8 +263,8 @@ namespace hamdb
         BufferPoolManager bpm(4, dm);
 
         // Allocate a page via raw API so we can check pin count afterward.
-        PageId       page_id = kInvalidPageId;
-        BufferFrame* frame   = nullptr;
+        PageId page_id = kInvalidPageId;
+        BufferFrame* frame = nullptr;
         ASSERT_EQ(bpm.newPage(page_id, frame), Status::Ok);
         // Unpin the raw pin so the guard is the only holder.
         ASSERT_EQ(bpm.unpinPage(page_id, false), Status::Ok);
@@ -303,8 +303,8 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId       page_id = kInvalidPageId;
-        BufferFrame* frame   = nullptr;
+        PageId page_id = kInvalidPageId;
+        BufferFrame* frame = nullptr;
         ASSERT_EQ(bpm.newPage(page_id, frame), Status::Ok);
         ASSERT_EQ(bpm.unpinPage(page_id, false), Status::Ok);
 
@@ -350,7 +350,7 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId         page_id = kInvalidPageId;
+        PageId page_id = kInvalidPageId;
         WritePageGuard wg;
         ASSERT_EQ(bpm.newPageGuard(page_id, wg), Status::Ok);
 
@@ -366,8 +366,8 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId       page_id = kInvalidPageId;
-        BufferFrame* frame   = nullptr;
+        PageId page_id = kInvalidPageId;
+        BufferFrame* frame = nullptr;
         ASSERT_EQ(bpm.newPage(page_id, frame), Status::Ok);
         ASSERT_EQ(bpm.unpinPage(page_id, false), Status::Ok);
 
@@ -387,7 +387,7 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId         page_id = kInvalidPageId;
+        PageId page_id = kInvalidPageId;
         WritePageGuard wg;
         ASSERT_EQ(bpm.newPageGuard(page_id, wg), Status::Ok);
         EXPECT_TRUE(wg.isValid());
@@ -405,8 +405,8 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId       page_id = kInvalidPageId;
-        BufferFrame* frame   = nullptr;
+        PageId page_id = kInvalidPageId;
+        BufferFrame* frame = nullptr;
         ASSERT_EQ(bpm.newPage(page_id, frame), Status::Ok);
         ASSERT_EQ(bpm.unpinPage(page_id, false), Status::Ok);
 
@@ -426,8 +426,8 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId       page_id = kInvalidPageId;
-        BufferFrame* frame   = nullptr;
+        PageId page_id = kInvalidPageId;
+        BufferFrame* frame = nullptr;
         ASSERT_EQ(bpm.newPage(page_id, frame), Status::Ok);
         ASSERT_EQ(bpm.unpinPage(page_id, false), Status::Ok);
         EXPECT_FALSE(frame->isDirty());
@@ -451,8 +451,8 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId       page_id = kInvalidPageId;
-        BufferFrame* frame   = nullptr;
+        PageId page_id = kInvalidPageId;
+        BufferFrame* frame = nullptr;
         ASSERT_EQ(bpm.newPage(page_id, frame), Status::Ok);
         ASSERT_EQ(bpm.unpinPage(page_id, false), Status::Ok);
 
@@ -472,7 +472,7 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId         page_id = kInvalidPageId;
+        PageId page_id = kInvalidPageId;
         WritePageGuard wg;
         ASSERT_EQ(bpm.newPageGuard(page_id, wg), Status::Ok);
 
@@ -493,7 +493,7 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId       pid   = kInvalidPageId;
+        PageId pid = kInvalidPageId;
         BufferFrame* frame = nullptr;
         ASSERT_EQ(bpm.newPage(pid, frame), Status::Ok);
         ASSERT_EQ(bpm.unpinPage(pid, false), Status::Ok);
@@ -514,7 +514,7 @@ namespace hamdb
         ASSERT_EQ(dm.openDatabase(), Status::Ok);
         BufferPoolManager bpm(4, dm);
 
-        PageId       pid   = kInvalidPageId;
+        PageId pid = kInvalidPageId;
         BufferFrame* frame = nullptr;
         ASSERT_EQ(bpm.newPage(pid, frame), Status::Ok);
         ASSERT_EQ(bpm.unpinPage(pid, false), Status::Ok);
@@ -536,7 +536,7 @@ namespace hamdb
             ASSERT_EQ(dm.openDatabase(), Status::Ok);
             BufferPoolManager bpm(4, dm);
 
-            PageId         page_id = kInvalidPageId;
+            PageId page_id = kInvalidPageId;
             WritePageGuard wg;
             ASSERT_EQ(bpm.newPageGuard(page_id, wg), Status::Ok);
 

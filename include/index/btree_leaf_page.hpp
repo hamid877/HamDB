@@ -47,8 +47,8 @@ namespace hamdb
      */
     struct LeafEntry
     {
-        int64_t key{0};  ///< Sorted index key.
-        RID     rid{};   ///< Heap location of the corresponding tuple.
+        int64_t key{0}; ///< Sorted index key.
+        RID rid{};      ///< Heap location of the corresponding tuple.
     };
 
     /**
@@ -89,8 +89,7 @@ namespace hamdb
         static constexpr std::size_t kEntrySize = 8 + 4 + 2; // 14
 
         /// Maximum number of entries that fit into a single leaf page.
-        static constexpr std::size_t kMaxEntries =
-            (kPageBodySize - kLeafHeaderSize) / kEntrySize;
+        static constexpr std::size_t kMaxEntries = (kPageBodySize - kLeafHeaderSize) / kEntrySize;
 
         // ── Construction ───────────────────────────────────────────────────────────
 
@@ -153,7 +152,6 @@ namespace hamdb
 
         /// Return the minimum number of key/RID pairs this leaf must hold.
         [[nodiscard]] uint16_t minSize() const noexcept;
-
 
         /// Return @c true when no entries are stored.
         [[nodiscard]] bool isEmpty() const noexcept;
@@ -251,7 +249,6 @@ namespace hamdb
          */
         void moveAllTo(BTreeLeafPage& recipient) noexcept;
 
-
         // ── Serialisation ──────────────────────────────────────────────────────────
 
         /**
@@ -286,18 +283,17 @@ namespace hamdb
         [[nodiscard]] int32_t findIndex(int64_t key) const noexcept;
 
         /// Serialise a single entry at position @p pos in @p ser.
-        [[nodiscard]] static Status serializeEntry(Serializer&       ser,
-                                                   const LeafEntry&  entry) noexcept;
+        [[nodiscard]] static Status serializeEntry(Serializer& ser,
+                                                   const LeafEntry& entry) noexcept;
 
         /// Deserialise a single entry from @p de into @p entry.
-        [[nodiscard]] static Status deserializeEntry(Deserializer& de,
-                                                     LeafEntry&    entry) noexcept;
+        [[nodiscard]] static Status deserializeEntry(Deserializer& de, LeafEntry& entry) noexcept;
 
         // ── Data members ──────────────────────────────────────────────────────────
 
-        BTreePage  header_{};                        ///< Shared B+ Tree header.
-        PageId     prev_page_id_ = kInvalidPageId;   ///< Predecessor leaf page.
-        PageId     next_page_id_ = kInvalidPageId;   ///< Successor leaf page.
+        BTreePage header_{};                   ///< Shared B+ Tree header.
+        PageId prev_page_id_ = kInvalidPageId; ///< Predecessor leaf page.
+        PageId next_page_id_ = kInvalidPageId; ///< Successor leaf page.
 
         /// In-memory slot array (only the first @c size() entries are valid).
         std::array<LeafEntry, kMaxEntries> entries_{};

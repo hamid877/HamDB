@@ -72,7 +72,6 @@ namespace hamdb
         void clearDeleted() noexcept;
     };
 
-    static_assert(sizeof(TupleSlot) == TupleSlot::kSize,
-                  "TupleSlot must be exactly 8 bytes");
+    static_assert(sizeof(TupleSlot) == TupleSlot::kSize, "TupleSlot must be exactly 8 bytes");
 
 } // namespace hamdb

@@ -1,6 +1,6 @@
 #include "index/btree_internal_page.hpp"
-#include <gtest/gtest.h>
 #include <array>
+#include <gtest/gtest.h>
 
 namespace hamdb
 {
@@ -106,7 +106,7 @@ namespace hamdb
         EXPECT_EQ(page_->childAt(1), 20);
         EXPECT_EQ(page_->keyAt(2), 2000);
         EXPECT_EQ(page_->childAt(2), 40);
-        
+
         EXPECT_EQ(page_->lookup(1000), 20); // 1000 < 2000, routes to child 1 which is 20
     }
 
@@ -116,24 +116,24 @@ namespace hamdb
         EXPECT_EQ(page_->remove(999), Status::NotFound);
         EXPECT_EQ(page_->size(), 2);
     }
-    
+
     TEST_F(BTreeInternalPageTest, FullPageBehavior)
     {
         page_->populateNewRoot(0, 1, 1);
-        
+
         uint16_t capacity = page_->maxSize();
-        
+
         for (int64_t i = 2; i < capacity; ++i)
         {
             EXPECT_EQ(page_->insert(i, static_cast<PageId>(i)), Status::Ok);
         }
-        
+
         EXPECT_TRUE(page_->isFull());
         EXPECT_EQ(page_->size(), capacity);
-        
+
         EXPECT_EQ(page_->insert(9999, 99), Status::InvalidArg);
     }
-    
+
     TEST_F(BTreeInternalPageTest, SerializationRoundTrip)
     {
         page_->populateNewRoot(10, 500, 20);
@@ -145,13 +145,13 @@ namespace hamdb
 
         std::array<std::byte, kPageSize> read_buffer{};
         BTreeInternalPage* read_page = reinterpret_cast<BTreeInternalPage*>(read_buffer.data());
-        
+
         EXPECT_EQ(read_page->deserialize(dest_buffer), Status::Ok);
 
         EXPECT_EQ(read_page->pageId(), 100);
         EXPECT_EQ(read_page->parentPageId(), 50);
         EXPECT_EQ(read_page->size(), 4);
-        
+
         EXPECT_EQ(read_page->childAt(0), 10);
         EXPECT_EQ(read_page->keyAt(1), 500);
         EXPECT_EQ(read_page->childAt(1), 20);

@@ -1,5 +1,5 @@
-#include "index/bplus_tree.hpp"
 #include "buffer/buffer_pool_manager.hpp"
+#include "index/bplus_tree.hpp"
 #include "index/btree_internal_page.hpp"
 #include "index/btree_leaf_page.hpp"
 #include "storage/disk_manager.hpp"
@@ -12,36 +12,35 @@ namespace hamdb
     class BPlusTreeTest : public ::testing::Test
     {
     protected:
-        std::filesystem::path db_path_ = std::filesystem::temp_directory_path() / "bplus_tree_test.db";
+        std::filesystem::path db_path_ =
+            std::filesystem::temp_directory_path() / "bplus_tree_test.db";
         std::unique_ptr<DiskManager> dm_;
         std::unique_ptr<BufferPoolManager> bpm_;
 
         void SetUp() override
-{
-    auto unique = std::to_string(
-        std::chrono::steady_clock::now()
-            .time_since_epoch()
-            .count());
+        {
+            auto unique =
+                std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
 
-    db_path_ = std::filesystem::temp_directory_path() /
-               ("hamdb-bplus-tree-" + unique + ".hamdb");
+            db_path_ =
+                std::filesystem::temp_directory_path() / ("hamdb-bplus-tree-" + unique + ".hamdb");
 
-    dm_ = std::make_unique<DiskManager>(db_path_);
+            dm_ = std::make_unique<DiskManager>(db_path_);
 
-    ASSERT_EQ(dm_->createDatabase(), Status::Ok);
-    ASSERT_EQ(dm_->openDatabase(), Status::Ok);
+            ASSERT_EQ(dm_->createDatabase(), Status::Ok);
+            ASSERT_EQ(dm_->openDatabase(), Status::Ok);
 
-    bpm_ = std::make_unique<BufferPoolManager>(10, *dm_);
-}
+            bpm_ = std::make_unique<BufferPoolManager>(10, *dm_);
+        }
 
         void TearDown() override
-{
-    bpm_.reset();
-    dm_.reset();
+        {
+            bpm_.reset();
+            dm_.reset();
 
-    std::error_code ec;
-    std::filesystem::remove(db_path_, ec);
-}
+            std::error_code ec;
+            std::filesystem::remove(db_path_, ec);
+        }
 
         // Helper to manually create a leaf page and fill it with some data
         PageId createLeafPage(const std::vector<std::pair<int64_t, RID>>& entries)
@@ -91,11 +90,7 @@ namespace hamdb
 
     TEST_F(BPlusTreeTest, SingleLeafLookup)
     {
-        PageId leaf_id = createLeafPage({
-            {10, RID{1, 0}},
-            {20, RID{1, 1}},
-            {30, RID{1, 2}}
-        });
+        PageId leaf_id = createLeafPage({{10, RID{1, 0}}, {20, RID{1, 1}}, {30, RID{1, 2}}});
 
         BPlusTree tree(*bpm_);
         tree.open(leaf_id);
@@ -126,24 +121,13 @@ namespace hamdb
     TEST_F(BPlusTreeTest, MultiLevelRouting)
     {
         // Leaf 1: keys 1, 2, 3
-        PageId leaf1 = createLeafPage({
-            {1, RID{2, 0}},
-            {2, RID{2, 1}},
-            {3, RID{2, 2}}
-        });
+        PageId leaf1 = createLeafPage({{1, RID{2, 0}}, {2, RID{2, 1}}, {3, RID{2, 2}}});
 
         // Leaf 2: keys 5, 6, 7
-        PageId leaf2 = createLeafPage({
-            {5, RID{3, 0}},
-            {6, RID{3, 1}},
-            {7, RID{3, 2}}
-        });
+        PageId leaf2 = createLeafPage({{5, RID{3, 0}}, {6, RID{3, 1}}, {7, RID{3, 2}}});
 
         // Leaf 3: keys 10, 11
-        PageId leaf3 = createLeafPage({
-            {10, RID{4, 0}},
-            {11, RID{4, 1}}
-        });
+        PageId leaf3 = createLeafPage({{10, RID{4, 0}}, {11, RID{4, 1}}});
 
         // Internal 1: Routes between Leaf 1 and Leaf 2 (separator = 5)
         PageId int1 = createInternalPage(leaf1, 5, leaf2);
@@ -178,11 +162,12 @@ namespace hamdb
 
     TEST_F(BPlusTreeTest, AutomaticGuardRelease)
     {
-        PageId root_id = createLeafPage({ {10, RID{1, 0}} });
+        PageId root_id = createLeafPage({{10, RID{1, 0}}});
         BPlusTree tree(*bpm_);
         tree.open(root_id);
 
-        // Call it many times. If guards are not released, the buffer pool (size 10) will fill up and stall.
+        // Call it many times. If guards are not released, the buffer pool (size 10) will fill up
+        // and stall.
         for (int i = 0; i < 100; ++i)
         {
             auto res = tree.getValue(10);

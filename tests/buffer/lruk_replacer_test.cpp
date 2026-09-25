@@ -16,14 +16,14 @@ namespace hamdb
         replacer.recordAccess(4);
         replacer.recordAccess(5);
         replacer.recordAccess(6);
-        
+
         replacer.setEvictable(1, true);
         replacer.setEvictable(2, true);
         replacer.setEvictable(3, true);
         replacer.setEvictable(4, true);
         replacer.setEvictable(5, true);
         replacer.setEvictable(6, false); // Frame 6 is pinned
-        
+
         EXPECT_EQ(5, replacer.size());
 
         // Insert access history for frame 1. Now frame 1 has two accesses total.
@@ -70,24 +70,24 @@ namespace hamdb
     TEST(LRUKReplacerTest, PinnedFramesAreNotEvicted)
     {
         LRUKReplacer replacer(3, 2);
-        
+
         replacer.recordAccess(1);
         replacer.recordAccess(2);
         replacer.setEvictable(1, true);
         // Frame 2 is pinned (evictable = false by default)
-        
+
         FrameId victim;
         EXPECT_TRUE(replacer.evict(victim));
         EXPECT_EQ(1, victim);
         replacer.remove(victim);
-        
+
         EXPECT_FALSE(replacer.evict(victim));
     }
 
     TEST(LRUKReplacerTest, HistoryTrimming)
     {
         LRUKReplacer replacer(3, 2);
-        
+
         // Access frame 1 three times. First access will be pushed out.
         replacer.recordAccess(1); // ts 1
         replacer.recordAccess(1); // ts 2
@@ -109,7 +109,7 @@ namespace hamdb
         EXPECT_TRUE(replacer.evict(victim));
         EXPECT_EQ(1, victim);
     }
-    
+
     TEST(LRUKReplacerTest, RemoveNonEvictableThrows)
     {
         LRUKReplacer replacer(3, 2);

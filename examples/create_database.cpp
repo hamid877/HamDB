@@ -40,8 +40,8 @@ int main()
         }
         else if (status != hamdb::Status::Ok)
         {
-            std::cerr << "[ERROR] createDatabase() failed: "
-                      << hamdb::statusToString(status) << "\n";
+            std::cerr << "[ERROR] createDatabase() failed: " << hamdb::statusToString(status)
+                      << "\n";
             return 1;
         }
         else
@@ -57,16 +57,14 @@ int main()
 
         if (status != hamdb::Status::Ok)
         {
-            std::cerr << "[ERROR] openDatabase() failed: "
-                      << hamdb::statusToString(status) << "\n";
+            std::cerr << "[ERROR] openDatabase() failed: " << hamdb::statusToString(status) << "\n";
             return 1;
         }
 
         std::cout << "[OK]   users.hamdb opened successfully.\n";
         std::cout << "       Path       : " << dm.filePath().string() << "\n";
         std::cout << "       Page count : " << dm.pageCount() << "\n";
-        std::cout << "       File size  : "
-                  << std::filesystem::file_size(db_path) << " bytes\n";
+        std::cout << "       File size  : " << std::filesystem::file_size(db_path) << " bytes\n";
 
         // closeDatabase() is called automatically by the destructor
     }

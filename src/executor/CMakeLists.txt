@@ -12,6 +12,7 @@ add_library(hamdb_executor STATIC
     nested_loop_join_executor.cpp
     aggregation_hash_table.cpp
     aggregation_executor.cpp
+    sort_executor.cpp
 )
 
 target_link_libraries(hamdb_executor PUBLIC

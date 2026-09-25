@@ -6,5 +6,5 @@
 
 namespace hamdb
 {
-// Nothing to define here — TupleVersion members are all inline.
+    // Nothing to define here — TupleVersion members are all inline.
 } // namespace hamdb

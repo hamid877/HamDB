@@ -43,17 +43,17 @@ namespace hamdb
      */
     enum class Status : std::uint8_t
     {
-        Ok = 0,        ///< Operation completed successfully.
-        NotFound,      ///< Requested resource does not exist.
-        InvalidArg,    ///< One or more arguments are invalid.
-        IoError,       ///< An I/O error occurred during a disk operation.
-        OutOfMemory,   ///< Memory allocation failed.
-        Corruption,    ///< On-disk data is corrupt or inconsistent.
-        NotSupported,  ///< Operation is not yet implemented.
-        AlreadyExists, ///< Resource already exists and cannot be created again.
-        BufferPoolFull,///< Buffer pool has no free frames available.
-        PageFull,      ///< Page has no free space.
-        Unknown,       ///< An unclassified internal error occurred.
+        Ok = 0,         ///< Operation completed successfully.
+        NotFound,       ///< Requested resource does not exist.
+        InvalidArg,     ///< One or more arguments are invalid.
+        IoError,        ///< An I/O error occurred during a disk operation.
+        OutOfMemory,    ///< Memory allocation failed.
+        Corruption,     ///< On-disk data is corrupt or inconsistent.
+        NotSupported,   ///< Operation is not yet implemented.
+        AlreadyExists,  ///< Resource already exists and cannot be created again.
+        BufferPoolFull, ///< Buffer pool has no free frames available.
+        PageFull,       ///< Page has no free space.
+        Unknown,        ///< An unclassified internal error occurred.
     };
 
     /**

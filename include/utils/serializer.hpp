@@ -126,7 +126,7 @@ namespace hamdb
 
     private:
         std::span<std::byte> buffer_; ///< Caller-owned backing storage.
-        std::size_t          cursor_; ///< Current write position (bytes from start).
+        std::size_t cursor_;          ///< Current write position (bytes from start).
 
         /// Write exactly @p n bytes from @p src into the buffer at @c cursor_,
         /// advancing @c cursor_ by @p n.  Returns @c Status::IoError if there

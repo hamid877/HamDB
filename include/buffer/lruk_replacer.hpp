@@ -82,7 +82,8 @@ namespace hamdb
         [[nodiscard]] std::size_t size() const;
 
     private:
-        struct LRUKNode {
+        struct LRUKNode
+        {
             std::deque<std::uint64_t> history_;
             bool is_evictable_{false};
         };

@@ -4,16 +4,15 @@ namespace hamdb
 {
 
     PageHeader::PageHeader(PageId page_id, PageType page_type)
-        : page_id(page_id),
-          page_type(page_type)
+        : page_id(page_id), page_type(page_type)
     {
     }
 
     bool PageHeader::operator==(const PageHeader& other) const noexcept
     {
-        return page_lsn == other.page_lsn && page_id == other.page_id && page_type == other.page_type &&
-               free_space_ptr == other.free_space_ptr && slot_count == other.slot_count &&
-               checksum == other.checksum;
+        return page_lsn == other.page_lsn && page_id == other.page_id &&
+               page_type == other.page_type && free_space_ptr == other.free_space_ptr &&
+               slot_count == other.slot_count && checksum == other.checksum;
     }
 
     bool PageHeader::operator!=(const PageHeader& other) const noexcept

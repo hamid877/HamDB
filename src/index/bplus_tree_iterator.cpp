@@ -3,7 +3,8 @@
 namespace hamdb
 {
 
-    BPlusTreeIterator::BPlusTreeIterator(BufferPoolManager& bpm, PageId page_id, uint16_t index) noexcept
+    BPlusTreeIterator::BPlusTreeIterator(BufferPoolManager& bpm, PageId page_id,
+                                         uint16_t index) noexcept
         : bpm_(&bpm), page_id_(page_id), index_(index)
     {
         if (page_id_ != kInvalidPageId)
@@ -13,11 +14,8 @@ namespace hamdb
     }
 
     BPlusTreeIterator::BPlusTreeIterator(BPlusTreeIterator&& other) noexcept
-        : bpm_(other.bpm_),
-          page_id_(other.page_id_),
-          index_(other.index_),
-          guard_(std::move(other.guard_)),
-          leaf_(std::move(other.leaf_))
+        : bpm_(other.bpm_), page_id_(other.page_id_), index_(other.index_),
+          guard_(std::move(other.guard_)), leaf_(std::move(other.leaf_))
     {
         other.bpm_ = nullptr;
         other.page_id_ = kInvalidPageId;

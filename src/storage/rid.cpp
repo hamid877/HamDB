@@ -3,10 +3,7 @@
 namespace hamdb
 {
 
-    RID::RID(PageId page_id, std::uint16_t slot_id)
-        : page_id_(page_id), slot_id_(slot_id)
-    {
-    }
+    RID::RID(PageId page_id, std::uint16_t slot_id) : page_id_(page_id), slot_id_(slot_id) {}
 
     PageId RID::getPageId() const noexcept
     {

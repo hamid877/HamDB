@@ -3,10 +3,7 @@
 namespace hamdb
 {
 
-    Tuple::Tuple(std::span<const std::byte> data)
-        : data_(data.begin(), data.end())
-    {
-    }
+    Tuple::Tuple(std::span<const std::byte> data) : data_(data.begin(), data.end()) {}
 
     std::span<const std::byte> Tuple::data() const noexcept
     {

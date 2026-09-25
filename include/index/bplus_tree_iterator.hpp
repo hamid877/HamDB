@@ -83,11 +83,11 @@ namespace hamdb
          */
         void loadPage() noexcept;
 
-        BufferPoolManager*             bpm_{nullptr};
-        PageId                         page_id_{kInvalidPageId};
-        uint16_t                       index_{0};
-        std::optional<ReadPageGuard>   guard_{std::nullopt};
-        BTreeLeafPage                  leaf_{};
+        BufferPoolManager* bpm_{nullptr};
+        PageId page_id_{kInvalidPageId};
+        uint16_t index_{0};
+        std::optional<ReadPageGuard> guard_{std::nullopt};
+        BTreeLeafPage leaf_{};
     };
 
 } // namespace hamdb

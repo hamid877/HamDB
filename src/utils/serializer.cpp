@@ -8,10 +8,7 @@ namespace hamdb
 
     // ── Construction ──────────────────────────────────────────────────────────
 
-    Serializer::Serializer(std::span<std::byte> buffer) noexcept
-        : buffer_(buffer), cursor_(0)
-    {
-    }
+    Serializer::Serializer(std::span<std::byte> buffer) noexcept : buffer_(buffer), cursor_(0) {}
 
     // ── Private helper ────────────────────────────────────────────────────────
 

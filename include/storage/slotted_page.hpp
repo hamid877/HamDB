@@ -25,8 +25,8 @@
 
 #include "common/enums.hpp"
 #include "storage/page.hpp"
-#include "storage/tuple_slot.hpp"
 #include "storage/tuple.hpp"
+#include "storage/tuple_slot.hpp"
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -147,8 +147,7 @@ namespace hamdb
          * @param[out] slot_id  Receives the assigned slot ID on success.
          * @return @c Status::Ok, or @c Status::IoError if the page is full.
          */
-        [[nodiscard]] Status insertTuple(const Tuple& tuple,
-                                         SlotId& slot_id) noexcept;
+        [[nodiscard]] Status insertTuple(const Tuple& tuple, SlotId& slot_id) noexcept;
 
         /**
          * @brief Mark the tuple in slot @p slot_id as deleted.
@@ -163,9 +162,9 @@ namespace hamdb
 
         /**
          * @brief Insert a tuple at a specific slot ID.
-         * 
+         *
          * Used for crash recovery.
-         * 
+         *
          * @param slot_id The slot to insert into.
          * @param tuple The tuple to insert.
          * @return Status::Ok, or IoError if full.
@@ -174,9 +173,9 @@ namespace hamdb
 
         /**
          * @brief Update a tuple in place.
-         * 
+         *
          * Used for crash recovery.
-         * 
+         *
          * @param slot_id The slot to update.
          * @param tuple The new tuple data.
          * @return Status::Ok, or IoError if full.
@@ -206,8 +205,7 @@ namespace hamdb
          * @return @c Status::Ok, @c Status::NotFound if the slot is out of range,
          *         @c Status::InvalidArg if the slot is deleted.
          */
-        [[nodiscard]] Status readTuple(SlotId slot_id,
-                                       Tuple& tuple) const noexcept;
+        [[nodiscard]] Status readTuple(SlotId slot_id, Tuple& tuple) const noexcept;
 
         /// Return the number of free bytes currently available for new data.
         [[nodiscard]] std::size_t freeSpace() const noexcept;

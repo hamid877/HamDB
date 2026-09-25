@@ -9,25 +9,19 @@ namespace hamdb
     // BasicPageGuard
     // =========================================================================
 
-    BasicPageGuard::BasicPageGuard(BufferPoolManager* bpm, BufferFrame* frame,
-                                   bool dirty) noexcept
-        : bpm_(bpm),
-          frame_(frame),
-          page_id_(frame != nullptr ? frame->pageId() : kInvalidPageId),
+    BasicPageGuard::BasicPageGuard(BufferPoolManager* bpm, BufferFrame* frame, bool dirty) noexcept
+        : bpm_(bpm), frame_(frame), page_id_(frame != nullptr ? frame->pageId() : kInvalidPageId),
           dirty_(dirty)
     {
     }
 
     BasicPageGuard::BasicPageGuard(BasicPageGuard&& other) noexcept
-        : bpm_(other.bpm_),
-          frame_(other.frame_),
-          page_id_(other.page_id_),
-          dirty_(other.dirty_)
+        : bpm_(other.bpm_), frame_(other.frame_), page_id_(other.page_id_), dirty_(other.dirty_)
     {
-        other.bpm_     = nullptr;
-        other.frame_   = nullptr;
+        other.bpm_ = nullptr;
+        other.frame_ = nullptr;
         other.page_id_ = kInvalidPageId;
-        other.dirty_   = false;
+        other.dirty_ = false;
     }
 
     BasicPageGuard& BasicPageGuard::operator=(BasicPageGuard&& other) noexcept
@@ -37,15 +31,15 @@ namespace hamdb
             // Release our current ownership before taking the new one.
             drop();
 
-            bpm_     = other.bpm_;
-            frame_   = other.frame_;
+            bpm_ = other.bpm_;
+            frame_ = other.frame_;
             page_id_ = other.page_id_;
-            dirty_   = other.dirty_;
+            dirty_ = other.dirty_;
 
-            other.bpm_     = nullptr;
-            other.frame_   = nullptr;
+            other.bpm_ = nullptr;
+            other.frame_ = nullptr;
             other.page_id_ = kInvalidPageId;
-            other.dirty_   = false;
+            other.dirty_ = false;
         }
         return *this;
     }
@@ -57,8 +51,7 @@ namespace hamdb
 
     bool BasicPageGuard::isValid() const noexcept
     {
-        return bpm_ != nullptr && frame_ != nullptr &&
-               page_id_ != kInvalidPageId;
+        return bpm_ != nullptr && frame_ != nullptr && page_id_ != kInvalidPageId;
     }
 
     PageId BasicPageGuard::pageId() const noexcept
@@ -90,23 +83,19 @@ namespace hamdb
 
         (void)bpm_->unpinPage(page_id_, dirty_);
 
-        bpm_     = nullptr;
-        frame_   = nullptr;
+        bpm_ = nullptr;
+        frame_ = nullptr;
         page_id_ = kInvalidPageId;
-        dirty_   = false;
+        dirty_ = false;
     }
 
     // =========================================================================
     // ReadPageGuard
     // =========================================================================
 
-    ReadPageGuard::ReadPageGuard(BasicPageGuard guard) noexcept
-        : guard_(std::move(guard))
-    {
-    }
+    ReadPageGuard::ReadPageGuard(BasicPageGuard guard) noexcept : guard_(std::move(guard)) {}
 
-    ReadPageGuard::ReadPageGuard(ReadPageGuard&& other) noexcept
-        : guard_(std::move(other.guard_))
+    ReadPageGuard::ReadPageGuard(ReadPageGuard&& other) noexcept : guard_(std::move(other.guard_))
     {
     }
 
@@ -143,10 +132,7 @@ namespace hamdb
     // WritePageGuard
     // =========================================================================
 
-    WritePageGuard::WritePageGuard(BasicPageGuard guard) noexcept
-        : guard_(std::move(guard))
-    {
-    }
+    WritePageGuard::WritePageGuard(BasicPageGuard guard) noexcept : guard_(std::move(guard)) {}
 
     WritePageGuard::WritePageGuard(WritePageGuard&& other) noexcept
         : guard_(std::move(other.guard_))

@@ -69,12 +69,12 @@ namespace hamdb
         void reset(PageId new_page_id);
 
     private:
-        Page    page_;                    ///< The actual page data.
-        PageId  page_id_{kInvalidPageId}; ///< The logical ID of the page.
-        FrameId frame_id_{0};             ///< The index of this frame in the pool.
-        int     pin_count_{0};            ///< Number of active users of this page.
-        bool    is_dirty_{false};         ///< True if the page has been modified.
-        bool    is_valid_{false};         ///< True if the frame holds a valid page.
+        Page page_;                      ///< The actual page data.
+        PageId page_id_{kInvalidPageId}; ///< The logical ID of the page.
+        FrameId frame_id_{0};            ///< The index of this frame in the pool.
+        int pin_count_{0};               ///< Number of active users of this page.
+        bool is_dirty_{false};           ///< True if the page has been modified.
+        bool is_valid_{false};           ///< True if the frame holds a valid page.
     };
 
 } // namespace hamdb

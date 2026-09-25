@@ -4,8 +4,7 @@ namespace hamdb
 {
 
     BufferPoolManager::BufferPoolManager(std::size_t pool_size, DiskManager& disk_manager)
-        : pool_size_(pool_size),
-          disk_manager_(disk_manager),
+        : pool_size_(pool_size), disk_manager_(disk_manager),
           frames_(std::make_unique<BufferFrame[]>(pool_size)),
           replacer_(std::make_unique<LRUKReplacer>(pool_size, 2))
     {
@@ -30,7 +29,7 @@ namespace hamdb
                 return Status::Ok;
             }
         }
-        
+
         FrameId victim_fid;
         if (replacer_->evict(victim_fid))
         {
@@ -75,7 +74,7 @@ namespace hamdb
 
         BufferFrame& frame = frames_[free_frame_id];
         frame.reset(page_id);
-        
+
         if (Status s = disk_manager_.readPage(page_id, frame.page()); s != Status::Ok)
         {
             frame.invalidate();
@@ -83,7 +82,7 @@ namespace hamdb
         }
 
         page_table_[page_id] = free_frame_id;
-        
+
         replacer_->recordAccess(free_frame_id);
         replacer_->setEvictable(free_frame_id, false);
 
@@ -108,11 +107,11 @@ namespace hamdb
         {
             return s;
         }
-        
+
         BufferFrame& frame = frames_[free_frame_id];
         frame.reset(new_page_id);
         page_table_[new_page_id] = free_frame_id;
-        
+
         replacer_->recordAccess(free_frame_id);
         replacer_->setEvictable(free_frame_id, false);
 
@@ -139,12 +138,12 @@ namespace hamdb
         }
 
         frame.unpin(is_dirty);
-        
+
         if (frame.pinCount() == 0)
         {
             replacer_->setEvictable(frame_id, true);
         }
-        
+
         return Status::Ok;
     }
 
@@ -193,8 +192,7 @@ namespace hamdb
         return Status::Ok;
     }
 
-    Status BufferPoolManager::fetchPageRead(PageId page_id,
-                                             ReadPageGuard& out_guard)
+    Status BufferPoolManager::fetchPageRead(PageId page_id, ReadPageGuard& out_guard)
     {
         out_guard.drop();
         BufferFrame* frame = nullptr;
@@ -206,8 +204,7 @@ namespace hamdb
         return Status::Ok;
     }
 
-    Status BufferPoolManager::fetchPageWrite(PageId page_id,
-                                              WritePageGuard& out_guard)
+    Status BufferPoolManager::fetchPageWrite(PageId page_id, WritePageGuard& out_guard)
     {
         out_guard.drop();
         BufferFrame* frame = nullptr;
@@ -219,20 +216,18 @@ namespace hamdb
         return Status::Ok;
     }
 
-    Status BufferPoolManager::newPageGuard(PageId& out_page_id,
-                                            WritePageGuard& out_guard)
+    Status BufferPoolManager::newPageGuard(PageId& out_page_id, WritePageGuard& out_guard)
     {
         out_guard.drop();
-        BufferFrame* frame    = nullptr;
-        PageId       page_id  = kInvalidPageId;
+        BufferFrame* frame = nullptr;
+        PageId page_id = kInvalidPageId;
         if (Status s = newPage(page_id, frame); s != Status::Ok)
         {
             return s;
         }
         out_page_id = page_id;
-        out_guard   = WritePageGuard(BasicPageGuard(this, frame, false));
+        out_guard = WritePageGuard(BasicPageGuard(this, frame, false));
         return Status::Ok;
     }
 
 } // namespace hamdb
-

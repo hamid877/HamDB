@@ -6,11 +6,8 @@ namespace hamdb
 
     TableHeap::TableHeap(DiskManager& disk_manager, PageId first_page_id, PageId last_page_id,
                          std::size_t page_count, std::size_t tuple_count)
-        : disk_manager_(disk_manager),
-          first_page_id_(first_page_id),
-          last_page_id_(last_page_id),
-          page_count_(page_count),
-          tuple_count_(tuple_count)
+        : disk_manager_(disk_manager), first_page_id_(first_page_id), last_page_id_(last_page_id),
+          page_count_(page_count), tuple_count_(tuple_count)
     {
     }
 
@@ -110,7 +107,7 @@ namespace hamdb
 
             // Move to next page
             PageId next_id = sp.getNextPageId();
-            
+
             // If there's no next page, we must break and allocate one.
             if (next_id == kInvalidPageId)
             {
@@ -148,7 +145,7 @@ namespace hamdb
         if (new_sp.insertTuple(tuple, slot_id) != Status::Ok)
         {
             // Tuple too large for an empty page
-            return Status::IoError; 
+            return Status::IoError;
         }
 
         if (disk_manager_.writePage(new_page_id, new_page) != Status::Ok)

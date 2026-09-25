@@ -1,6 +1,6 @@
 #include "storage/table_heap.hpp"
-#include <gtest/gtest.h>
 #include <filesystem>
+#include <gtest/gtest.h>
 #include <vector>
 
 namespace hamdb
@@ -33,7 +33,8 @@ namespace hamdb
 
         Tuple createTuple(std::string_view sv)
         {
-            std::span<const std::byte> span{reinterpret_cast<const std::byte*>(sv.data()), sv.size()}; // NOLINT
+            std::span<const std::byte> span{reinterpret_cast<const std::byte*>(sv.data()),
+                                            sv.size()}; // NOLINT
             return Tuple(span);
         }
 
@@ -120,7 +121,7 @@ namespace hamdb
             RID rid;
             ASSERT_EQ(heap.insertTuple(large_tuple, rid), Status::Ok);
         }
-        
+
         EXPECT_GT(heap.getPageCount(), 1u);
 
         int observed = 0;

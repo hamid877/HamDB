@@ -1,6 +1,6 @@
 #include "storage/disk_manager.hpp"
-#include "storage/database_metadata.hpp"
 #include "common/constants.hpp"
+#include "storage/database_metadata.hpp"
 #include "utils/deserializer.hpp"
 #include "utils/serializer.hpp"
 
@@ -78,15 +78,15 @@ namespace hamdb
 
         // magic: copy exactly 8 chars from kDbMagic (no NUL)
         std::memcpy(meta.magic.data(), kDbMagic.data(), meta.magic.size());
-        meta.version       = kFormatVersion;
-        meta.reserved0     = 0;
-        meta.page_size     = static_cast<std::uint32_t>(kPageSize);
-        meta.page_count    = 1;
+        meta.version = kFormatVersion;
+        meta.reserved0 = 0;
+        meta.page_size = static_cast<std::uint32_t>(kPageSize);
+        meta.page_count = 1;
         meta.free_page_ptr = kInvalidPageId;
-        meta.reserved1     = 0;
+        meta.reserved1 = 0;
         generateUuid(meta.uuid);
         meta.created_at = unixTimestampNow();
-        meta.reserved2  = 0;
+        meta.reserved2 = 0;
 
         // Serialise into the first 64 bytes of the page buffer
         std::array<std::uint8_t, DatabaseMetadata::kSize> meta_buf{};
@@ -165,7 +165,7 @@ namespace hamdb
         }
 
         page_count_ = static_cast<std::size_t>(meta.page_count);
-        is_open_    = true;
+        is_open_ = true;
 
         return Status::Ok;
     }
@@ -183,14 +183,14 @@ namespace hamdb
             if (!stream_.good())
             {
                 stream_.close();
-                is_open_    = false;
+                is_open_ = false;
                 page_count_ = 0;
                 return Status::IoError;
             }
             stream_.close();
         }
 
-        is_open_    = false;
+        is_open_ = false;
         page_count_ = 0;
 
         return Status::Ok;
@@ -289,7 +289,7 @@ namespace hamdb
             meta.deserialize(meta_buf);
             meta.page_count = static_cast<std::uint32_t>(page_count_);
             meta.serialize(meta_buf);
-            
+
             stream_.seekp(0);
             stream_.write(reinterpret_cast<const char*>(meta_buf.data()), DatabaseMetadata::kSize);
         }

@@ -62,7 +62,7 @@ namespace hamdb
         DiskManager* disk_manager_ = nullptr;
         PageId current_page_id_ = kInvalidPageId;
         std::uint16_t current_slot_id_ = 0;
-        
+
         // Caching
         std::optional<Page> cached_page_;
     };

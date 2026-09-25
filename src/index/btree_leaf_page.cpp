@@ -11,8 +11,7 @@ namespace hamdb
 
     // ── Private static helpers ────────────────────────────────────────────────────
 
-    Status BTreeLeafPage::serializeEntry(Serializer&      ser,
-                                         const LeafEntry& entry) noexcept
+    Status BTreeLeafPage::serializeEntry(Serializer& ser, const LeafEntry& entry) noexcept
     {
         // Key: int64, stored as two uint32 halves to avoid signed-cast pitfalls.
         const auto raw_key = static_cast<uint64_t>(entry.key);
@@ -36,21 +35,31 @@ namespace hamdb
         return Status::Ok;
     }
 
-    Status BTreeLeafPage::deserializeEntry(Deserializer& de,
-                                           LeafEntry&    entry) noexcept
+    Status BTreeLeafPage::deserializeEntry(Deserializer& de, LeafEntry& entry) noexcept
     {
-        uint32_t lo    = 0;
-        uint32_t hi    = 0;
-        uint32_t pid   = 0;
-        uint16_t slot  = 0;
+        uint32_t lo = 0;
+        uint32_t hi = 0;
+        uint32_t pid = 0;
+        uint16_t slot = 0;
 
-        if (de.readUInt32(lo) != Status::Ok) { return Status::IoError; }
-        if (de.readUInt32(hi) != Status::Ok) { return Status::IoError; }
-        if (de.readUInt32(pid) != Status::Ok) { return Status::IoError; }
-        if (de.readUInt16(slot) != Status::Ok) { return Status::IoError; }
+        if (de.readUInt32(lo) != Status::Ok)
+        {
+            return Status::IoError;
+        }
+        if (de.readUInt32(hi) != Status::Ok)
+        {
+            return Status::IoError;
+        }
+        if (de.readUInt32(pid) != Status::Ok)
+        {
+            return Status::IoError;
+        }
+        if (de.readUInt16(slot) != Status::Ok)
+        {
+            return Status::IoError;
+        }
 
-        const uint64_t raw_key = (static_cast<uint64_t>(hi) << 32u) |
-                                  static_cast<uint64_t>(lo);
+        const uint64_t raw_key = (static_cast<uint64_t>(hi) << 32u) | static_cast<uint64_t>(lo);
         entry.key = static_cast<int64_t>(raw_key);
         entry.rid = RID{pid, slot};
         return Status::Ok;
@@ -104,7 +113,6 @@ namespace hamdb
     {
         return header_.minSize();
     }
-
 
     bool BTreeLeafPage::isEmpty() const noexcept
     {
@@ -160,7 +168,7 @@ namespace hamdb
         while (lo <= hi)
         {
             const int32_t mid = lo + (hi - lo) / 2;
-            const int64_t k   = entries_[static_cast<std::size_t>(mid)].key;
+            const int64_t k = entries_[static_cast<std::size_t>(mid)].key;
 
             if (k == key)
             {
@@ -245,7 +253,7 @@ namespace hamdb
         }
 
         const uint16_t count = header_.currentSize();
-        const auto     pos   = static_cast<uint16_t>(idx);
+        const auto pos = static_cast<uint16_t>(idx);
 
         // Shift entries left to close the gap.
         for (uint16_t i = pos; i < static_cast<uint16_t>(count - 1u); ++i)
@@ -260,7 +268,7 @@ namespace hamdb
     void BTreeLeafPage::moveHalfTo(BTreeLeafPage& recipient) noexcept
     {
         const uint16_t total = header_.currentSize();
-        const uint16_t half  = total / 2;
+        const uint16_t half = total / 2;
         const uint16_t move_count = total - half;
 
         for (uint16_t i = 0; i < move_count; ++i)
@@ -306,14 +314,12 @@ namespace hamdb
         header_.setCurrentSize(0);
     }
 
-
     // ── Serialisation ─────────────────────────────────────────────────────────────
 
     Status BTreeLeafPage::serialize(std::span<std::byte> dest) const noexcept
     {
-        const uint16_t count     = header_.currentSize();
-        const std::size_t needed = kLeafHeaderSize +
-                                   static_cast<std::size_t>(count) * kEntrySize;
+        const uint16_t count = header_.currentSize();
+        const std::size_t needed = kLeafHeaderSize + static_cast<std::size_t>(count) * kEntrySize;
 
         if (dest.size() < needed)
         {
@@ -328,12 +334,18 @@ namespace hamdb
 
         // 2. Serialise sibling pointers (8 bytes) after the BTreePage header.
         Serializer ser(dest.subspan(BTreePage::kHeaderSize, kSiblingPtrSize));
-        if (ser.writeUInt32(prev_page_id_) != Status::Ok) { return Status::IoError; }
-        if (ser.writeUInt32(next_page_id_) != Status::Ok) { return Status::IoError; }
+        if (ser.writeUInt32(prev_page_id_) != Status::Ok)
+        {
+            return Status::IoError;
+        }
+        if (ser.writeUInt32(next_page_id_) != Status::Ok)
+        {
+            return Status::IoError;
+        }
 
         // 3. Serialise entries.
-        Serializer eser(dest.subspan(kLeafHeaderSize,
-                                     static_cast<std::size_t>(count) * kEntrySize));
+        Serializer eser(
+            dest.subspan(kLeafHeaderSize, static_cast<std::size_t>(count) * kEntrySize));
         for (uint16_t i = 0; i < count; ++i)
         {
             if (serializeEntry(eser, entries_[i]) != Status::Ok)
@@ -359,9 +371,8 @@ namespace hamdb
             return Status::IoError;
         }
 
-        const uint16_t  count  = tmp_header.currentSize();
-        const std::size_t needed = kLeafHeaderSize +
-                                   static_cast<std::size_t>(count) * kEntrySize;
+        const uint16_t count = tmp_header.currentSize();
+        const std::size_t needed = kLeafHeaderSize + static_cast<std::size_t>(count) * kEntrySize;
 
         if (src.size() < needed)
         {
@@ -372,15 +383,21 @@ namespace hamdb
         Deserializer de(src.subspan(BTreePage::kHeaderSize, kSiblingPtrSize));
         uint32_t prev = 0;
         uint32_t next = 0;
-        if (de.readUInt32(prev) != Status::Ok) { return Status::IoError; }
-        if (de.readUInt32(next) != Status::Ok) { return Status::IoError; }
+        if (de.readUInt32(prev) != Status::Ok)
+        {
+            return Status::IoError;
+        }
+        if (de.readUInt32(next) != Status::Ok)
+        {
+            return Status::IoError;
+        }
 
         // 3. Read entries.
         std::array<LeafEntry, kMaxEntries> tmp_entries{};
         if (count > 0)
         {
-            Deserializer ede(src.subspan(kLeafHeaderSize,
-                                         static_cast<std::size_t>(count) * kEntrySize));
+            Deserializer ede(
+                src.subspan(kLeafHeaderSize, static_cast<std::size_t>(count) * kEntrySize));
             for (uint16_t i = 0; i < count; ++i)
             {
                 if (deserializeEntry(ede, tmp_entries[i]) != Status::Ok)
@@ -391,10 +408,10 @@ namespace hamdb
         }
 
         // Commit — all reads succeeded.
-        header_       = tmp_header;
+        header_ = tmp_header;
         prev_page_id_ = prev;
         next_page_id_ = next;
-        entries_      = tmp_entries;
+        entries_ = tmp_entries;
         return Status::Ok;
     }
 

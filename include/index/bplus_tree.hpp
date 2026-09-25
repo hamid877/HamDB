@@ -57,7 +57,8 @@ namespace hamdb
          *
          * @param key The key to insert.
          * @param rid The RID to insert.
-         * @return Status::Ok on success, Status::AlreadyExists if duplicate, Status::PageFull if full.
+         * @return Status::Ok on success, Status::AlreadyExists if duplicate, Status::PageFull if
+         * full.
          */
         [[nodiscard]] Status insert(int64_t key, RID rid) noexcept;
 
@@ -68,7 +69,6 @@ namespace hamdb
          * @return Status::Ok on success, Status::NotFound if not found.
          */
         [[nodiscard]] Status remove(int64_t key) noexcept;
-
 
         /**
          * @brief Get an iterator pointing to the first key in the B+ tree.
@@ -101,7 +101,8 @@ namespace hamdb
          * @param new_node_id The new child page created by the split.
          * @return Status::Ok on success.
          */
-        [[nodiscard]] Status insertIntoParent(PageId old_node_id, int64_t key, PageId new_node_id) noexcept;
+        [[nodiscard]] Status insertIntoParent(PageId old_node_id, int64_t key,
+                                              PageId new_node_id) noexcept;
 
         /**
          * @brief Recursively handle underflow for a given page.
@@ -111,9 +112,8 @@ namespace hamdb
          */
         [[nodiscard]] Status handleUnderflow(PageId page_id) noexcept;
 
-
         BufferPoolManager& bpm_;
-        PageId             root_page_id_{kInvalidPageId};
+        PageId root_page_id_{kInvalidPageId};
     };
 
 } // namespace hamdb

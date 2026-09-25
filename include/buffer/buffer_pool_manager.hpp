@@ -101,8 +101,7 @@ namespace hamdb
          * @param[out] out_guard The resulting ReadPageGuard.
          * @return Status::Ok on success.
          */
-        [[nodiscard]] Status fetchPageRead(PageId page_id,
-                                           ReadPageGuard& out_guard);
+        [[nodiscard]] Status fetchPageRead(PageId page_id, ReadPageGuard& out_guard);
 
         /**
          * @brief Fetch a page and return a WritePageGuard for mutable access.
@@ -114,8 +113,7 @@ namespace hamdb
          * @param[out] out_guard The resulting WritePageGuard.
          * @return Status::Ok on success.
          */
-        [[nodiscard]] Status fetchPageWrite(PageId page_id,
-                                            WritePageGuard& out_guard);
+        [[nodiscard]] Status fetchPageWrite(PageId page_id, WritePageGuard& out_guard);
 
         /**
          * @brief Allocate a new page on disk and return a WritePageGuard.
@@ -124,8 +122,7 @@ namespace hamdb
          * @param[out] out_guard   The resulting WritePageGuard.
          * @return Status::Ok on success.
          */
-        [[nodiscard]] Status newPageGuard(PageId& out_page_id,
-                                          WritePageGuard& out_guard);
+        [[nodiscard]] Status newPageGuard(PageId& out_page_id, WritePageGuard& out_guard);
 
     private:
         /**
@@ -140,10 +137,10 @@ namespace hamdb
 
         std::size_t pool_size_;
         DiskManager& disk_manager_;
-        
+
         // Fixed-size array of BufferFrames. Unique_ptr avoids vector resizing entirely.
         std::unique_ptr<BufferFrame[]> frames_;
-        
+
         // Maps PageId to FrameId to quickly find cached pages.
         std::unordered_map<PageId, FrameId> page_table_;
 
