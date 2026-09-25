@@ -5,6 +5,8 @@
 #include "buffer/buffer_pool_manager.hpp"
 #include "transaction/transaction_manager.hpp"
 #include "transaction/mvcc_manager.hpp"
+#include "transaction/lock_manager.hpp"
+#include "wal/log_manager.hpp"
 
 #include <gtest/gtest.h>
 #include <filesystem>
@@ -80,11 +82,13 @@ protected:
     TableInfo* table_info_{nullptr};
     TransactionManager txn_mgr_;
     MvccManager mvcc_;
+    LockManager lock_mgr_;
+    LogManager log_mgr_;
 };
 
 TEST_F(SeqScanExecutorTest, EmptyTable) {
     auto* txn = txn_mgr_.begin();
-    ExecutorContext exec_ctx(txn, catalog_.get(), bpm_.get(), &mvcc_, disk_manager_.get());
+    ExecutorContext exec_ctx(txn, catalog_.get(), bpm_.get(), &mvcc_, disk_manager_.get(), &lock_mgr_, &log_mgr_);
     
     // We override root page by creating a fresh table heap.
     auto heap = TableHeap::create(*disk_manager_);
@@ -111,7 +115,7 @@ TEST_F(SeqScanExecutorTest, ScanBaseTuplesOnly) {
     ASSERT_EQ(heap->insertTuple(Tuple(makePayload("row2")), rid2), Status::Ok);
 
     auto* txn = txn_mgr_.begin();
-    ExecutorContext exec_ctx(txn, catalog_.get(), bpm_.get(), &mvcc_, disk_manager_.get());
+    ExecutorContext exec_ctx(txn, catalog_.get(), bpm_.get(), &mvcc_, disk_manager_.get(), &lock_mgr_, &log_mgr_);
     SeqScanExecutor executor(&exec_ctx, &info);
 
     executor.init();
@@ -149,7 +153,7 @@ TEST_F(SeqScanExecutorTest, ScanMvccVersions) {
     txn_mgr_.commit(update_txn);
 
     auto* scan_txn = txn_mgr_.begin();
-    ExecutorContext exec_ctx(scan_txn, catalog_.get(), bpm_.get(), &mvcc_, disk_manager_.get());
+    ExecutorContext exec_ctx(scan_txn, catalog_.get(), bpm_.get(), &mvcc_, disk_manager_.get(), &lock_mgr_, &log_mgr_);
     SeqScanExecutor executor(&exec_ctx, &info);
 
     executor.init();

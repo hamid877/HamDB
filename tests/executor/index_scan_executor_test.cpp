@@ -5,6 +5,8 @@
 #include "buffer/buffer_pool_manager.hpp"
 #include "transaction/transaction_manager.hpp"
 #include "transaction/mvcc_manager.hpp"
+#include "transaction/lock_manager.hpp"
+#include "wal/log_manager.hpp"
 
 #include <gtest/gtest.h>
 #include <filesystem>
@@ -73,11 +75,13 @@ protected:
     TableInfo* table_info_{nullptr};
     TransactionManager txn_mgr_;
     MvccManager mvcc_;
+    LockManager lock_mgr_;
+    LogManager log_mgr_;
 };
 
 TEST_F(IndexScanExecutorTest, EmptyTable) {
     auto* txn = txn_mgr_.begin();
-    ExecutorContext exec_ctx(txn, catalog_.get(), bpm_.get(), &mvcc_, disk_manager_.get());
+    ExecutorContext exec_ctx(txn, catalog_.get(), bpm_.get(), &mvcc_, disk_manager_.get(), &lock_mgr_, &log_mgr_);
     
     auto heap = TableHeap::create(*disk_manager_);
     ASSERT_TRUE(heap.has_value());
@@ -114,7 +118,7 @@ TEST_F(IndexScanExecutorTest, ScanBaseTupleOnly) {
     TableInfo info(table_info_->getTableId(), table_info_->getTableName(), heap->getFirstPageId(), tree_root, table_info_->getSchema());
 
     auto* txn = txn_mgr_.begin();
-    ExecutorContext exec_ctx(txn, catalog_.get(), bpm_.get(), &mvcc_, disk_manager_.get());
+    ExecutorContext exec_ctx(txn, catalog_.get(), bpm_.get(), &mvcc_, disk_manager_.get(), &lock_mgr_, &log_mgr_);
     
     // Search for existing key
     IndexScanExecutor executor1(&exec_ctx, &info, 20);
@@ -154,7 +158,7 @@ TEST_F(IndexScanExecutorTest, ScanMvccVersions) {
     txn_mgr_.commit(update_txn);
 
     auto* scan_txn = txn_mgr_.begin();
-    ExecutorContext exec_ctx(scan_txn, catalog_.get(), bpm_.get(), &mvcc_, disk_manager_.get());
+    ExecutorContext exec_ctx(scan_txn, catalog_.get(), bpm_.get(), &mvcc_, disk_manager_.get(), &lock_mgr_, &log_mgr_);
     IndexScanExecutor executor(&exec_ctx, &info, 10);
 
     executor.init();
@@ -173,7 +177,7 @@ TEST_F(IndexScanExecutorTest, ScanMvccVersions) {
     txn_mgr_.commit(del_txn);
 
     auto* scan_txn2 = txn_mgr_.begin();
-    ExecutorContext exec_ctx2(scan_txn2, catalog_.get(), bpm_.get(), &mvcc_, disk_manager_.get());
+    ExecutorContext exec_ctx2(scan_txn2, catalog_.get(), bpm_.get(), &mvcc_, disk_manager_.get(), &lock_mgr_, &log_mgr_);
     IndexScanExecutor executor2(&exec_ctx2, &info, 10);
 
     executor2.init();

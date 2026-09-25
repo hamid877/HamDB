@@ -4,6 +4,8 @@ add_library(hamdb_executor STATIC
     executor_context.cpp
     seq_scan_executor.cpp
     index_scan_executor.cpp
+    insert_executor.cpp
+    delete_executor.cpp
 )
 
 target_link_libraries(hamdb_executor PUBLIC
@@ -14,6 +16,7 @@ target_link_libraries(hamdb_executor PUBLIC
     hamdb_transaction
     hamdb_buffer
     hamdb_index
+    hamdb_wal
 )
 
 target_include_directories(hamdb_executor PUBLIC

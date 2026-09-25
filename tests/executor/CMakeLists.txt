@@ -2,6 +2,8 @@ add_executable(hamdb_executor_test
     expression_test.cpp
     seq_scan_executor_test.cpp
     index_scan_executor_test.cpp
+    insert_executor_test.cpp
+    delete_executor_test.cpp
 )
 
 target_link_libraries(hamdb_executor_test PRIVATE

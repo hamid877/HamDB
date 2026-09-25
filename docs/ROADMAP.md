@@ -87,11 +87,12 @@ Every milestone must satisfy:
 | M4.1 | Expression System | ✅ Complete |
 | M4.2 | Sequential Scan Executor | ✅ Complete |
 | M4.3 | Index Scan Executor | ✅ Complete |
-| M4.4 | SQL Lexer  | ⬜      |
-| M4.5 | SQL Parser | ⬜      |
-| M4.6 | AST        | ⬜      |
-| M4.7 | Planner    | ⬜      |
-| M4.8 | Executor   | ⬜      |
+| M4.4 | Insert & Delete Executor | ✅ Complete |
+| M4.5 | SQL Lexer  | ⬜      |
+| M4.6 | SQL Parser | ⬜      |
+| M4.7 | AST        | ⬜      |
+| M4.8 | Planner    | ⬜      |
+| M4.9 | Executor   | ⬜      |
 
 ---
 
@@ -108,6 +109,35 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M4.4 — Insert & Delete Executor
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `InsertExecutor` and `DeleteExecutor` implementing the executor lifecycle (`init()`, `next()`, `outputSchema()`).
+* Exclusive locking of RIDs using `LockManager`.
+* Tombstoning and inserting tuples via `MvccManager`.
+* WAL logging for `LogRecordType::INSERT` and `LogRecordType::DELETE`.
+* Primary B+ Tree index updates (`insert` and `remove`).
+* Both executors return a single tuple containing the number of affected rows.
+* Updates to `ExecutorContext` to inject `LockManager` and `LogManager`.
+
+### Verification
+
+* Tests passing: **340 / 340**
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement insert and delete executors (M4.4)
+```
+
+---
 
 ## M4.3 — Index Scan Executor
 
@@ -657,7 +687,7 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M4.4 — SQL Lexer
+## M4.5 — SQL Lexer
 
 ### Goal
 
@@ -705,7 +735,8 @@ Approximately **370+ total tests** after completion.
 | M4.0      | 337           |
 | M4.1      | 338           |
 | M4.2      | 338           |
-| M4.3      | **338**       |
+| M4.3      | 338           |
+| M4.4      | **340**       |
 
 ---
 
