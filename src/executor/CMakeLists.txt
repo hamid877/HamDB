@@ -10,6 +10,8 @@ add_library(hamdb_executor STATIC
     filter_executor.cpp
     projection_executor.cpp
     nested_loop_join_executor.cpp
+    aggregation_hash_table.cpp
+    aggregation_executor.cpp
 )
 
 target_link_libraries(hamdb_executor PUBLIC

@@ -92,7 +92,7 @@ Every milestone must satisfy:
 | M4.6 | Filter Executor | ✅ Complete |
 | M4.7 | Projection Executor | ✅ Complete |
 | M4.8 | Nested Loop Join Executor | ✅ Complete |
-| M4.9 | SQL Lexer  | ⬜      |
+| M4.9 | Aggregation Executor | ✅ Complete |
 | M4.10 | SQL Parser | ⬜      |
 | M4.11 | AST        | ⬜      |
 | M4.12 | Planner    | ⬜      |
