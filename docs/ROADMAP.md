@@ -89,11 +89,12 @@ Every milestone must satisfy:
 | M4.3 | Index Scan Executor | ✅ Complete |
 | M4.4 | Insert & Delete Executor | ✅ Complete |
 | M4.5 | Update Executor | ✅ Complete |
-| M4.6 | SQL Lexer  | ⬜      |
-| M4.7 | SQL Parser | ⬜      |
-| M4.8 | AST        | ⬜      |
-| M4.9 | Planner    | ⬜      |
-| M4.10 | Executor   | ⬜      |
+| M4.6 | Filter Executor | ✅ Complete |
+| M4.7 | SQL Lexer  | ⬜      |
+| M4.8 | SQL Parser | ⬜      |
+| M4.9 | AST        | ⬜      |
+| M4.10 | Planner    | ⬜      |
+| M4.11 | Executor   | ⬜      |
 
 ---
 
@@ -110,6 +111,33 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M4.6 — Filter Executor
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `FilterExecutor` implementing the executor lifecycle (`init()`, `next()`, `outputSchema()`).
+* Wrapping of any child executor.
+* Evaluation of predicates using `Expression` system.
+* Support for logical operators (`LogicalExpression`) handling `AND`, `OR`, `NOT`.
+* Integration with `Value` type boolean logic.
+
+### Verification
+
+* Tests passing: **338 / 338** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement filter executor (M4.6)
+```
+
+---
 
 ## M4.5 — Update Executor
 
@@ -718,7 +746,7 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M4.6 — SQL Lexer
+## M4.7 — SQL Lexer
 
 ### Goal
 
@@ -768,7 +796,8 @@ Approximately **370+ total tests** after completion.
 | M4.2      | 338           |
 | M4.3      | 338           |
 | M4.4      | 340           |
-| M4.5      | **338**       |
+| M4.5      | 338           |
+| M4.6      | **338**       |
 
 ---
 

@@ -7,6 +7,7 @@ add_library(hamdb_executor STATIC
     insert_executor.cpp
     delete_executor.cpp
     update_executor.cpp
+    filter_executor.cpp
 )
 
 target_link_libraries(hamdb_executor PUBLIC
