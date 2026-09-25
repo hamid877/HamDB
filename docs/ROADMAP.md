@@ -94,10 +94,11 @@ Every milestone must satisfy:
 | M4.8 | Nested Loop Join Executor | ✅ Complete |
 | M4.9 | Aggregation Executor | ✅ Complete |
 | M4.10 | Sort Executor | ✅ Complete |
-| M4.11 | SQL Parser | ⬜      |
-| M4.12 | AST        | ⬜      |
-| M4.13 | Planner    | ⬜      |
-| M4.14 | Executor   | ⬜      |
+| M4.11 | Limit Executor | ✅ Complete |
+| M4.12 | SQL Parser | ⬜      |
+| M4.13 | AST        | ⬜      |
+| M4.14 | Planner    | ⬜      |
+| M4.15 | Executor   | ⬜      |
 
 ---
 
@@ -114,6 +115,35 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M4.11 — Limit Executor
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `LimitExecutor` implementing the executor lifecycle (`init()`, `next()`, `outputSchema()`).
+* Wrapping of any child executor.
+* Emitting at most `LIMIT` tuples and skipping `OFFSET` tuples.
+* Returns `false` immediately in `next()` once `LIMIT` tuples have been emitted.
+* Preserves `Tuple` and `RID` propagation from the child tuple.
+* Uses O(1) extra memory by simply keeping track of the tuple count.
+* Correctly handles limits and offsets of 0.
+
+### Verification
+
+* Tests passing: **343 / 343** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement limit executor (M4.11)
+```
+
+---
 
 ## M4.10 — Sort Executor
 

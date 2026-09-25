@@ -13,6 +13,7 @@ add_library(hamdb_executor STATIC
     aggregation_hash_table.cpp
     aggregation_executor.cpp
     sort_executor.cpp
+    limit_executor.cpp
 )
 
 target_link_libraries(hamdb_executor PUBLIC
