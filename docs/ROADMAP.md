@@ -88,11 +88,12 @@ Every milestone must satisfy:
 | M4.2 | Sequential Scan Executor | ✅ Complete |
 | M4.3 | Index Scan Executor | ✅ Complete |
 | M4.4 | Insert & Delete Executor | ✅ Complete |
-| M4.5 | SQL Lexer  | ⬜      |
-| M4.6 | SQL Parser | ⬜      |
-| M4.7 | AST        | ⬜      |
-| M4.8 | Planner    | ⬜      |
-| M4.9 | Executor   | ⬜      |
+| M4.5 | Update Executor | ✅ Complete |
+| M4.6 | SQL Lexer  | ⬜      |
+| M4.7 | SQL Parser | ⬜      |
+| M4.8 | AST        | ⬜      |
+| M4.9 | Planner    | ⬜      |
+| M4.10 | Executor   | ⬜      |
 
 ---
 
@@ -109,6 +110,36 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M4.5 — Update Executor
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `UpdateExecutor` implementing the executor lifecycle (`init()`, `next()`, `outputSchema()`).
+* Consumer of child executor output (`Tuple`, `RID`).
+* Exclusive tuple lock acquisition via `LockManager`.
+* Evaluation of target expressions using the `Expression` system.
+* Tombstoning the old MVCC version and inserting a new version.
+* Primary B+ Tree index updates (`remove` old key and `insert` new key) if indexed column changed.
+* WAL `LogRecordType::UPDATE` logging.
+* Returns affected row count.
+
+### Verification
+
+* Tests passing: **338 / 338** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement update executor (M4.5)
+```
+
+---
 
 ## M4.4 — Insert & Delete Executor
 
@@ -687,7 +718,7 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M4.5 — SQL Lexer
+## M4.6 — SQL Lexer
 
 ### Goal
 
@@ -736,7 +767,8 @@ Approximately **370+ total tests** after completion.
 | M4.1      | 338           |
 | M4.2      | 338           |
 | M4.3      | 338           |
-| M4.4      | **340**       |
+| M4.4      | 340           |
+| M4.5      | **338**       |
 
 ---
 
