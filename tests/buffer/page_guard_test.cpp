@@ -12,34 +12,33 @@ namespace hamdb
     // Test fixture
     // =========================================================================
 
-    class PageGuardTest : public ::testing::Test
-    {
-    protected:
-        std::filesystem::path db_path_ =
-            std::filesystem::temp_directory_path() / "page_guard_test.db";
+class PageGuardTest : public ::testing::Test {
+protected:
+    std::filesystem::path db_path_;
 
-        void SetUp() override
-        {
-            std::filesystem::remove(db_path_);
-        }
+    void SetUp() override {
+        db_path_ = std::filesystem::temp_directory_path() /
+            ("page_guard_test_" +
+             std::to_string(::getpid()) + "_" +
+             std::to_string(std::chrono::steady_clock::now()
+                                .time_since_epoch()
+                                .count()) +
+             ".db");
 
-        void TearDown() override
-        {
-            std::filesystem::remove(db_path_);
-        }
+        std::filesystem::remove(db_path_);
+    }
 
-        /// Helper: create + open a DiskManager backed by db_path_.
-        DiskManager makeDiskManager()
-        {
-            DiskManager dm(db_path_);
-            if (!std::filesystem::exists(db_path_))
-            {
-                (void)dm.createDatabase();
-            }
-            (void)dm.openDatabase();
-            return dm;
-        }
-    };
+    void TearDown() override {
+        std::filesystem::remove(db_path_);
+    }
+
+    DiskManager makeDiskManager() {
+        DiskManager dm(db_path_);
+        EXPECT_EQ(dm.createDatabase(), Status::Ok);
+        EXPECT_EQ(dm.openDatabase(), Status::Ok);
+        return dm;
+    }
+};
 
     // =========================================================================
     // BasicPageGuard tests
