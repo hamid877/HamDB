@@ -90,11 +90,12 @@ Every milestone must satisfy:
 | M4.4 | Insert & Delete Executor | ✅ Complete |
 | M4.5 | Update Executor | ✅ Complete |
 | M4.6 | Filter Executor | ✅ Complete |
-| M4.7 | SQL Lexer  | ⬜      |
-| M4.8 | SQL Parser | ⬜      |
-| M4.9 | AST        | ⬜      |
-| M4.10 | Planner    | ⬜      |
-| M4.11 | Executor   | ⬜      |
+| M4.7 | Projection Executor | ✅ Complete |
+| M4.8 | SQL Lexer  | ⬜      |
+| M4.9 | SQL Parser | ⬜      |
+| M4.10 | AST        | ⬜      |
+| M4.11 | Planner    | ⬜      |
+| M4.12 | Executor   | ⬜      |
 
 ---
 
@@ -111,6 +112,33 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M4.7 — Projection Executor
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `ProjectionExecutor` implementing the executor lifecycle (`init()`, `next()`, `outputSchema()`).
+* Wrapping of any child executor.
+* Evaluation of a list of target expressions for every input tuple using the `Expression` system.
+* Construction of a new output `Tuple` based on the evaluated values.
+* Preservation of `RID` propagation from the child tuple.
+
+### Verification
+
+* Tests passing: **338 / 338** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement projection executor (M4.7)
+```
+
+---
 
 ## M4.6 — Filter Executor
 
@@ -746,7 +774,7 @@ users.hamdb
 
 # Upcoming Milestone
 
-## M4.7 — SQL Lexer
+## M4.8 — SQL Lexer
 
 ### Goal
 
