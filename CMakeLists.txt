@@ -43,6 +43,7 @@ add_subdirectory(src/executor)
 add_subdirectory(src/parser)
 add_subdirectory(src/binder)
 add_subdirectory(src/planner)
+add_subdirectory(src/optimizer)
 
 # ── hamdb_core convenience interface ──────────────────────────────────────────
 add_library(hamdb_core INTERFACE)
@@ -60,6 +61,7 @@ target_link_libraries(hamdb_core INTERFACE
     hamdb_parser
     hamdb_binder
     hamdb_planner
+    hamdb_optimizer
 )
 target_include_directories(hamdb_core INTERFACE
     ${PROJECT_SOURCE_DIR}/include
@@ -77,6 +79,7 @@ add_subdirectory(tests/executor)
 add_subdirectory(tests/parser)
 add_subdirectory(tests/binder)
 add_subdirectory(tests/planner)
+add_subdirectory(tests/optimizer)
 
 # ── Examples ──────────────────────────────────────────────────────────────────
 add_subdirectory(examples)

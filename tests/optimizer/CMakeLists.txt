@@ -1,0 +1,4 @@
+add_executable(predicate_pushdown_test predicate_pushdown_test.cpp)
+target_include_directories(predicate_pushdown_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(predicate_pushdown_test PRIVATE GTest::gtest_main hamdb_optimizer hamdb_planner hamdb_executor hamdb_transaction hamdb_wal hamdb_parser hamdb_catalog)
+add_test(NAME PredicatePushdownTest COMMAND predicate_pushdown_test)

@@ -32,6 +32,9 @@ public:
     void addChild(std::unique_ptr<LogicalPlanNode> child) {
         children_.push_back(std::move(child));
     }
+    std::vector<std::unique_ptr<LogicalPlanNode>>& getChildren() {
+        return children_;
+    }
     const std::vector<std::unique_ptr<LogicalPlanNode>>& getChildren() const {
         return children_;
     }
@@ -45,16 +48,21 @@ protected:
 
 class SeqScanPlanNode : public LogicalPlanNode {
 public:
-    SeqScanPlanNode(Schema output_schema, std::string table_name, std::string table_alias)
+    SeqScanPlanNode(Schema output_schema, std::string table_name, std::string table_alias, std::unique_ptr<hamdb::Expression> predicate = nullptr)
         : LogicalPlanNode(LogicalPlanType::SEQ_SCAN, std::move(output_schema)),
-          table_name_(std::move(table_name)), table_alias_(std::move(table_alias)) {}
+          table_name_(std::move(table_name)), table_alias_(std::move(table_alias)), predicate_(std::move(predicate)) {}
     
     const std::string& getTableName() const { return table_name_; }
     const std::string& getTableAlias() const { return table_alias_; }
+    const hamdb::Expression* getPredicate() const { return predicate_.get(); }
+    
+    std::unique_ptr<hamdb::Expression> takePredicate() { return std::move(predicate_); }
+    void setPredicate(std::unique_ptr<hamdb::Expression> predicate) { predicate_ = std::move(predicate); }
 
 private:
     std::string table_name_;
     std::string table_alias_;
+    std::unique_ptr<hamdb::Expression> predicate_;
     friend class PhysicalPlanner;
 };
 
@@ -65,6 +73,7 @@ public:
           predicate_(std::move(predicate)) {}
     
     const hamdb::Expression* getPredicate() const { return predicate_.get(); }
+    std::unique_ptr<hamdb::Expression> takePredicate() { return std::move(predicate_); }
 private:
     std::unique_ptr<hamdb::Expression> predicate_;
     friend class PhysicalPlanner;

@@ -30,7 +30,7 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
             if (exec_ctx->getCatalog()->getTable(seq_scan->getTableName(), table_info) != Status::Ok) {
                 throw std::runtime_error("Table not found: " + seq_scan->getTableName());
             }
-            return std::make_unique<SeqScanExecutor>(exec_ctx, table_info);
+            return std::make_unique<SeqScanExecutor>(exec_ctx, table_info, std::move(seq_scan->getPredicate()));
         }
         case PhysicalPlanType::FILTER: {
             auto* filter = dynamic_cast<FilterPlan*>(plan.get());

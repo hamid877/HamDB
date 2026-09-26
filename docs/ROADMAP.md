@@ -115,7 +115,43 @@ Every milestone must satisfy:
 
 ---
 
+## Phase 6 — Query Optimizer
+
+| ID   | Milestone    | Status |
+| ---- | ------------ | ------ |
+| M6.1 | Predicate Pushdown | ✅ Complete |
+
+---
+
 # Completed Milestones
+
+## M6.1 — Predicate Pushdown Optimizer
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Created optimizer directory structure (`include/optimizer`, `src/optimizer`, `tests/optimizer`).
+* Defined `Rule` base class for logical plan rewriting.
+* Implemented `RuleExecutor` for bottom-up rule application across the logical plan tree.
+* Implemented `PredicatePushdownRule` which pushes `FilterPlanNode` predicates into underlying `SeqScanPlanNode`s and removes the filter if eligible.
+* Updated `SeqScanPlanNode` and `SeqScanExecutor` to accept and evaluate predicates dynamically during scans.
+* Full integration test demonstrating identical tuple output between optimized and unoptimized plans while validating structural plan differences.
+
+### Verification
+
+* Tests passing: **344 / 344** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(optimizer): implement rule-based predicate pushdown (M6.1)
+```
+
+---
 
 ## M5.5 — Physical Planner & Executor Factory
 

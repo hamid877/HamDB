@@ -18,7 +18,7 @@ std::unique_ptr<AbstractPlanNode> PhysicalPlanner::planNode(std::unique_ptr<Logi
         case LogicalPlanType::SEQ_SCAN: {
             auto* seq_scan = dynamic_cast<SeqScanPlanNode*>(logical_node.get());
             physical_node = std::make_unique<SeqScanPlan>(
-                seq_scan->getOutputSchema(), seq_scan->table_name_, seq_scan->table_alias_);
+                seq_scan->getOutputSchema(), seq_scan->table_name_, seq_scan->table_alias_, std::move(seq_scan->predicate_));
             break;
         }
         case LogicalPlanType::FILTER: {

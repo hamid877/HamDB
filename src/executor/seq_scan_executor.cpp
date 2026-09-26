@@ -3,8 +3,8 @@
 namespace hamdb
 {
 
-    SeqScanExecutor::SeqScanExecutor(ExecutorContext* exec_ctx, const TableInfo* table_info)
-        : exec_ctx_(exec_ctx), table_info_(table_info)
+    SeqScanExecutor::SeqScanExecutor(ExecutorContext* exec_ctx, const TableInfo* table_info, std::unique_ptr<Expression> predicate)
+        : exec_ctx_(exec_ctx), table_info_(table_info), predicate_(std::move(predicate))
     {
     }
 
@@ -47,6 +47,14 @@ namespace hamdb
                 {
                     *tuple = Tuple(*visible_data);
                     *rid = current_rid;
+                    
+                    if (predicate_) {
+                        auto val = predicate_->evaluate(*tuple, table_info_->getSchema());
+                        if (val.isNull() || !val.getAsBoolean()) {
+                            continue;
+                        }
+                    }
+                    
                     return true;
                 }
                 // If std::nullopt, the tuple is invisible or deleted in MVCC, skip it.
@@ -56,6 +64,14 @@ namespace hamdb
                 // No MVCC version chain, meaning the heap tuple is the committed version.
                 *tuple = std::move(heap_tuple);
                 *rid = current_rid;
+                
+                if (predicate_) {
+                    auto val = predicate_->evaluate(*tuple, table_info_->getSchema());
+                    if (val.isNull() || !val.getAsBoolean()) {
+                        continue;
+                    }
+                }
+                
                 return true;
             }
         }
