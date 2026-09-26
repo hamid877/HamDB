@@ -117,6 +117,32 @@ Every milestone must satisfy:
 
 # Completed Milestones
 
+## M5.2 — Recursive Descent SQL Parser
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* AST node definitions (`ASTNode`, `Expression`, `Statement` hierarchies).
+* Expression parsing with precedence (Parentheses, Unary, `*`/`/`/`%`, `+`/`-`, Comparison, `AND`, `OR`).
+* Statement parsing (`SELECT`, `INSERT`, `UPDATE`, `DELETE`, `VALUES`).
+* `Parser` class with recursive descent strategy over lexer tokens.
+* Graceful error handling using `ParserError`.
+
+### Verification
+
+* Tests passing: **339 / 339** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(parser): implement recursive descent SQL parser (M5.2)
+```
+
+---
 ## M5.1 — SQL Lexer / Tokenizer
 
 **Status:** ✅ Complete

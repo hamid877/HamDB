@@ -24,7 +24,7 @@ enum class TokenType {
     Integer, String, BoolLiteral, NullLiteral,
 
     // Arithmetic
-    Plus, Minus, Asterisk, Slash,
+    Plus, Minus, Asterisk, Slash, Modulo,
 
     // Comparison
     Equals, NotEquals, Less, LessEquals, Greater, GreaterEquals,

@@ -1,5 +1,6 @@
 add_executable(hamdb_parser_test
     lexer_test.cpp
+    parser_test.cpp
 )
 
 target_link_libraries(hamdb_parser_test PRIVATE

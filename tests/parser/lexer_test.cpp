@@ -60,9 +60,9 @@ TEST(LexerTest, UnterminatedString) {
 }
 
 TEST(LexerTest, OperatorsAndDelimiters) {
-    Lexer lexer("+, - *, /,= != < <= > >= ( ) ; .");
+    Lexer lexer("+, - *, /, %,= != < <= > >= ( ) ; .");
     auto tokens = lexer.tokenize();
-    ASSERT_EQ(tokens.size(), 18);
+    ASSERT_EQ(tokens.size(), 20);
     EXPECT_EQ(tokens[0].type, TokenType::Plus);
     EXPECT_EQ(tokens[1].type, TokenType::Comma);
     EXPECT_EQ(tokens[2].type, TokenType::Minus);
@@ -70,17 +70,19 @@ TEST(LexerTest, OperatorsAndDelimiters) {
     EXPECT_EQ(tokens[4].type, TokenType::Comma);
     EXPECT_EQ(tokens[5].type, TokenType::Slash);
     EXPECT_EQ(tokens[6].type, TokenType::Comma);
-    EXPECT_EQ(tokens[7].type, TokenType::Equals);
-    EXPECT_EQ(tokens[8].type, TokenType::NotEquals);
-    EXPECT_EQ(tokens[9].type, TokenType::Less);
-    EXPECT_EQ(tokens[10].type, TokenType::LessEquals);
-    EXPECT_EQ(tokens[11].type, TokenType::Greater);
-    EXPECT_EQ(tokens[12].type, TokenType::GreaterEquals);
-    EXPECT_EQ(tokens[13].type, TokenType::LeftParen);
-    EXPECT_EQ(tokens[14].type, TokenType::RightParen);
-    EXPECT_EQ(tokens[15].type, TokenType::Semicolon);
-    EXPECT_EQ(tokens[16].type, TokenType::Dot);
-    EXPECT_EQ(tokens[17].type, TokenType::Eof);
+    EXPECT_EQ(tokens[7].type, TokenType::Modulo);
+    EXPECT_EQ(tokens[8].type, TokenType::Comma);
+    EXPECT_EQ(tokens[9].type, TokenType::Equals);
+    EXPECT_EQ(tokens[10].type, TokenType::NotEquals);
+    EXPECT_EQ(tokens[11].type, TokenType::Less);
+    EXPECT_EQ(tokens[12].type, TokenType::LessEquals);
+    EXPECT_EQ(tokens[13].type, TokenType::Greater);
+    EXPECT_EQ(tokens[14].type, TokenType::GreaterEquals);
+    EXPECT_EQ(tokens[15].type, TokenType::LeftParen);
+    EXPECT_EQ(tokens[16].type, TokenType::RightParen);
+    EXPECT_EQ(tokens[17].type, TokenType::Semicolon);
+    EXPECT_EQ(tokens[18].type, TokenType::Dot);
+    EXPECT_EQ(tokens[19].type, TokenType::Eof);
 }
 
 TEST(LexerTest, OperatorsAndDelimitersCorrect) {

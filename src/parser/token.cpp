@@ -38,6 +38,7 @@ std::string_view tokenTypeToString(TokenType type) {
         case TokenType::Minus: return "Minus";
         case TokenType::Asterisk: return "Asterisk";
         case TokenType::Slash: return "Slash";
+        case TokenType::Modulo: return "Modulo";
         case TokenType::Equals: return "Equals";
         case TokenType::NotEquals: return "NotEquals";
         case TokenType::Less: return "Less";

@@ -199,6 +199,7 @@ Token Lexer::nextToken() {
         case '-': t = makeToken(TokenType::Minus); break;
         case '*': t = makeToken(TokenType::Asterisk); break;
         case '/': t = makeToken(TokenType::Slash); break;
+        case '%': t = makeToken(TokenType::Modulo); break;
         case '=': t = makeToken(TokenType::Equals); break;
         case '!':
             if (peek() == '=') {

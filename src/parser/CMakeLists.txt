@@ -1,6 +1,9 @@
 add_library(hamdb_parser STATIC
     token.cpp
     lexer.cpp
+    parser.cpp
+    ast/expression.cpp
+    ast/statement.cpp
 )
 
 target_include_directories(hamdb_parser PUBLIC
