@@ -98,7 +98,7 @@ Every milestone must satisfy:
 | M4.12 | Values Executor | ✅ Complete |
 | M4.13 | SQL Parser | ⬜      |
 | M4.14 | AST        | ⬜      |
-| M4.15 | Planner    | ⬜      |
+| M4.15 | Planner    | ✅ Complete |
 | M4.16 | Executor   | ⬜      |
 
 ---
@@ -116,6 +116,33 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M5.4 — Logical Query Planner
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Defined `LogicalPlanNode` tree representing relational algebra operations (`SeqScan`, `Filter`, `Projection`, `Sort`, `Limit`, `Values`, `Insert`, `Update`, `Delete`).
+* Implemented `Planner` to convert `BoundStatement` AST nodes into logical plan trees.
+* Handled target lists, predicates, ordering, limits, and set clauses recursively.
+* Automatically resolved and derived `Schema` outputs for every logical plan operator.
+* Unit tests validating tree construction (e.g., `LIMIT -> PROJECTION -> FILTER -> SEQ_SCAN`) and proper values wrapping.
+
+### Verification
+
+* Tests passing: **341 / 341** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(planner): implement logical query planner (M5.4)
+```
+
+---
 
 ## M5.3 — Binder (Semantic Analysis)
 
