@@ -40,6 +40,7 @@ protected:
     LogicalPlanType type_;
     Schema output_schema_;
     std::vector<std::unique_ptr<LogicalPlanNode>> children_;
+    friend class PhysicalPlanner;
 };
 
 class SeqScanPlanNode : public LogicalPlanNode {
@@ -54,6 +55,7 @@ public:
 private:
     std::string table_name_;
     std::string table_alias_;
+    friend class PhysicalPlanner;
 };
 
 class FilterPlanNode : public LogicalPlanNode {
@@ -65,6 +67,7 @@ public:
     const hamdb::Expression* getPredicate() const { return predicate_.get(); }
 private:
     std::unique_ptr<hamdb::Expression> predicate_;
+    friend class PhysicalPlanner;
 };
 
 class ProjectionPlanNode : public LogicalPlanNode {
@@ -76,6 +79,7 @@ public:
     const std::vector<std::unique_ptr<hamdb::Expression>>& getExpressions() const { return expressions_; }
 private:
     std::vector<std::unique_ptr<hamdb::Expression>> expressions_;
+    friend class PhysicalPlanner;
 };
 
 class SortPlanNode : public LogicalPlanNode {
@@ -87,6 +91,7 @@ public:
     const std::vector<std::pair<std::unique_ptr<hamdb::Expression>, bool>>& getOrderBy() const { return order_by_; }
 private:
     std::vector<std::pair<std::unique_ptr<hamdb::Expression>, bool>> order_by_;
+    friend class PhysicalPlanner;
 };
 
 class LimitPlanNode : public LogicalPlanNode {
@@ -100,6 +105,7 @@ public:
 private:
     std::unique_ptr<hamdb::Expression> limit_;
     std::unique_ptr<hamdb::Expression> offset_;
+    friend class PhysicalPlanner;
 };
 
 class ValuesPlanNode : public LogicalPlanNode {
@@ -111,6 +117,7 @@ public:
     const std::vector<std::vector<std::unique_ptr<hamdb::Expression>>>& getValues() const { return values_; }
 private:
     std::vector<std::vector<std::unique_ptr<hamdb::Expression>>> values_;
+    friend class PhysicalPlanner;
 };
 
 class InsertPlanNode : public LogicalPlanNode {
@@ -122,6 +129,7 @@ public:
     const std::string& getTableName() const { return table_name_; }
 private:
     std::string table_name_;
+    friend class PhysicalPlanner;
 };
 
 class UpdatePlanNode : public LogicalPlanNode {
@@ -135,6 +143,7 @@ public:
 private:
     std::string table_name_;
     std::vector<std::pair<std::string, std::unique_ptr<hamdb::Expression>>> set_clauses_;
+    friend class PhysicalPlanner;
 };
 
 class DeletePlanNode : public LogicalPlanNode {
@@ -146,6 +155,7 @@ public:
     const std::string& getTableName() const { return table_name_; }
 private:
     std::string table_name_;
+    friend class PhysicalPlanner;
 };
 
 } // namespace hamdb::planner

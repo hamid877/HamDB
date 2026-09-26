@@ -117,6 +117,33 @@ Every milestone must satisfy:
 
 # Completed Milestones
 
+## M5.5 — Physical Planner & Executor Factory
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Defined `PhysicalPlanNode` tree representing executor physical operations (`SeqScan`, `Filter`, `Projection`, `Sort`, `Limit`, `Values`, `Insert`, `Update`, `Delete`).
+* Implemented `PhysicalPlanner` to translate `LogicalPlanNode` to `PhysicalPlanNode`.
+* Implemented `ExecutorFactory` to construct the execution pipeline recursively.
+* Passes `ExecutorContext` through the tree to all executors.
+* Full integration tests running end-to-end SQL query pipelines.
+
+### Verification
+
+* Tests passing: **343 / 343** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(planner): implement physical planner and executor factory (M5.5)
+```
+
+---
+
 ## M5.4 — Logical Query Planner
 
 **Status:** ✅ Complete
