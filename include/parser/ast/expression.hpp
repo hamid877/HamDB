@@ -31,6 +31,11 @@ public:
     std::string toString() const override;
 };
 
+class StarExpression : public Expression {
+public:
+    std::string toString() const override { return "*"; }
+};
+
 class BinaryExpression : public Expression {
 public:
     enum class Op { Add, Subtract, Multiply, Divide, Modulo, Equals, NotEquals, Less, LessEquals, Greater, GreaterEquals, And, Or };

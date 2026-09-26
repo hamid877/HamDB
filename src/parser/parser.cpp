@@ -161,6 +161,9 @@ std::unique_ptr<ast::Expression> Parser::parsePrimary() {
     if (match(TokenType::NullLiteral)) {
         return std::make_unique<ast::ConstantExpression>(ast::ConstantExpression::Type::Null, "null");
     }
+    if (match(TokenType::Asterisk)) {
+        return std::make_unique<ast::StarExpression>();
+    }
     if (match(TokenType::Identifier)) {
         std::string name = previous_token_.lexeme;
         if (match(TokenType::Dot)) {
@@ -190,6 +193,9 @@ std::unique_ptr<ast::Statement> Parser::parseSelect() {
     if (match(TokenType::From)) {
         consume(TokenType::Identifier, "Expected table name");
         stmt->table_name = previous_token_.lexeme;
+        if (match(TokenType::Identifier)) {
+            stmt->table_alias = previous_token_.lexeme;
+        }
     }
 
     // Where

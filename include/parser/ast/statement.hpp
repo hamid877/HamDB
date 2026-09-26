@@ -17,6 +17,7 @@ class SelectStatement : public Statement {
 public:
     std::vector<std::unique_ptr<Expression>> select_list;
     std::string table_name;
+    std::string table_alias;
     std::unique_ptr<Expression> where_clause;
     
     // Order By

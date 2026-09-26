@@ -117,6 +117,35 @@ Every milestone must satisfy:
 
 # Completed Milestones
 
+## M5.3 — Binder (Semantic Analysis)
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `include/binder/*` and `src/binder/*` defining `BoundExpression` and `BoundStatement` hierarchies.
+* `Binder` class that recursively binds `ast::Statement` nodes to bound equivalents.
+* Resolution of table names using `CatalogManager`.
+* Resolution of column names, including schema lookup and alias support.
+* Support for `SELECT *` expansion into all table columns.
+* Strict type checking (unknown/ambiguous columns, missing tables, mismatched expressions).
+* Binder unit tests covering `SELECT`, `UPDATE`, `INSERT`, aliases, and error conditions.
+
+### Verification
+
+* Tests passing: **346 / 346** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(binder): implement semantic binder (M5.3)
+```
+
+---
+
 ## M5.2 — Recursive Descent SQL Parser
 
 **Status:** ✅ Complete

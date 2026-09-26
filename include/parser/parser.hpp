@@ -48,6 +48,7 @@ private:
     std::unique_ptr<ast::Expression> parseUnary();
     std::unique_ptr<ast::Expression> parsePrimary();
 
+public:
     // Statement parsing
     std::unique_ptr<ast::Statement> parseSelect();
     std::unique_ptr<ast::Statement> parseInsert();
@@ -55,6 +56,7 @@ private:
     std::unique_ptr<ast::Statement> parseDelete();
     std::unique_ptr<ast::Statement> parseValues();
     
+private:
     std::vector<std::vector<std::unique_ptr<ast::Expression>>> parseValuesList();
 };
 
