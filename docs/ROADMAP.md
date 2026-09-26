@@ -117,6 +117,33 @@ Every milestone must satisfy:
 
 # Completed Milestones
 
+## M5.1 — SQL Lexer / Tokenizer
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `Token` structures for types, lexemes, lines, and columns.
+* `Lexer` implementation to tokenize SQL strings.
+* Case-insensitive keyword parsing, identifiers, literals, operators, and delimiters.
+* Error handling for invalid characters and unterminated strings.
+* Single-line (`--`) and multi-line (`/* */`) comment skipping.
+
+### Verification
+
+* Tests passing: **339 / 339** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(parser): implement SQL lexer / tokenizer (M5.1)
+```
+
+---
+
 ## M4.12 — Values Executor
 
 **Status:** ✅ Complete
