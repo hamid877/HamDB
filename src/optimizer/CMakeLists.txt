@@ -1,5 +1,6 @@
 add_library(hamdb_optimizer
     predicate_pushdown_rule.cpp
+    projection_pruning_rule.cpp
     rule_executor.cpp
 )
 target_include_directories(hamdb_optimizer PUBLIC ${PROJECT_SOURCE_DIR}/include)

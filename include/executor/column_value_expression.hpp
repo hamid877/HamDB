@@ -23,6 +23,8 @@ namespace hamdb
         }
 
         [[nodiscard]] Value evaluate(const Tuple& tuple, const Schema& schema) const override;
+        [[nodiscard]] uint32_t getColIdx() const { return col_idx_; }
+
         [[nodiscard]] Value evaluateJoin(const Tuple* left_tuple, const Schema* left_schema,
                                          const Tuple* right_tuple,
                                          const Schema* right_schema) const override;

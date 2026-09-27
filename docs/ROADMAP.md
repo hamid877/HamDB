@@ -120,10 +120,40 @@ Every milestone must satisfy:
 | ID   | Milestone    | Status |
 | ---- | ------------ | ------ |
 | M6.1 | Predicate Pushdown | ✅ Complete |
+| M6.2 | Projection Pruning | ✅ Complete |
+| M6.3 | Constant Folding   | ⬜      |
 
 ---
 
 # Completed Milestones
+
+## M6.2 — Projection Pruning Optimizer
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Implemented `ProjectionPruningRule`.
+* Recursively traverses logical plan top-down to collect required columns.
+* Implemented recursive expression column collector.
+* Preserves schemas for all operators except `SeqScanPlanNode`, which rewrites output schema.
+* Projection, Filter, Sort, Limit contribute their respective required columns to the child.
+* Disabled pruning for wildcard SELECT * and modifications (INSERT/UPDATE/DELETE/VALUES).
+* Added unit test to verify correctly rewritten logical plans, output schemas, and preserved optimized execution.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(optimizer): implement projection pruning rule (M6.2)
+```
+
+---
 
 ## M6.1 — Predicate Pushdown Optimizer
 
