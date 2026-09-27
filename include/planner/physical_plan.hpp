@@ -3,6 +3,7 @@
 #include "catalog/schema.hpp"
 #include "executor/expression.hpp"
 #include "executor/sort_executor.hpp" // for OrderByType
+#include "executor/execution_stats.hpp"
 #include <memory>
 #include <vector>
 #include <string>
@@ -42,10 +43,14 @@ public:
         return children_;
     }
 
+    void setStats(std::shared_ptr<executor::ExecutionStats> stats) { stats_ = std::move(stats); }
+    std::shared_ptr<executor::ExecutionStats> getStats() const { return stats_; }
+
 protected:
     PhysicalPlanType type_;
     Schema output_schema_;
     std::vector<std::unique_ptr<AbstractPlanNode>> children_;
+    std::shared_ptr<executor::ExecutionStats> stats_;
 };
 
 class SeqScanPlan : public AbstractPlanNode {

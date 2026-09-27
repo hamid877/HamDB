@@ -54,6 +54,7 @@ std::unique_ptr<ast::Statement> Parser::parseStatement() {
     if (match(TokenType::Update)) return parseUpdate();
     if (match(TokenType::Delete)) return parseDelete();
     if (match(TokenType::Values)) return parseValues();
+    if (match(TokenType::Explain)) return parseExplain();
     
     error(current_token_, "Expected statement");
 }
@@ -294,6 +295,15 @@ std::vector<std::vector<std::unique_ptr<ast::Expression>>> Parser::parseValuesLi
 std::unique_ptr<ast::Statement> Parser::parseValues() {
     auto stmt = std::make_unique<ast::ValuesStatement>();
     stmt->values = parseValuesList();
+    return stmt;
+}
+
+std::unique_ptr<ast::Statement> Parser::parseExplain() {
+    auto stmt = std::make_unique<ast::ExplainStatement>();
+    if (match(TokenType::Analyze)) {
+        stmt->analyze = true;
+    }
+    stmt->statement = parseStatement();
     return stmt;
 }
 

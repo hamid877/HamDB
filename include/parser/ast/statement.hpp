@@ -61,4 +61,12 @@ public:
     std::string toString() const override;
 };
 
+class ExplainStatement : public Statement {
+public:
+    std::unique_ptr<Statement> statement;
+    bool analyze{false};
+
+    std::string toString() const override;
+};
+
 } // namespace hamdb::ast

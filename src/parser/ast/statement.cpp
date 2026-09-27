@@ -84,4 +84,15 @@ std::string ValuesStatement::toString() const {
     return oss.str();
 }
 
+std::string ExplainStatement::toString() const {
+    std::string out = "EXPLAIN ";
+    if (analyze) {
+        out += "ANALYZE ";
+    }
+    if (statement) {
+        out += statement->toString();
+    }
+    return out;
+}
+
 } // namespace hamdb::ast

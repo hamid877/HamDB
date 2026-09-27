@@ -55,6 +55,7 @@ public:
     std::unique_ptr<ast::Statement> parseUpdate();
     std::unique_ptr<ast::Statement> parseDelete();
     std::unique_ptr<ast::Statement> parseValues();
+    std::unique_ptr<ast::Statement> parseExplain();
     
 private:
     std::vector<std::vector<std::unique_ptr<ast::Expression>>> parseValuesList();

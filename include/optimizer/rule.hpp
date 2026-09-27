@@ -8,6 +8,7 @@ class Rule {
 public:
     virtual ~Rule() = default;
     virtual std::unique_ptr<planner::LogicalPlanNode> apply(std::unique_ptr<planner::LogicalPlanNode> plan) = 0;
+    virtual std::string name() const = 0;
 };
 
 } // namespace hamdb::optimizer

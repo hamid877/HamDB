@@ -10,6 +10,7 @@ public:
     explicit IndexScanRule(CatalogManager* catalog) : catalog_(catalog) {}
     
     std::unique_ptr<planner::LogicalPlanNode> apply(std::unique_ptr<planner::LogicalPlanNode> plan) override;
+    std::string name() const override { return "IndexScanRule"; }
     
 private:
     CatalogManager* catalog_;

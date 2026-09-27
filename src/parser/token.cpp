@@ -22,8 +22,9 @@ std::string_view tokenTypeToString(TokenType type) {
         case TokenType::Values: return "Values";
         case TokenType::Into: return "Into";
         case TokenType::Set: return "Set";
-        case TokenType::Create: return "Create";
         case TokenType::Table: return "Table";
+        case TokenType::Explain: return "Explain";
+        case TokenType::Analyze: return "Analyze";
         case TokenType::Int: return "Int";
         case TokenType::Boolean: return "Boolean";
         case TokenType::Varchar: return "Varchar";

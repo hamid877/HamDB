@@ -12,3 +12,13 @@ add_executable(executor_factory_test executor_factory_test.cpp)
 target_include_directories(executor_factory_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(executor_factory_test PRIVATE GTest::gtest_main hamdb_planner hamdb_binder hamdb_executor hamdb_transaction hamdb_wal hamdb_parser)
 add_test(NAME ExecutorFactoryTest COMMAND executor_factory_test)
+
+add_executable(explain_test explain_test.cpp)
+target_include_directories(explain_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(explain_test PRIVATE GTest::gtest_main hamdb_shell hamdb_planner hamdb_binder hamdb_executor hamdb_transaction hamdb_wal hamdb_parser)
+add_test(NAME ExplainTest COMMAND explain_test)
+
+add_executable(analyze_test analyze_test.cpp)
+target_include_directories(analyze_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(analyze_test PRIVATE GTest::gtest_main hamdb_shell hamdb_planner hamdb_binder hamdb_executor hamdb_transaction hamdb_wal hamdb_parser)
+add_test(NAME AnalyzeTest COMMAND analyze_test)

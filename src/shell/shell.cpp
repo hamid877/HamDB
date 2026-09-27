@@ -9,6 +9,8 @@
 #include "optimizer/projection_pruning_rule.hpp"
 #include "optimizer/index_scan_rule.hpp"
 #include "optimizer/sort_limit_rule.hpp"
+#include "planner/explain_plan.hpp"
+#include "planner/plan_formatter.hpp"
 
 #include <stdexcept>
 #include <sstream>
@@ -120,12 +122,76 @@ void Shell::executeSQL(const std::string& query, std::ostream& out) {
         Parser parser(query);
         auto ast = parser.parseStatement();
         
+        bool is_explain = false;
+        bool is_analyze = false;
+        ast::Statement* inner_stmt = ast.get();
+        if (auto* explain_stmt = dynamic_cast<ast::ExplainStatement*>(ast.get())) {
+            is_explain = true;
+            is_analyze = explain_stmt->analyze;
+            inner_stmt = explain_stmt->statement.get();
+        }
+        
         binder::Binder binder(catalog_.get());
-        auto bound_stmt = binder.bind(*ast);
+        auto bound_stmt = binder.bind(*inner_stmt);
+        
+        planner::ExplainPlan explain;
         
         auto logical_plan = planner_->plan(std::move(bound_stmt));
+        if (is_explain) {
+            explain.logical_plan = planner::PlanFormatter::renderTree(planner::PlanFormatter::buildFormattedTree(logical_plan.get()), false);
+        }
+        
+        optimizer_->clearAppliedRules();
         auto optimized_plan = optimizer_->optimize(std::move(logical_plan));
+        if (is_explain) {
+            explain.optimized_plan = planner::PlanFormatter::renderTree(planner::PlanFormatter::buildFormattedTree(optimized_plan.get()), false);
+            explain.optimizer_rules = optimizer_->getAppliedRules();
+        }
+        
         auto physical_plan = physical_planner_->plan(std::move(optimized_plan));
+        
+        planner::FormattedPlanNode formatted_phys;
+        if (is_explain) {
+            std::function<void(planner::AbstractPlanNode*, planner::FormattedPlanNode&)> attachStats = [&](planner::AbstractPlanNode* node, planner::FormattedPlanNode& fmt_node) {
+                auto stats = std::make_shared<executor::ExecutionStats>();
+                node->setStats(stats);
+                fmt_node.stats = stats;
+                for (size_t i = 0; i < node->getChildren().size(); ++i) {
+                    attachStats(node->getChildren()[i].get(), fmt_node.children[i]);
+                }
+            };
+            formatted_phys = planner::PlanFormatter::buildFormattedTree(physical_plan.get());
+            if (is_analyze) {
+                attachStats(physical_plan.get(), formatted_phys);
+            }
+            explain.physical_plan = planner::PlanFormatter::renderTree(formatted_phys, false);
+            
+            std::ostringstream schema_out;
+            const auto& schema = physical_plan->getOutputSchema();
+            schema_out << "Schema(";
+            for (size_t i = 0; i < schema.getColumnCount(); ++i) {
+                schema_out << schema.getColumn(i).getName();
+                if (i + 1 < schema.getColumnCount()) schema_out << ", ";
+            }
+            schema_out << ")";
+            explain.output_schema = schema_out.str();
+        }
+        
+        if (is_explain && !is_analyze) {
+            out << "=== LOGICAL PLAN ===\n" << explain.logical_plan << "\n";
+            out << "=== OPTIMIZED LOGICAL PLAN ===\n" << explain.optimized_plan << "\n";
+            out << "=== PHYSICAL PLAN ===\n" << explain.physical_plan << "\n";
+            out << "=== OUTPUT SCHEMA ===\n" << explain.output_schema << "\n\n";
+            out << "=== OPTIMIZER RULES APPLIED ===\n";
+            if (explain.optimizer_rules.empty()) {
+                out << "(None)\n";
+            } else {
+                for (const auto& rule : explain.optimizer_rules) {
+                    out << rule << "\n";
+                }
+            }
+            return;
+        }
         
         auto *txn = txn_manager_->begin();
         ExecutorContext exec_ctx(txn, catalog_.get(), bpm_.get(), mvcc_manager_.get(), disk_manager_.get(), lock_manager_.get(), log_manager_.get());
@@ -147,28 +213,47 @@ void Shell::executeSQL(const std::string& query, std::ostream& out) {
         size_t row_count = 0;
         
         while (exec->next(&tuple, &rid)) {
-            std::vector<std::string> row;
-            for (size_t i = 0; i < schema.getColumnCount(); ++i) {
-                ColumnValueExpression col_expr(i);
-                Value val = col_expr.evaluate(tuple, schema);
-                if (val.isNull()) {
-                    row.emplace_back("NULL");
-                } else if (val.getType() == TypeId::Integer) {
-                    row.push_back(std::to_string(val.getAsInteger()));
-                } else if (val.getType() == TypeId::Boolean) {
-                    row.emplace_back(val.getAsBoolean() ? "true" : "false");
-                } else if (val.getType() == TypeId::Varchar) {
-                    row.push_back(val.getAsVarchar());
-                } else {
-                    row.emplace_back("?");
+            if (!is_explain) {
+                std::vector<std::string> row;
+                for (size_t i = 0; i < schema.getColumnCount(); ++i) {
+                    ColumnValueExpression col_expr(i);
+                    Value val = col_expr.evaluate(tuple, schema);
+                    if (val.isNull()) {
+                        row.emplace_back("NULL");
+                    } else if (val.getType() == TypeId::Integer) {
+                        row.push_back(std::to_string(val.getAsInteger()));
+                    } else if (val.getType() == TypeId::Boolean) {
+                        row.emplace_back(val.getAsBoolean() ? "true" : "false");
+                    } else if (val.getType() == TypeId::Varchar) {
+                        row.push_back(val.getAsVarchar());
+                    } else {
+                        row.emplace_back("?");
+                    }
                 }
+                printer.addRow(row);
             }
-            printer.addRow(row);
             row_count++;
         }
         
-        printer.print(out);
-        TablePrinter::printRowCount(out, row_count);
+        if (!is_explain) {
+            printer.print(out);
+            TablePrinter::printRowCount(out, row_count);
+        } else if (is_analyze) {
+            planner::PlanFormatter::computeRowsIn(formatted_phys);
+            explain.physical_plan = planner::PlanFormatter::renderTree(formatted_phys, true);
+            out << "=== LOGICAL PLAN ===\n" << explain.logical_plan << "\n";
+            out << "=== OPTIMIZED LOGICAL PLAN ===\n" << explain.optimized_plan << "\n";
+            out << "=== PHYSICAL PLAN ===\n" << explain.physical_plan << "\n";
+            out << "=== OUTPUT SCHEMA ===\n" << explain.output_schema << "\n\n";
+            out << "=== OPTIMIZER RULES APPLIED ===\n";
+            if (explain.optimizer_rules.empty()) {
+                out << "(None)\n";
+            } else {
+                for (const auto& rule : explain.optimizer_rules) {
+                    out << rule << "\n";
+                }
+            }
+        }
         
         txn_manager_->commit(txn);
         

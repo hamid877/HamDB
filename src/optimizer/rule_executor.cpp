@@ -1,4 +1,5 @@
 #include "optimizer/rule_executor.hpp"
+#include <algorithm>
 
 namespace hamdb::optimizer {
 
@@ -17,6 +18,9 @@ std::unique_ptr<planner::LogicalPlanNode> RuleExecutor::optimize(std::unique_ptr
     // Apply rules to the current node
     for (auto& rule : rules_) {
         plan = rule->apply(std::move(plan));
+        if (std::find(applied_rules_.begin(), applied_rules_.end(), rule->name()) == applied_rules_.end()) {
+            applied_rules_.push_back(rule->name());
+        }
     }
 
     return plan;

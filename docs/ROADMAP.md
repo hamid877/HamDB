@@ -132,12 +132,40 @@ Every milestone must satisfy:
 | ID   | Milestone    | Status |
 | ---- | ------------ | ------ |
 | M7.1 | Interactive SQL REPL | ✅ Complete |
-| M7.2 | Client-Server Protocol | ⬜      |
-| M7.3 | CLI Client   | ⬜      |
+| M7.2 | EXPLAIN & EXPLAIN ANALYZE | ✅ Complete |
+| M7.3 | Client-Server Protocol | ⬜      |
+| M7.4 | CLI Client   | ⬜      |
 
 ---
 
 # Completed Milestones
+
+## M7.2 — EXPLAIN & EXPLAIN ANALYZE
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Created `include/planner/explain_plan.hpp` and `include/planner/plan_formatter.hpp`.
+* Created `include/executor/execution_stats.hpp` to track `rows_in`, `rows_out`, and `execution_time`.
+* Updated `ExecutorFactory` to conditionally wrap executors in `AnalyzeExecutor` to collect execution statistics during `EXPLAIN ANALYZE`.
+* Updated `RuleExecutor` to track applied rules.
+* Updated `Lexer` and `Parser` to support `EXPLAIN` and `ANALYZE` keywords and `ExplainStatement`.
+* Modified `Shell::executeSQL` to format logical plan, optimized logical plan, physical plan, output schema, and optimizer rule trace using Unicode tree characters.
+* Preserved normal query execution semantics.
+
+### Verification
+
+* Tests passing: All
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(planner): implement EXPLAIN and EXPLAIN ANALYZE (M7.2)
+```
 
 ## M7.1 — Interactive SQL REPL
 

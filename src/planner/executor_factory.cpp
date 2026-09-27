@@ -10,8 +10,42 @@
 #include "executor/update_executor.hpp"
 #include "executor/delete_executor.hpp"
 #include <stdexcept>
+#include <chrono>
 
 namespace hamdb::planner {
+
+namespace {
+class AnalyzeExecutor : public hamdb::AbstractExecutor {
+public:
+    AnalyzeExecutor(std::unique_ptr<hamdb::AbstractExecutor> child, std::shared_ptr<hamdb::executor::ExecutionStats> stats)
+        : child_(std::move(child)), stats_(std::move(stats)) {}
+    
+    void init() override {
+        auto start = std::chrono::steady_clock::now();
+        child_->init();
+        auto end = std::chrono::steady_clock::now();
+        stats_->execution_time += std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    }
+    
+    bool next(hamdb::Tuple* tuple, hamdb::RID* rid) override {
+        auto start = std::chrono::steady_clock::now();
+        bool res = child_->next(tuple, rid);
+        auto end = std::chrono::steady_clock::now();
+        stats_->execution_time += std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        if (res) {
+            stats_->rows_out++;
+        }
+        return res;
+    }
+    
+    const hamdb::Schema& outputSchema() const override {
+        return child_->outputSchema();
+    }
+private:
+    std::unique_ptr<hamdb::AbstractExecutor> child_;
+    std::shared_ptr<hamdb::executor::ExecutionStats> stats_;
+};
+} // namespace
 
 std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
     hamdb::ExecutorContext* exec_ctx,
@@ -24,6 +58,7 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
         child_executors.push_back(createExecutor(exec_ctx, std::move(child_plan)));
     }
 
+    std::unique_ptr<hamdb::AbstractExecutor> exec;
     switch (plan->getType()) {
         case PhysicalPlanType::SEQ_SCAN: {
             auto* seq_scan = dynamic_cast<SeqScanPlan*>(plan.get());
@@ -31,32 +66,38 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
             if (exec_ctx->getCatalog()->getTable(seq_scan->getTableName(), table_info) != Status::Ok) {
                 throw std::runtime_error("Table not found: " + seq_scan->getTableName());
             }
-            return std::make_unique<SeqScanExecutor>(exec_ctx, table_info, std::move(seq_scan->getPredicate()), seq_scan->getLimit(), seq_scan->getOffset());
+            exec = std::make_unique<SeqScanExecutor>(exec_ctx, table_info, std::move(seq_scan->getPredicate()), seq_scan->getLimit(), seq_scan->getOffset());
+            break;
         }
         case PhysicalPlanType::FILTER: {
             auto* filter = dynamic_cast<FilterPlan*>(plan.get());
-            return std::make_unique<FilterExecutor>(
+            exec = std::make_unique<FilterExecutor>(
                 std::move(child_executors[0]), std::move(filter->getPredicate()));
+            break;
         }
         case PhysicalPlanType::PROJECTION: {
             auto* proj = dynamic_cast<ProjectionPlan*>(plan.get());
-            return std::make_unique<ProjectionExecutor>(
+            exec = std::make_unique<ProjectionExecutor>(
                 std::move(child_executors[0]), std::move(proj->getExpressions()), proj->getOutputSchema());
+            break;
         }
         case PhysicalPlanType::SORT: {
             auto* sort = dynamic_cast<SortPlan*>(plan.get());
-            return std::make_unique<SortExecutor>(
+            exec = std::make_unique<SortExecutor>(
                 std::move(child_executors[0]), std::move(sort->getOrderBy()));
+            break;
         }
         case PhysicalPlanType::LIMIT: {
             auto* limit = dynamic_cast<LimitPlan*>(plan.get());
-            return std::make_unique<LimitExecutor>(
+            exec = std::make_unique<LimitExecutor>(
                 std::move(child_executors[0]), limit->getLimit(), limit->getOffset());
+            break;
         }
         case PhysicalPlanType::VALUES: {
             auto* values = dynamic_cast<ValuesPlan*>(plan.get());
-            return std::make_unique<ValuesExecutor>(
+            exec = std::make_unique<ValuesExecutor>(
                 std::move(values->getValues()), values->getOutputSchema());
+            break;
         }
         case PhysicalPlanType::INSERT: {
             auto* insert = dynamic_cast<InsertPlan*>(plan.get());
@@ -64,8 +105,9 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
             if (exec_ctx->getCatalog()->getTable(insert->getTableName(), table_info) != Status::Ok) {
                 throw std::runtime_error("Table not found: " + insert->getTableName());
             }
-            return std::make_unique<InsertExecutor>(
+            exec = std::make_unique<InsertExecutor>(
                 exec_ctx, table_info, std::move(child_executors[0]));
+            break;
         }
         case PhysicalPlanType::UPDATE: {
             auto* update = dynamic_cast<UpdatePlan*>(plan.get());
@@ -73,8 +115,9 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
             if (exec_ctx->getCatalog()->getTable(update->getTableName(), table_info) != Status::Ok) {
                 throw std::runtime_error("Table not found: " + update->getTableName());
             }
-            return std::make_unique<UpdateExecutor>(
+            exec = std::make_unique<UpdateExecutor>(
                 exec_ctx, table_info, std::move(child_executors[0]), std::move(update->getTargetExpressions()));
+            break;
         }
         case PhysicalPlanType::DELETE: {
             auto* del = dynamic_cast<DeletePlan*>(plan.get());
@@ -82,8 +125,9 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
             if (exec_ctx->getCatalog()->getTable(del->getTableName(), table_info) != Status::Ok) {
                 throw std::runtime_error("Table not found: " + del->getTableName());
             }
-            return std::make_unique<DeleteExecutor>(
+            exec = std::make_unique<DeleteExecutor>(
                 exec_ctx, table_info, std::move(child_executors[0]));
+            break;
         }
         case PhysicalPlanType::INDEX_SCAN: {
             auto* index_scan = dynamic_cast<IndexScanPlan*>(plan.get());
@@ -91,11 +135,17 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
             if (exec_ctx->getCatalog()->getTable(index_scan->getTableName(), table_info) != Status::Ok) {
                 throw std::runtime_error("Table not found: " + index_scan->getTableName());
             }
-            return std::make_unique<IndexScanExecutor>(exec_ctx, table_info, std::move(index_scan->getPredicate()), index_scan->getLimit(), index_scan->getOffset());
+            exec = std::make_unique<IndexScanExecutor>(exec_ctx, table_info, std::move(index_scan->getPredicate()), index_scan->getLimit(), index_scan->getOffset());
+            break;
         }
         default:
             throw std::runtime_error("Unsupported physical plan type");
     }
+
+    if (plan->getStats()) {
+        return std::make_unique<AnalyzeExecutor>(std::move(exec), plan->getStats());
+    }
+    return exec;
 }
 
 } // namespace hamdb::planner
