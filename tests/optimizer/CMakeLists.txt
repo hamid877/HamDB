@@ -7,3 +7,8 @@ add_executable(projection_pruning_test projection_pruning_test.cpp)
 target_include_directories(projection_pruning_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(projection_pruning_test PRIVATE GTest::gtest_main hamdb_optimizer hamdb_planner hamdb_executor hamdb_transaction hamdb_wal hamdb_parser hamdb_catalog)
 add_test(NAME ProjectionPruningTest COMMAND projection_pruning_test)
+
+add_executable(constant_folding_test constant_folding_test.cpp)
+target_include_directories(constant_folding_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(constant_folding_test PRIVATE GTest::gtest_main hamdb_optimizer hamdb_planner hamdb_executor hamdb_transaction hamdb_wal hamdb_parser hamdb_catalog)
+add_test(NAME ConstantFoldingTest COMMAND constant_folding_test)

@@ -11,7 +11,8 @@ namespace hamdb
         Add,
         Subtract,
         Multiply,
-        Divide
+        Divide,
+        Modulo
     };
 
     class ArithmeticExpression : public Expression
@@ -24,6 +25,8 @@ namespace hamdb
             children_.push_back(std::move(left));
             children_.push_back(std::move(right));
         }
+
+        [[nodiscard]] ArithmeticType getArithmeticType() const { return arith_type_; }
 
         [[nodiscard]] Value evaluate(const Tuple& tuple, const Schema& schema) const override
         {
@@ -49,6 +52,8 @@ namespace hamdb
                 return left.multiply(right);
             case ArithmeticType::Divide:
                 return left.divide(right);
+            case ArithmeticType::Modulo:
+                return left.modulo(right);
             }
             throw std::runtime_error("Unknown arithmetic type");
         }

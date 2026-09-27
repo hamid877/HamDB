@@ -36,6 +36,7 @@ namespace hamdb
         Value subtract(const Value& other) const;
         Value multiply(const Value& other) const;
         Value divide(const Value& other) const;
+        Value modulo(const Value& other) const;
 
         Value compareEquals(const Value& other) const;
         Value compareNotEquals(const Value& other) const;

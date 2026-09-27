@@ -29,6 +29,11 @@ namespace hamdb
             return children_;
         }
 
+        [[nodiscard]] std::vector<std::unique_ptr<Expression>>& getMutableChildren()
+        {
+            return children_;
+        }
+
     protected:
         std::vector<std::unique_ptr<Expression>> children_;
     };

@@ -121,11 +121,40 @@ Every milestone must satisfy:
 | ---- | ------------ | ------ |
 | M6.1 | Predicate Pushdown | ✅ Complete |
 | M6.2 | Projection Pruning | ✅ Complete |
-| M6.3 | Constant Folding   | ⬜      |
+| M6.3 | Constant Folding   | ✅ Complete |
 
 ---
 
 # Completed Milestones
+
+## M6.3 — Constant Folding Optimizer
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Implemented `ConstantFoldingRule`.
+* Recursively traverses and folds constant subtrees in `Expression` trees.
+* Supports folding Arithmetic (`+`, `-`, `*`, `/`, `%`, unary minus), Comparison, and Boolean (`AND`, `OR`, `NOT`) expressions.
+* Handles boolean identities (`expr AND true → expr`, `expr OR false → expr`, etc.).
+* Modifies expressions in place for `SeqScan`, `Filter`, `Projection`, `Sort`, `Limit`, `Values`, and `Update` nodes.
+* Added support for `Modulo` to the expression system and SQL binder.
+* Preserves output schemas and semantics.
+
+### Verification
+
+* Tests passing: **346 / 346** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(optimizer): implement constant folding rule (M6.3)
+```
+
+---
 
 ## M6.2 — Projection Pruning Optimizer
 

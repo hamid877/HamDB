@@ -263,7 +263,8 @@ std::unique_ptr<BoundExpression> Binder::bindBinary(const ast::BinaryExpression&
             else if (expr.op == ast::BinaryExpression::Op::Subtract) op = ArithmeticType::Subtract;
             else if (expr.op == ast::BinaryExpression::Op::Multiply) op = ArithmeticType::Multiply;
             else if (expr.op == ast::BinaryExpression::Op::Divide) op = ArithmeticType::Divide;
-            else throw BinderError("Modulo not supported in ArithmeticType");
+            else if (expr.op == ast::BinaryExpression::Op::Modulo) op = ArithmeticType::Modulo;
+            else throw BinderError("Unknown arithmetic operation");
 
             auto e = std::make_unique<hamdb::ArithmeticExpression>(op, left->takeExpr(), right->takeExpr());
             return std::make_unique<BoundArithmetic>(std::move(e), left->getType());

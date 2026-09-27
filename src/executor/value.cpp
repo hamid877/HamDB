@@ -86,6 +86,20 @@ namespace hamdb
         throw std::runtime_error("Unsupported type for division");
     }
 
+    Value Value::modulo(const Value& other) const
+    {
+        if (isNull() || other.isNull())
+            return Value();
+        if (getType() == TypeId::Integer && other.getType() == TypeId::Integer)
+        {
+            int32_t denom = other.getAsInteger();
+            if (denom == 0)
+                throw std::runtime_error("Modulo by zero");
+            return Value(getAsInteger() % denom);
+        }
+        throw std::runtime_error("Unsupported type for modulo");
+    }
+
     Value Value::compareEquals(const Value& other) const
     {
         if (isNull() || other.isNull())

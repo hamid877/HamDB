@@ -38,6 +38,8 @@ namespace hamdb
             children_.push_back(std::move(right));
         }
 
+        [[nodiscard]] LogicalType getLogicType() const { return logic_type_; }
+
         [[nodiscard]] Value evaluate(const Tuple& tuple, const Schema& schema) const override
         {
             return evaluateJoin(&tuple, &schema, nullptr, nullptr);

@@ -74,6 +74,7 @@ public:
     
     const hamdb::Expression* getPredicate() const { return predicate_.get(); }
     std::unique_ptr<hamdb::Expression> takePredicate() { return std::move(predicate_); }
+    void setPredicate(std::unique_ptr<hamdb::Expression> predicate) { predicate_ = std::move(predicate); }
 private:
     std::unique_ptr<hamdb::Expression> predicate_;
     friend class PhysicalPlanner;
@@ -86,6 +87,7 @@ public:
           expressions_(std::move(expressions)) {}
           
     const std::vector<std::unique_ptr<hamdb::Expression>>& getExpressions() const { return expressions_; }
+    std::vector<std::unique_ptr<hamdb::Expression>>& getMutableExpressions() { return expressions_; }
 private:
     std::vector<std::unique_ptr<hamdb::Expression>> expressions_;
     friend class PhysicalPlanner;
@@ -98,6 +100,7 @@ public:
           order_by_(std::move(order_by)) {}
           
     const std::vector<std::pair<std::unique_ptr<hamdb::Expression>, bool>>& getOrderBy() const { return order_by_; }
+    std::vector<std::pair<std::unique_ptr<hamdb::Expression>, bool>>& getMutableOrderBy() { return order_by_; }
 private:
     std::vector<std::pair<std::unique_ptr<hamdb::Expression>, bool>> order_by_;
     friend class PhysicalPlanner;
@@ -111,6 +114,10 @@ public:
           
     const hamdb::Expression* getLimit() const { return limit_.get(); }
     const hamdb::Expression* getOffset() const { return offset_.get(); }
+    std::unique_ptr<hamdb::Expression> takeLimit() { return std::move(limit_); }
+    std::unique_ptr<hamdb::Expression> takeOffset() { return std::move(offset_); }
+    void setLimit(std::unique_ptr<hamdb::Expression> limit) { limit_ = std::move(limit); }
+    void setOffset(std::unique_ptr<hamdb::Expression> offset) { offset_ = std::move(offset); }
 private:
     std::unique_ptr<hamdb::Expression> limit_;
     std::unique_ptr<hamdb::Expression> offset_;
@@ -124,6 +131,7 @@ public:
           values_(std::move(values)) {}
           
     const std::vector<std::vector<std::unique_ptr<hamdb::Expression>>>& getValues() const { return values_; }
+    std::vector<std::vector<std::unique_ptr<hamdb::Expression>>>& getMutableValues() { return values_; }
 private:
     std::vector<std::vector<std::unique_ptr<hamdb::Expression>>> values_;
     friend class PhysicalPlanner;
@@ -149,6 +157,7 @@ public:
           
     const std::string& getTableName() const { return table_name_; }
     const std::vector<std::pair<std::string, std::unique_ptr<hamdb::Expression>>>& getSetClauses() const { return set_clauses_; }
+    std::vector<std::pair<std::string, std::unique_ptr<hamdb::Expression>>>& getMutableSetClauses() { return set_clauses_; }
 private:
     std::string table_name_;
     std::vector<std::pair<std::string, std::unique_ptr<hamdb::Expression>>> set_clauses_;
