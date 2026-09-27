@@ -117,7 +117,7 @@ Token Lexer::identifierOrKeyword() {
     while (!isAtEnd() && (std::isalnum(peek()) || peek() == '_')) {
         advance();
     }
-    
+
     std::string_view lexeme = source_.substr(start_, current_ - start_);
     std::string upper_lexeme;
     upper_lexeme.reserve(lexeme.size());
@@ -129,6 +129,7 @@ Token Lexer::identifierOrKeyword() {
         {"SELECT", TokenType::Select},
         {"INSERT", TokenType::Insert},
         {"UPDATE", TokenType::Update},
+        {"SET", TokenType::Set},
         {"DELETE", TokenType::Delete},
         {"FROM", TokenType::From},
         {"WHERE", TokenType::Where},
@@ -168,7 +169,7 @@ Token Lexer::nextToken() {
     skipWhitespace();
 
     start_ = current_;
-    
+
     // Calculate the start line and column for the new token based on current line/col.
     // If skipWhitespace consumed newlines, line_ and column_ are already updated.
     start_column_ = column_;
@@ -226,8 +227,8 @@ Token Lexer::nextToken() {
                 t = makeToken(TokenType::Greater);
             }
             break;
-        case '\'': 
-            t = string(); 
+        case '\'':
+            t = string();
             break;
         default:
             t = makeErrorToken(std::string("Invalid character: ") + c);
