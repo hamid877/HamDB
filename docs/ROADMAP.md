@@ -122,10 +122,40 @@ Every milestone must satisfy:
 | M6.1 | Predicate Pushdown | ✅ Complete |
 | M6.2 | Projection Pruning | ✅ Complete |
 | M6.3 | Constant Folding   | ✅ Complete |
+| M6.4 | Index Scan Selection Optimizer | ✅ Complete |
 
 ---
 
 # Completed Milestones
+
+## M6.4 — Index Scan Selection Optimizer
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Created `LogicalIndexScanNode` and `IndexScanRule`.
+* `IndexScanRule` rewrites `SeqScanPlanNode` with an index-eligible predicate into a `LogicalIndexScanNode`.
+* Extended `PhysicalPlanner` to support translating `LogicalIndexScanNode` to `IndexScanPlan`.
+* Extended `ExecutorFactory` to instantiate `IndexScanExecutor`.
+* Updated `IndexScanExecutor` to accept an `Expression` predicate.
+* `IndexScanExecutor` iterates `BPlusTree` via `BPlusTreeIterator`, looking up the RID in `TableHeap` and applying the predicate.
+* Handled fallback to `SeqScan` for unsupported queries.
+* Included fallback rules in `ConstantFoldingRule` and `ProjectionPruningRule`.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(optimizer): implement index scan selection optimizer (M6.4)
+```
+
+---
 
 ## M6.3 — Constant Folding Optimizer
 

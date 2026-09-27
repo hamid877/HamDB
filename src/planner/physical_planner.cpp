@@ -1,4 +1,5 @@
 #include "planner/physical_planner.hpp"
+#include "planner/logical_index_scan.hpp"
 #include "executor/column_value_expression.hpp"
 #include <stdexcept>
 
@@ -104,6 +105,12 @@ std::unique_ptr<AbstractPlanNode> PhysicalPlanner::planNode(std::unique_ptr<Logi
             auto* delete_node = dynamic_cast<DeletePlanNode*>(logical_node.get());
             physical_node = std::make_unique<DeletePlan>(
                 delete_node->getOutputSchema(), delete_node->table_name_);
+            break;
+        }
+        case LogicalPlanType::INDEX_SCAN: {
+            auto* index_scan = dynamic_cast<LogicalIndexScanNode*>(logical_node.get());
+            physical_node = std::make_unique<IndexScanPlan>(
+                index_scan->getOutputSchema(), index_scan->table_name_, index_scan->table_alias_, std::move(index_scan->predicate_));
             break;
         }
         default:

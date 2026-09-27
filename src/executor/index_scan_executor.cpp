@@ -1,11 +1,13 @@
 #include "executor/index_scan_executor.hpp"
+#include "executor/comparison_expression.hpp"
+#include "executor/constant_expression.hpp"
 
 namespace hamdb
 {
 
     IndexScanExecutor::IndexScanExecutor(ExecutorContext* exec_ctx, const TableInfo* table_info,
-                                         int64_t search_key)
-        : exec_ctx_(exec_ctx), table_info_(table_info), search_key_(search_key), is_done_(false)
+                                         std::unique_ptr<Expression> predicate)
+        : exec_ctx_(exec_ctx), table_info_(table_info), predicate_(std::move(predicate)), is_done_(false)
     {
     }
 
@@ -33,47 +35,111 @@ namespace hamdb
         {
             table_heap_ = std::nullopt;
         }
+
+        if (bplus_tree_ && predicate_)
+        {
+            auto* comp_expr = dynamic_cast<ComparisonExpression*>(predicate_.get());
+            if (comp_expr)
+            {
+                auto* const_expr = dynamic_cast<ConstantExpression*>(comp_expr->getChildren()[1].get());
+                if (const_expr)
+                {
+                    int64_t val = const_expr->evaluate(Tuple{}, Schema(std::vector<Column>{})).getAsInteger();
+                    auto comp_type = comp_expr->getComparisonType();
+                    if (comp_type == ComparisonType::Equal || comp_type == ComparisonType::GreaterThan ||
+                        comp_type == ComparisonType::GreaterThanOrEqual)
+                    {
+                        iter_ = bplus_tree_->begin(val);
+                    }
+                    else if (comp_type == ComparisonType::LessThan || comp_type == ComparisonType::LessThanOrEqual)
+                    {
+                        iter_ = bplus_tree_->begin();
+                    }
+                    else
+                    {
+                        iter_ = bplus_tree_->end();
+                    }
+                }
+                else
+                {
+                    iter_ = bplus_tree_->end();
+                }
+            }
+            else
+            {
+                iter_ = bplus_tree_->end();
+            }
+        }
+        else
+        {
+            iter_ = bplus_tree_->end();
+        }
     }
 
     bool IndexScanExecutor::next(Tuple* tuple, RID* rid)
     {
-        if (is_done_ || !bplus_tree_ || !table_heap_)
-        {
-            return false;
-        }
-        is_done_ = true;
-
-        auto rid_opt = bplus_tree_->getValue(search_key_);
-        if (!rid_opt)
+        if (is_done_ || !bplus_tree_ || !table_heap_ || !iter_)
         {
             return false;
         }
 
-        RID current_rid = *rid_opt;
         Transaction* txn = exec_ctx_->getTransaction();
         MvccManager* mvcc = exec_ctx_->getMvccManager();
 
-        if (mvcc->versionCount(current_rid) > 0)
+        while (*iter_ != bplus_tree_->end())
         {
-            auto visible_data = mvcc->read(txn, current_rid);
-            if (visible_data.has_value())
+            auto current_rid = (**iter_).second;
+            ++(*iter_);
+
+            Tuple current_tuple;
+            if (mvcc->versionCount(current_rid) > 0)
             {
-                *tuple = Tuple(*visible_data);
-                *rid = current_rid;
-                return true;
+                auto visible_data = mvcc->read(txn, current_rid);
+                if (visible_data.has_value())
+                {
+                    current_tuple = Tuple(*visible_data);
+                }
+                else
+                {
+                    continue;
+                }
             }
-            return false;
-        }
-        else
-        {
-            Status s = table_heap_->readTuple(current_rid, *tuple);
-            if (s == Status::Ok)
+            else
             {
-                *rid = current_rid;
-                return true;
+                Status s = table_heap_->readTuple(current_rid, current_tuple);
+                if (s != Status::Ok)
+                {
+                    continue;
+                }
             }
-            return false;
+
+            if (predicate_)
+            {
+                Value res = predicate_->evaluate(current_tuple, table_info_->getSchema());
+                if (!res.getAsBoolean())
+                {
+                    auto* comp_expr = dynamic_cast<ComparisonExpression*>(predicate_.get());
+                    if (comp_expr)
+                    {
+                        auto comp_type = comp_expr->getComparisonType();
+                        if (comp_type == ComparisonType::Equal || comp_type == ComparisonType::LessThan ||
+                            comp_type == ComparisonType::LessThanOrEqual)
+                        {
+                            is_done_ = true;
+                            return false;
+                        }
+                    }
+                    continue;
+                }
+            }
+
+            *tuple = current_tuple;
+            *rid = current_rid;
+            return true;
         }
+
+        is_done_ = true;
+        return false;
     }
 
     const Schema& IndexScanExecutor::outputSchema() const

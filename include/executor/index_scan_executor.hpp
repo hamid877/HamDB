@@ -3,6 +3,7 @@
 #include "catalog/table_info.hpp"
 #include "executor/abstract_executor.hpp"
 #include "executor/executor_context.hpp"
+#include "executor/expression.hpp"
 #include "index/bplus_tree.hpp"
 #include "storage/table_heap.hpp"
 
@@ -15,7 +16,7 @@ namespace hamdb
     {
     public:
         IndexScanExecutor(ExecutorContext* exec_ctx, const TableInfo* table_info,
-                          int64_t search_key);
+                          std::unique_ptr<Expression> predicate);
 
         void init() override;
         bool next(Tuple* tuple, RID* rid) override;
@@ -24,10 +25,11 @@ namespace hamdb
     private:
         ExecutorContext* exec_ctx_;
         const TableInfo* table_info_;
-        int64_t search_key_;
+        std::unique_ptr<Expression> predicate_;
         bool is_done_{false};
         std::optional<BPlusTree> bplus_tree_;
         std::optional<TableHeap> table_heap_;
+        std::optional<BPlusTreeIterator> iter_;
     };
 
 } // namespace hamdb

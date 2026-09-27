@@ -18,7 +18,8 @@ enum class PhysicalPlanType {
     VALUES,
     INSERT,
     UPDATE,
-    DELETE
+    DELETE,
+    INDEX_SCAN
 };
 
 class AbstractPlanNode {
@@ -158,6 +159,23 @@ public:
     const std::string& getTableName() const { return table_name_; }
 private:
     std::string table_name_;
+};
+
+class IndexScanPlan : public AbstractPlanNode {
+public:
+    IndexScanPlan(Schema output_schema, std::string table_name, std::string table_alias, std::unique_ptr<hamdb::Expression> predicate)
+        : AbstractPlanNode(PhysicalPlanType::INDEX_SCAN, std::move(output_schema)),
+          table_name_(std::move(table_name)), table_alias_(std::move(table_alias)), predicate_(std::move(predicate)) {}
+    
+    const std::string& getTableName() const { return table_name_; }
+    const std::string& getTableAlias() const { return table_alias_; }
+    std::unique_ptr<hamdb::Expression>& getPredicate() { return predicate_; }
+    const std::unique_ptr<hamdb::Expression>& getPredicate() const { return predicate_; }
+
+private:
+    std::string table_name_;
+    std::string table_alias_;
+    std::unique_ptr<hamdb::Expression> predicate_;
 };
 
 } // namespace hamdb::planner

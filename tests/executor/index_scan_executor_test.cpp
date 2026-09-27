@@ -11,33 +11,39 @@
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <vector>
+#include <cstring>
+
+#include "executor/comparison_expression.hpp"
+#include "executor/column_value_expression.hpp"
+#include "executor/constant_expression.hpp"
 
 namespace hamdb
 {
     namespace
     {
 
-        std::vector<std::byte> makePayload(std::string_view s)
+        std::vector<std::byte> makePayload(int32_t val)
         {
-            std::vector<std::byte> out;
-            out.reserve(s.size());
-            for (char c : s)
-            {
-                out.push_back(static_cast<std::byte>(c));
-            }
+            std::vector<std::byte> out(4);
+            std::memcpy(out.data(), &val, 4);
             return out;
         }
 
-        bool payloadEq(const Tuple& t, std::string_view b)
+        std::unique_ptr<Expression> makeEqPredicate(int32_t val) {
+            return std::make_unique<ComparisonExpression>(
+                ComparisonType::Equal,
+                std::make_unique<ColumnValueExpression>(0),
+                std::make_unique<ConstantExpression>(Value(val))
+            );
+        }
+
+        bool payloadEq(const Tuple& t, int32_t val)
         {
-            if (t.size() != b.size())
+            if (t.size() != 4)
                 return false;
-            for (std::size_t i = 0; i < t.size(); ++i)
-            {
-                if (static_cast<char>(t.data()[i]) != b[i])
-                    return false;
-            }
-            return true;
+            int32_t act = 0;
+            std::memcpy(&act, t.data().data(), 4);
+            return act == val;
         }
 
         struct BPlusTreeLayout
@@ -67,7 +73,7 @@ namespace hamdb
                 catalog_ = std::make_unique<CatalogManager>(bpm_.get());
 
                 std::vector<Column> cols;
-                cols.emplace_back("col1", ColumnType::Varchar);
+                cols.emplace_back("col1", ColumnType::Integer);
                 Schema schema(std::move(cols));
 
                 Status s = catalog_->createTable("test_table", schema, table_info_);
@@ -107,7 +113,7 @@ namespace hamdb
             TableInfo info(table_info_->getTableId(), table_info_->getTableName(),
                            heap->getFirstPageId(), tree_root, table_info_->getSchema());
 
-            IndexScanExecutor executor(&exec_ctx, &info, 42);
+            IndexScanExecutor executor(&exec_ctx, &info, makeEqPredicate(42));
             executor.init();
 
             Tuple tuple;
@@ -125,8 +131,8 @@ namespace hamdb
             tree.create();
 
             RID rid1, rid2;
-            ASSERT_EQ(heap->insertTuple(Tuple(makePayload("row1")), rid1), Status::Ok);
-            ASSERT_EQ(heap->insertTuple(Tuple(makePayload("row2")), rid2), Status::Ok);
+            ASSERT_EQ(heap->insertTuple(Tuple(makePayload(10)), rid1), Status::Ok);
+            ASSERT_EQ(heap->insertTuple(Tuple(makePayload(20)), rid2), Status::Ok);
 
             ASSERT_EQ(tree.insert(10, rid1), Status::Ok);
             ASSERT_EQ(tree.insert(20, rid2), Status::Ok);
@@ -140,17 +146,17 @@ namespace hamdb
                                      &lock_mgr_, &log_mgr_);
 
             // Search for existing key
-            IndexScanExecutor executor1(&exec_ctx, &info, 20);
+            IndexScanExecutor executor1(&exec_ctx, &info, makeEqPredicate(20));
             executor1.init();
             Tuple tuple;
             RID rid;
             ASSERT_TRUE(executor1.next(&tuple, &rid));
             EXPECT_EQ(rid, rid2);
-            EXPECT_TRUE(payloadEq(tuple, "row2"));
+            EXPECT_TRUE(payloadEq(tuple, 20));
             EXPECT_FALSE(executor1.next(&tuple, &rid));
 
             // Search for non-existent key
-            IndexScanExecutor executor2(&exec_ctx, &info, 999);
+            IndexScanExecutor executor2(&exec_ctx, &info, makeEqPredicate(999));
             executor2.init();
             EXPECT_FALSE(executor2.next(&tuple, &rid));
 
@@ -165,7 +171,7 @@ namespace hamdb
             tree.create();
 
             RID rid1;
-            ASSERT_EQ(heap->insertTuple(Tuple(makePayload("row1_old")), rid1), Status::Ok);
+            ASSERT_EQ(heap->insertTuple(Tuple(makePayload(10)), rid1), Status::Ok);
             ASSERT_EQ(tree.insert(10, rid1), Status::Ok);
 
             PageId tree_root = reinterpret_cast<BPlusTreeLayout*>(&tree)->root_page_id_;
@@ -174,14 +180,14 @@ namespace hamdb
 
             // Update via MVCC
             auto* update_txn = txn_mgr_.begin();
-            ASSERT_TRUE(mvcc_.insert(update_txn, rid1, makePayload("row1_new")));
+            ASSERT_TRUE(mvcc_.insert(update_txn, rid1, makePayload(10)));
             mvcc_.commit(update_txn);
             txn_mgr_.commit(update_txn);
 
             auto* scan_txn = txn_mgr_.begin();
             ExecutorContext exec_ctx(scan_txn, catalog_.get(), bpm_.get(), &mvcc_,
                                      disk_manager_.get(), &lock_mgr_, &log_mgr_);
-            IndexScanExecutor executor(&exec_ctx, &info, 10);
+            IndexScanExecutor executor(&exec_ctx, &info, makeEqPredicate(10));
 
             executor.init();
             Tuple tuple;
@@ -189,7 +195,7 @@ namespace hamdb
 
             ASSERT_TRUE(executor.next(&tuple, &rid));
             EXPECT_EQ(rid, rid1);
-            EXPECT_TRUE(payloadEq(tuple, "row1_new"));
+            EXPECT_TRUE(payloadEq(tuple, 10));
             EXPECT_FALSE(executor.next(&tuple, &rid));
 
             // Delete via MVCC
@@ -201,7 +207,7 @@ namespace hamdb
             auto* scan_txn2 = txn_mgr_.begin();
             ExecutorContext exec_ctx2(scan_txn2, catalog_.get(), bpm_.get(), &mvcc_,
                                       disk_manager_.get(), &lock_mgr_, &log_mgr_);
-            IndexScanExecutor executor2(&exec_ctx2, &info, 10);
+            IndexScanExecutor executor2(&exec_ctx2, &info, makeEqPredicate(10));
 
             executor2.init();
             // It should not find it as it is deleted in MVCC

@@ -2,6 +2,7 @@ set(PLANNER_SOURCES
     planner.cpp
     physical_planner.cpp
     executor_factory.cpp
+    logical_index_scan.cpp
 )
 
 add_library(hamdb_planner STATIC ${PLANNER_SOURCES})

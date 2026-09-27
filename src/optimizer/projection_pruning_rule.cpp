@@ -1,5 +1,6 @@
 #include "optimizer/projection_pruning_rule.hpp"
 #include "executor/column_value_expression.hpp"
+#include "planner/logical_index_scan.hpp"
 #include <vector>
 #include <algorithm>
 
@@ -135,6 +136,34 @@ std::unique_ptr<planner::LogicalPlanNode> ProjectionPruningRule::rewriteTopDown(
         
         Schema new_schema(new_columns);
         auto new_scan = std::make_unique<planner::SeqScanPlanNode>(
+            std::move(new_schema), scan->getTableName(), scan->getTableAlias(), scan->takePredicate());
+            
+        return new_scan;
+    }
+    
+    if (type == planner::LogicalPlanType::INDEX_SCAN) {
+        auto* scan = dynamic_cast<planner::LogicalIndexScanNode*>(node.get());
+        
+        collectColumns(scan->getPredicate(), required_cols);
+        
+        const auto& old_schema = scan->getOutputSchema();
+        std::vector<Column> new_columns;
+        for (uint32_t i = 0; i < old_schema.getColumnCount(); ++i) {
+            if (required_cols.find(i) != required_cols.end()) {
+                new_columns.push_back(old_schema.getColumn(i));
+            }
+        }
+        
+        if (new_columns.empty() && old_schema.getColumnCount() > 0) {
+            new_columns.push_back(old_schema.getColumn(0));
+        }
+        
+        if (new_columns.size() == old_schema.getColumnCount()) {
+            return node;
+        }
+        
+        Schema new_schema(new_columns);
+        auto new_scan = std::make_unique<planner::LogicalIndexScanNode>(
             std::move(new_schema), scan->getTableName(), scan->getTableAlias(), scan->takePredicate());
             
         return new_scan;

@@ -12,3 +12,8 @@ add_executable(constant_folding_test constant_folding_test.cpp)
 target_include_directories(constant_folding_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(constant_folding_test PRIVATE GTest::gtest_main hamdb_optimizer hamdb_planner hamdb_executor hamdb_transaction hamdb_wal hamdb_parser hamdb_catalog)
 add_test(NAME ConstantFoldingTest COMMAND constant_folding_test)
+
+add_executable(index_scan_rule_test index_scan_rule_test.cpp)
+target_include_directories(index_scan_rule_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(index_scan_rule_test PRIVATE GTest::gtest_main hamdb_optimizer hamdb_planner hamdb_executor hamdb_transaction hamdb_wal hamdb_parser hamdb_catalog)
+add_test(NAME IndexScanRuleTest COMMAND index_scan_rule_test)

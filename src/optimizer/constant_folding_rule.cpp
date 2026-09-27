@@ -3,6 +3,7 @@
 #include "executor/arithmetic_expression.hpp"
 #include "executor/comparison_expression.hpp"
 #include "executor/logical_expression.hpp"
+#include "planner/logical_index_scan.hpp"
 
 namespace hamdb::optimizer {
 
@@ -97,6 +98,13 @@ std::unique_ptr<planner::LogicalPlanNode> ConstantFoldingRule::apply(std::unique
             auto* node = dynamic_cast<planner::SeqScanPlanNode*>(plan.get());
             if (node && node->getPredicate()) {
                 node->setPredicate(foldExpression(node->takePredicate()));
+            }
+            break;
+        }
+        case planner::LogicalPlanType::INDEX_SCAN: {
+            auto* node = dynamic_cast<planner::LogicalIndexScanNode*>(plan.get());
+            if (node && node->getPredicate()) {
+                node->predicate_ = foldExpression(node->takePredicate());
             }
             break;
         }

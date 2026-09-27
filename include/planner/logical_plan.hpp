@@ -17,7 +17,8 @@ enum class LogicalPlanType {
     VALUES,
     INSERT,
     UPDATE,
-    DELETE
+    DELETE,
+    INDEX_SCAN
 };
 
 class LogicalPlanNode {

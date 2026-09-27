@@ -1,5 +1,6 @@
 #include "planner/executor_factory.hpp"
 #include "executor/seq_scan_executor.hpp"
+#include "executor/index_scan_executor.hpp"
 #include "executor/filter_executor.hpp"
 #include "executor/projection_executor.hpp"
 #include "executor/sort_executor.hpp"
@@ -83,6 +84,14 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
             }
             return std::make_unique<DeleteExecutor>(
                 exec_ctx, table_info, std::move(child_executors[0]));
+        }
+        case PhysicalPlanType::INDEX_SCAN: {
+            auto* index_scan = dynamic_cast<IndexScanPlan*>(plan.get());
+            TableInfo* table_info = nullptr;
+            if (exec_ctx->getCatalog()->getTable(index_scan->getTableName(), table_info) != Status::Ok) {
+                throw std::runtime_error("Table not found: " + index_scan->getTableName());
+            }
+            return std::make_unique<IndexScanExecutor>(exec_ctx, table_info, std::move(index_scan->getPredicate()));
         }
         default:
             throw std::runtime_error("Unsupported physical plan type");
