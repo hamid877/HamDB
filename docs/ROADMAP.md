@@ -123,10 +123,40 @@ Every milestone must satisfy:
 | M6.2 | Projection Pruning | ✅ Complete |
 | M6.3 | Constant Folding   | ✅ Complete |
 | M6.4 | Index Scan Selection Optimizer | ✅ Complete |
+| M6.5 | Sort Elimination & Limit Pushdown | ✅ Complete |
 
 ---
 
 # Completed Milestones
+
+## M6.5 — Sort Elimination & Limit Pushdown
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Created `include/optimizer/sort_limit_rule.hpp` and `src/optimizer/sort_limit_rule.cpp`.
+* Implemented `SortLimitRule` to eliminate `Sort` node if `IndexScan` guarantees identical ordering.
+* Implemented `Limit` pushdown through `Projection` and `Filter` nodes into `SeqScan` and `IndexScan`.
+* Updated `LogicalPlanNode`, `SeqScanPlanNode`, and `LogicalIndexScanNode` to support ordering and limit metadata.
+* Updated `SeqScanExecutor` and `IndexScanExecutor` to accept `limit` and `offset` and stop after emitting N tuples.
+* Implemented corresponding physical plan nodes and updated `PhysicalPlanner` and `ExecutorFactory`.
+* Wrote integration tests in `tests/optimizer/sort_limit_rule_test.cpp`.
+
+### Verification
+
+* Tests passing: **348 / 348**
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(optimizer): implement sort elimination and limit pushdown (M6.5)
+```
+
+---
 
 ## M6.4 — Index Scan Selection Optimizer
 

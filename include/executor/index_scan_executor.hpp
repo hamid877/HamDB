@@ -8,6 +8,7 @@
 #include "storage/table_heap.hpp"
 
 #include <optional>
+#include <limits>
 
 namespace hamdb
 {
@@ -16,7 +17,7 @@ namespace hamdb
     {
     public:
         IndexScanExecutor(ExecutorContext* exec_ctx, const TableInfo* table_info,
-                          std::unique_ptr<Expression> predicate);
+                          std::unique_ptr<Expression> predicate, std::size_t limit = std::numeric_limits<std::size_t>::max(), std::size_t offset = 0);
 
         void init() override;
         bool next(Tuple* tuple, RID* rid) override;
@@ -30,6 +31,10 @@ namespace hamdb
         std::optional<BPlusTree> bplus_tree_;
         std::optional<TableHeap> table_heap_;
         std::optional<BPlusTreeIterator> iter_;
+        std::size_t limit_;
+        std::size_t offset_;
+        std::size_t tuples_emitted_{0};
+        std::size_t tuples_skipped_{0};
     };
 
 } // namespace hamdb

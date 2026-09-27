@@ -31,7 +31,7 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
             if (exec_ctx->getCatalog()->getTable(seq_scan->getTableName(), table_info) != Status::Ok) {
                 throw std::runtime_error("Table not found: " + seq_scan->getTableName());
             }
-            return std::make_unique<SeqScanExecutor>(exec_ctx, table_info, std::move(seq_scan->getPredicate()));
+            return std::make_unique<SeqScanExecutor>(exec_ctx, table_info, std::move(seq_scan->getPredicate()), seq_scan->getLimit(), seq_scan->getOffset());
         }
         case PhysicalPlanType::FILTER: {
             auto* filter = dynamic_cast<FilterPlan*>(plan.get());
@@ -91,7 +91,7 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
             if (exec_ctx->getCatalog()->getTable(index_scan->getTableName(), table_info) != Status::Ok) {
                 throw std::runtime_error("Table not found: " + index_scan->getTableName());
             }
-            return std::make_unique<IndexScanExecutor>(exec_ctx, table_info, std::move(index_scan->getPredicate()));
+            return std::make_unique<IndexScanExecutor>(exec_ctx, table_info, std::move(index_scan->getPredicate()), index_scan->getLimit(), index_scan->getOffset());
         }
         default:
             throw std::runtime_error("Unsupported physical plan type");

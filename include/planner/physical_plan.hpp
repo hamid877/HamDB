@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <limits>
 
 namespace hamdb::planner {
 
@@ -49,19 +50,23 @@ protected:
 
 class SeqScanPlan : public AbstractPlanNode {
 public:
-    SeqScanPlan(Schema output_schema, std::string table_name, std::string table_alias, std::unique_ptr<hamdb::Expression> predicate = nullptr)
+    SeqScanPlan(Schema output_schema, std::string table_name, std::string table_alias, std::unique_ptr<hamdb::Expression> predicate = nullptr, std::size_t limit = std::numeric_limits<std::size_t>::max(), std::size_t offset = 0)
         : AbstractPlanNode(PhysicalPlanType::SEQ_SCAN, std::move(output_schema)),
-          table_name_(std::move(table_name)), table_alias_(std::move(table_alias)), predicate_(std::move(predicate)) {}
+          table_name_(std::move(table_name)), table_alias_(std::move(table_alias)), predicate_(std::move(predicate)), limit_(limit), offset_(offset) {}
     
     const std::string& getTableName() const { return table_name_; }
     const std::string& getTableAlias() const { return table_alias_; }
     std::unique_ptr<hamdb::Expression>& getPredicate() { return predicate_; }
     const std::unique_ptr<hamdb::Expression>& getPredicate() const { return predicate_; }
+    std::size_t getLimit() const { return limit_; }
+    std::size_t getOffset() const { return offset_; }
 
 private:
     std::string table_name_;
     std::string table_alias_;
     std::unique_ptr<hamdb::Expression> predicate_;
+    std::size_t limit_;
+    std::size_t offset_;
 };
 
 class FilterPlan : public AbstractPlanNode {
@@ -163,19 +168,23 @@ private:
 
 class IndexScanPlan : public AbstractPlanNode {
 public:
-    IndexScanPlan(Schema output_schema, std::string table_name, std::string table_alias, std::unique_ptr<hamdb::Expression> predicate)
+    IndexScanPlan(Schema output_schema, std::string table_name, std::string table_alias, std::unique_ptr<hamdb::Expression> predicate, std::size_t limit = std::numeric_limits<std::size_t>::max(), std::size_t offset = 0)
         : AbstractPlanNode(PhysicalPlanType::INDEX_SCAN, std::move(output_schema)),
-          table_name_(std::move(table_name)), table_alias_(std::move(table_alias)), predicate_(std::move(predicate)) {}
+          table_name_(std::move(table_name)), table_alias_(std::move(table_alias)), predicate_(std::move(predicate)), limit_(limit), offset_(offset) {}
     
     const std::string& getTableName() const { return table_name_; }
     const std::string& getTableAlias() const { return table_alias_; }
     std::unique_ptr<hamdb::Expression>& getPredicate() { return predicate_; }
     const std::unique_ptr<hamdb::Expression>& getPredicate() const { return predicate_; }
+    std::size_t getLimit() const { return limit_; }
+    std::size_t getOffset() const { return offset_; }
 
 private:
     std::string table_name_;
     std::string table_alias_;
     std::unique_ptr<hamdb::Expression> predicate_;
+    std::size_t limit_;
+    std::size_t offset_;
 };
 
 } // namespace hamdb::planner

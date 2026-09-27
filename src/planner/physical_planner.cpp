@@ -18,8 +18,18 @@ std::unique_ptr<AbstractPlanNode> PhysicalPlanner::planNode(std::unique_ptr<Logi
     switch (logical_node->getType()) {
         case LogicalPlanType::SEQ_SCAN: {
             auto* seq_scan = dynamic_cast<SeqScanPlanNode*>(logical_node.get());
+            std::size_t limit = std::numeric_limits<std::size_t>::max();
+            std::size_t offset = 0;
+            if (seq_scan->getLimit()) {
+                auto val = seq_scan->getLimit()->evaluate(Tuple{}, Schema(std::vector<Column>{}));
+                limit = val.getAsInteger();
+            }
+            if (seq_scan->getOffset()) {
+                auto val = seq_scan->getOffset()->evaluate(Tuple{}, Schema(std::vector<Column>{}));
+                offset = val.getAsInteger();
+            }
             physical_node = std::make_unique<SeqScanPlan>(
-                seq_scan->getOutputSchema(), seq_scan->table_name_, seq_scan->table_alias_, std::move(seq_scan->predicate_));
+                seq_scan->getOutputSchema(), seq_scan->getTableName(), seq_scan->getTableAlias(), seq_scan->takePredicate(), limit, offset);
             break;
         }
         case LogicalPlanType::FILTER: {
@@ -109,8 +119,18 @@ std::unique_ptr<AbstractPlanNode> PhysicalPlanner::planNode(std::unique_ptr<Logi
         }
         case LogicalPlanType::INDEX_SCAN: {
             auto* index_scan = dynamic_cast<LogicalIndexScanNode*>(logical_node.get());
+            std::size_t limit = std::numeric_limits<std::size_t>::max();
+            std::size_t offset = 0;
+            if (index_scan->getLimit()) {
+                auto val = index_scan->getLimit()->evaluate(Tuple{}, Schema(std::vector<Column>{}));
+                limit = val.getAsInteger();
+            }
+            if (index_scan->getOffset()) {
+                auto val = index_scan->getOffset()->evaluate(Tuple{}, Schema(std::vector<Column>{}));
+                offset = val.getAsInteger();
+            }
             physical_node = std::make_unique<IndexScanPlan>(
-                index_scan->getOutputSchema(), index_scan->table_name_, index_scan->table_alias_, std::move(index_scan->predicate_));
+                index_scan->getOutputSchema(), index_scan->table_name_, index_scan->table_alias_, index_scan->takePredicate(), limit, offset);
             break;
         }
         default:

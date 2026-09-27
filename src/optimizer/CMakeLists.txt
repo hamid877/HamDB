@@ -3,6 +3,7 @@ add_library(hamdb_optimizer
     projection_pruning_rule.cpp
     constant_folding_rule.cpp
     index_scan_rule.cpp
+    sort_limit_rule.cpp
     rule_executor.cpp
 )
 target_include_directories(hamdb_optimizer PUBLIC ${PROJECT_SOURCE_DIR}/include)

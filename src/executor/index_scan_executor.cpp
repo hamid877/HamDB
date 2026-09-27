@@ -6,14 +6,16 @@ namespace hamdb
 {
 
     IndexScanExecutor::IndexScanExecutor(ExecutorContext* exec_ctx, const TableInfo* table_info,
-                                         std::unique_ptr<Expression> predicate)
-        : exec_ctx_(exec_ctx), table_info_(table_info), predicate_(std::move(predicate)), is_done_(false)
+                                         std::unique_ptr<Expression> predicate, std::size_t limit, std::size_t offset)
+        : exec_ctx_(exec_ctx), table_info_(table_info), predicate_(std::move(predicate)), is_done_(false), limit_(limit), offset_(offset)
     {
     }
 
     void IndexScanExecutor::init()
     {
         is_done_ = false;
+        tuples_emitted_ = 0;
+        tuples_skipped_ = 0;
 
         if (table_info_->getIndexRootPage() != kInvalidPageId)
         {
@@ -83,6 +85,14 @@ namespace hamdb
             return false;
         }
 
+        if (limit_ != std::numeric_limits<std::size_t>::max() && limit_ > 0 && tuples_emitted_ >= limit_)
+        {
+            return false;
+        }
+        if (limit_ == 0) {
+            return false;
+        }
+
         Transaction* txn = exec_ctx_->getTransaction();
         MvccManager* mvcc = exec_ctx_->getMvccManager();
 
@@ -133,8 +143,14 @@ namespace hamdb
                 }
             }
 
+            if (tuples_skipped_ < offset_) {
+                tuples_skipped_++;
+                continue;
+            }
+
             *tuple = current_tuple;
             *rid = current_rid;
+            tuples_emitted_++;
             return true;
         }
 

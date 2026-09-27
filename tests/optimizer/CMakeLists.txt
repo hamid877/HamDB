@@ -17,3 +17,8 @@ add_executable(index_scan_rule_test index_scan_rule_test.cpp)
 target_include_directories(index_scan_rule_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(index_scan_rule_test PRIVATE GTest::gtest_main hamdb_optimizer hamdb_planner hamdb_executor hamdb_transaction hamdb_wal hamdb_parser hamdb_catalog)
 add_test(NAME IndexScanRuleTest COMMAND index_scan_rule_test)
+
+add_executable(sort_limit_rule_test sort_limit_rule_test.cpp)
+target_include_directories(sort_limit_rule_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(sort_limit_rule_test PRIVATE GTest::gtest_main hamdb_optimizer hamdb_planner hamdb_executor hamdb_transaction hamdb_wal hamdb_parser hamdb_catalog)
+add_test(NAME SortLimitRuleTest COMMAND sort_limit_rule_test)

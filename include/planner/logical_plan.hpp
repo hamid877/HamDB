@@ -60,10 +60,19 @@ public:
     std::unique_ptr<hamdb::Expression> takePredicate() { return std::move(predicate_); }
     void setPredicate(std::unique_ptr<hamdb::Expression> predicate) { predicate_ = std::move(predicate); }
 
+    std::unique_ptr<hamdb::Expression> takeLimit() { return std::move(limit_); }
+    std::unique_ptr<hamdb::Expression> takeOffset() { return std::move(offset_); }
+    void setLimit(std::unique_ptr<hamdb::Expression> limit) { limit_ = std::move(limit); }
+    void setOffset(std::unique_ptr<hamdb::Expression> offset) { offset_ = std::move(offset); }
+    const hamdb::Expression* getLimit() const { return limit_.get(); }
+    const hamdb::Expression* getOffset() const { return offset_.get(); }
+
 private:
     std::string table_name_;
     std::string table_alias_;
     std::unique_ptr<hamdb::Expression> predicate_;
+    std::unique_ptr<hamdb::Expression> limit_;
+    std::unique_ptr<hamdb::Expression> offset_;
     friend class PhysicalPlanner;
 };
 
