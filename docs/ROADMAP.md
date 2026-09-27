@@ -16,7 +16,7 @@
 | Testing          | GoogleTest                  |
 | Platform         | Linux (Ubuntu / Linux Mint) |
 | Current Version  | v0.3.0-dev                  |
-| Overall Progress | **60%**                     |
+| Overall Progress | **63%**                     |
 
 ---
 
@@ -127,7 +127,44 @@ Every milestone must satisfy:
 
 ---
 
+## Phase 7 — Client Interfaces & Tooling
+
+| ID   | Milestone    | Status |
+| ---- | ------------ | ------ |
+| M7.1 | Interactive SQL REPL | ✅ Complete |
+| M7.2 | Client-Server Protocol | ⬜      |
+| M7.3 | CLI Client   | ⬜      |
+
+---
+
 # Completed Milestones
+
+## M7.1 — Interactive SQL REPL
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Created `include/shell/` and `src/shell/` for `Repl`, `Shell`, and `TablePrinter`.
+* Added ASCII `TablePrinter` for formatting SQL output with `(N rows)` counters and `NULL` handling.
+* Integrated `Shell` with HamDB's optimizer and executor pipelines (`executeSQL`).
+* Added meta commands (`.help`, `.exit`, `.quit`, `.tables`, `.schema <table>`, `.indexes <table>`).
+* Support for multiline SQL statements buffered until `;` is typed (`hamdb>` and `....>` prompts).
+* Added comprehensive integration tests (`tests/shell/shell_test.cpp`, `tests/shell/table_printer_test.cpp`).
+* Added `app/hamdb.cpp` building to executable `build/app/hamdb`.
+
+### Verification
+
+* Tests passing: **349 / 349** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(shell): implement interactive SQL REPL and table printer (M7.1)
+```
 
 ## M6.5 — Sort Elimination & Limit Pushdown
 
