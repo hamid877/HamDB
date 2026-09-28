@@ -134,11 +134,36 @@ Every milestone must satisfy:
 | M7.1 | Interactive SQL REPL | ✅ Complete |
 | M7.2 | EXPLAIN & EXPLAIN ANALYZE | ✅ Complete |
 | M7.3 | Prepared Statements & Parameter Binding | ✅ Complete |
-| M7.4 | CLI Client   | ⬜      |
+| M7.4 | CLI Client   | ✅ Complete |
 
 ---
 
 # Completed Milestones
+
+## M7.4 — CLI Client & SQL Script Execution
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Created `StatementSplitter` to separate SQL scripts into distinct statements correctly supporting comments and strings.
+* Created `ScriptExecutor` to run `.sql` script files.
+* Updated `hamdb` executable to accept `.sql` scripts as command-line arguments.
+* Implemented `.read` meta command in the REPL.
+* Re-used existing physical planning and execution pipeline.
+* Stops on first error and prints summary of statement execution count.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(shell): implement sql script execution and cli client (M7.4)
+```
 
 ## M7.3 — Prepared Statements & Parameter Binding
 

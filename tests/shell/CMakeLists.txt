@@ -1,6 +1,7 @@
 add_executable(shell_test
     shell_test.cpp
     table_printer_test.cpp
+    script_executor_test.cpp
 )
 
 target_link_libraries(shell_test PRIVATE

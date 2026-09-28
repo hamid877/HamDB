@@ -2,6 +2,7 @@ add_library(hamdb_shell STATIC
     table_printer.cpp
     shell.cpp
     repl.cpp
+    script_executor.cpp
 )
 
 target_link_libraries(hamdb_shell PUBLIC

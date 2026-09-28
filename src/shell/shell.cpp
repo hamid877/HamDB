@@ -11,6 +11,7 @@
 #include "optimizer/sort_limit_rule.hpp"
 #include "planner/explain_plan.hpp"
 #include "planner/plan_formatter.hpp"
+#include "shell/script_executor.hpp"
 
 #include <stdexcept>
 #include <sstream>
@@ -240,6 +241,13 @@ void Shell::executeMeta(const std::string& cmd, std::ostream& out) {
             }
         } else {
             out << "Usage: .indexes <table>\n";
+        }
+    } else if (token == ".read") {
+        std::string filepath;
+        if (ss >> filepath) {
+            ScriptExecutor::execute(filepath, *this, out);
+        } else {
+            out << "Usage: .read <filepath>\n";
         }
     } else if (token == ".exit" || token == ".quit") {
         // Handled by repl
