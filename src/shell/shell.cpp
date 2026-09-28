@@ -11,6 +11,7 @@
 #include "optimizer/sort_limit_rule.hpp"
 #include "planner/explain_plan.hpp"
 #include "planner/plan_formatter.hpp"
+#include "planner/nested_loop_join_plan.hpp"
 #include "shell/script_executor.hpp"
 #include "shell/meta_commands.hpp"
 
@@ -85,6 +86,13 @@ std::unique_ptr<planner::AbstractPlanNode> clonePhysicalPlan(const planner::Abst
             cloned = std::make_unique<planner::DeletePlan>(node->getOutputSchema(), node->getTableName());
             break;
         }
+                case planner::PhysicalPlanType::NESTED_LOOP_JOIN: {
+            auto* node = static_cast<const planner::NestedLoopJoinPlan*>(plan);
+            cloned = std::make_unique<planner::NestedLoopJoinPlan>(
+                node->getOutputSchema(),
+                node->getPredicate() ? node->getPredicate()->clone() : nullptr);
+            break;
+        }
         case planner::PhysicalPlanType::INDEX_SCAN: {
             auto* node = static_cast<const planner::IndexScanPlan*>(plan);
             cloned = std::make_unique<planner::IndexScanPlan>(
@@ -134,6 +142,11 @@ void bindPhysicalPlan(planner::AbstractPlanNode* plan, const std::vector<Value>&
         case planner::PhysicalPlanType::UPDATE: {
             auto* node = static_cast<planner::UpdatePlan*>(plan);
             for (auto& e : node->getTargetExpressions()) if (e) e.get()->bindParameters(params);
+            break;
+        }
+                case planner::PhysicalPlanType::NESTED_LOOP_JOIN: {
+            auto* node = static_cast<planner::NestedLoopJoinPlan*>(plan);
+            if (node->getPredicate()) node->getPredicate()->bindParameters(params);
             break;
         }
         case planner::PhysicalPlanType::INDEX_SCAN: {

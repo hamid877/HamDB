@@ -101,6 +101,7 @@ std::unique_ptr<planner::LogicalPlanNode> ConstantFoldingRule::apply(std::unique
             }
             break;
         }
+        case planner::LogicalPlanType::NESTED_LOOP_JOIN:
         case planner::LogicalPlanType::INDEX_SCAN: {
             auto* node = dynamic_cast<planner::LogicalIndexScanNode*>(plan.get());
             if (node && node->getPredicate()) {

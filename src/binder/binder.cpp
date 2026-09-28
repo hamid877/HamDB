@@ -22,33 +22,67 @@ std::unique_ptr<BoundStatement> Binder::bind(const ast::Statement& stmt) {
     throw BinderError("Unknown statement type");
 }
 
+std::unique_ptr<BoundTableReference> Binder::bindTableReference(const ast::TableReference& ref, std::vector<Column>& combined_columns) {
+    if (auto base = dynamic_cast<const ast::BaseTableReference*>(&ref)) {
+        auto bound_base = std::make_unique<BoundBaseTableReference>();
+        TableInfo* table_info = nullptr;
+        if (catalog_->getTable(base->table_name_, table_info) != Status::Ok) {
+            throw BinderError("Unknown table: " + base->table_name_);
+        }
+        bound_base->table_name_ = base->table_name_;
+        bound_base->table_alias_ = base->table_alias_;
+        bound_base->schema_ = &table_info->getSchema();
+        
+        TableContext tc;
+        tc.table_name = base->table_name_;
+        tc.table_alias = base->table_alias_;
+        tc.schema = bound_base->schema_;
+        tc.column_offset = combined_columns.size();
+        current_context_.tables.push_back(tc);
+        
+        for (uint32_t i = 0; i < tc.schema->getColumnCount(); ++i) {
+            combined_columns.push_back(tc.schema->getColumn(i));
+        }
+        return bound_base;
+    } else if (auto join = dynamic_cast<const ast::JoinTableReference*>(&ref)) {
+        auto bound_join = std::make_unique<BoundJoinTable>();
+        bound_join->left_ = bindTableReference(*join->left_, combined_columns);
+        bound_join->right_ = bindTableReference(*join->right_, combined_columns);
+        
+        current_context_.combined_schema = std::make_unique<Schema>(combined_columns);
+        if (join->condition_) {
+            bound_join->condition_ = bindExpression(*join->condition_);
+            if (bound_join->condition_->getType() != TypeId::Boolean) {
+                throw BinderError("JOIN condition must be of boolean type");
+            }
+        }
+        return bound_join;
+    }
+    throw BinderError("Unknown TableReference type");
+}
+
 std::unique_ptr<BoundSelectStatement> Binder::bindSelect(const ast::SelectStatement& stmt) {
     auto bound = std::make_unique<BoundSelectStatement>();
+    current_context_.tables.clear();
     
-    if (!stmt.table_name.empty()) {
-        TableInfo* table_info = nullptr;
-        if (catalog_->getTable(stmt.table_name, table_info) != Status::Ok) {
-            throw BinderError("Unknown table: " + stmt.table_name);
-        }
-        current_context_.table_name = stmt.table_name;
-        current_context_.table_alias = stmt.table_alias;
-        current_context_.schema = &table_info->getSchema();
-        bound->table_name_ = stmt.table_name;
-        bound->table_alias_ = stmt.table_alias;
+    if (stmt.table) {
+        std::vector<Column> combined_columns;
+        bound->table_ = bindTableReference(*stmt.table, combined_columns);
+        current_context_.combined_schema = std::make_unique<Schema>(combined_columns);
     } else {
-        current_context_.schema = nullptr;
+        current_context_.combined_schema = nullptr;
     }
 
     for (const auto& expr : stmt.select_list) {
         if (dynamic_cast<ast::StarExpression*>(expr.get())) {
-            if (!current_context_.schema) {
+            if (!current_context_.combined_schema) {
                 throw BinderError("SELECT * with no table specified");
             }
-            const auto& cols = current_context_.schema->getColumns();
+            const auto& cols = current_context_.combined_schema->getColumns();
             for (size_t i = 0; i < cols.size(); ++i) {
                 TypeId type = columnTypeToTypeId(cols[i].getType());
                 auto col_val = std::make_unique<hamdb::ColumnValueExpression>(i);
-                bound->select_list_.push_back(std::make_unique<BoundColumnRef>(std::move(col_val), type, current_context_.table_name, cols[i].getName()));
+                bound->select_list_.push_back(std::make_unique<BoundColumnRef>(std::move(col_val), type, "", cols[i].getName()));
             }
         } else {
             bound->select_list_.push_back(bindExpression(*expr));
@@ -77,10 +111,10 @@ std::unique_ptr<BoundSelectStatement> Binder::bindSelect(const ast::SelectStatem
 std::unique_ptr<BoundInsertStatement> Binder::bindInsert(const ast::InsertStatement& stmt) {
     auto bound = std::make_unique<BoundInsertStatement>();
     TableInfo* table_info = nullptr;
-    if (catalog_->getTable(stmt.table_name, table_info) != Status::Ok) {
-        throw BinderError("Unknown table: " + stmt.table_name);
+    if (catalog_->getTable(stmt.table_name_, table_info) != Status::Ok) {
+        throw BinderError("Unknown table: " + stmt.table_name_);
     }
-    bound->table_name_ = stmt.table_name;
+    bound->table_name_ = stmt.table_name_;
 
     for (const auto& row : stmt.values) {
         std::vector<std::unique_ptr<BoundExpression>> bound_row;
@@ -107,22 +141,27 @@ std::unique_ptr<BoundInsertStatement> Binder::bindInsert(const ast::InsertStatem
 std::unique_ptr<BoundUpdateStatement> Binder::bindUpdate(const ast::UpdateStatement& stmt) {
     auto bound = std::make_unique<BoundUpdateStatement>();
     TableInfo* table_info = nullptr;
-    if (catalog_->getTable(stmt.table_name, table_info) != Status::Ok) {
-        throw BinderError("Unknown table: " + stmt.table_name);
+    if (catalog_->getTable(stmt.table_name_, table_info) != Status::Ok) {
+        throw BinderError("Unknown table: " + stmt.table_name_);
     }
-    bound->table_name_ = stmt.table_name;
-    current_context_.table_name = stmt.table_name;
-    current_context_.table_alias = "";
-    current_context_.schema = &table_info->getSchema();
+    bound->table_name_ = stmt.table_name_;
+    
+    current_context_.tables.clear();
+    current_context_.tables.push_back({stmt.table_name_, "", &table_info->getSchema(), 0});
+    std::vector<Column> cols;
+    for (uint32_t i = 0; i < table_info->getSchema().getColumnCount(); ++i) {
+        cols.push_back(table_info->getSchema().getColumn(i));
+    }
+    current_context_.combined_schema = std::make_unique<Schema>(cols);
 
     for (const auto& set_clause : stmt.set_clauses) {
         auto bound_expr = bindExpression(*set_clause.second);
         bool found = false;
-        const auto& cols = table_info->getSchema().getColumns();
-        for (size_t i = 0; i < cols.size(); ++i) {
-            if (cols[i].getName() == set_clause.first) {
+        const auto& schema_cols = table_info->getSchema().getColumns();
+        for (size_t i = 0; i < schema_cols.size(); ++i) {
+            if (schema_cols[i].getName() == set_clause.first) {
                 found = true;
-                TypeId expected = columnTypeToTypeId(cols[i].getType());
+                TypeId expected = columnTypeToTypeId(schema_cols[i].getType());
                 if (bound_expr->getBoundType() == BoundExpressionType::PARAMETER) {
                     auto param = static_cast<BoundParameter*>(bound_expr.get());
                     param->setType(expected);
@@ -153,13 +192,18 @@ std::unique_ptr<BoundUpdateStatement> Binder::bindUpdate(const ast::UpdateStatem
 std::unique_ptr<BoundDeleteStatement> Binder::bindDelete(const ast::DeleteStatement& stmt) {
     auto bound = std::make_unique<BoundDeleteStatement>();
     TableInfo* table_info = nullptr;
-    if (catalog_->getTable(stmt.table_name, table_info) != Status::Ok) {
-        throw BinderError("Unknown table: " + stmt.table_name);
+    if (catalog_->getTable(stmt.table_name_, table_info) != Status::Ok) {
+        throw BinderError("Unknown table: " + stmt.table_name_);
     }
-    bound->table_name_ = stmt.table_name;
-    current_context_.table_name = stmt.table_name;
-    current_context_.table_alias = "";
-    current_context_.schema = &table_info->getSchema();
+    bound->table_name_ = stmt.table_name_;
+    
+    current_context_.tables.clear();
+    current_context_.tables.push_back({stmt.table_name_, "", &table_info->getSchema(), 0});
+    std::vector<Column> cols;
+    for (uint32_t i = 0; i < table_info->getSchema().getColumnCount(); ++i) {
+        cols.push_back(table_info->getSchema().getColumn(i));
+    }
+    current_context_.combined_schema = std::make_unique<Schema>(cols);
 
     if (stmt.where_clause) {
         bound->where_clause_ = bindExpression(*stmt.where_clause);
@@ -228,25 +272,45 @@ std::unique_ptr<BoundExpression> Binder::bindConstant(const ast::ConstantExpress
 }
 
 std::unique_ptr<BoundExpression> Binder::bindColumnValue(const ast::ColumnValueExpression& expr) {
-    if (!current_context_.schema) {
+    if (!current_context_.combined_schema) {
         throw BinderError("Column reference without a table");
     }
 
-    // Check table match
+    int found_idx = -1;
+    std::string found_table_name;
+    TypeId type;
+
     if (!expr.table_name.empty()) {
-        if (expr.table_name != current_context_.table_name && expr.table_name != current_context_.table_alias) {
+        bool table_found = false;
+        for (const auto& tc : current_context_.tables) {
+            if (tc.table_name == expr.table_name || tc.table_alias == expr.table_name) {
+                table_found = true;
+                const auto& cols = tc.schema->getColumns();
+                for (size_t i = 0; i < cols.size(); ++i) {
+                    if (cols[i].getName() == expr.column_name) {
+                        if (found_idx != -1) {
+                            throw BinderError("Ambiguous column: " + expr.column_name);
+                        }
+                        found_idx = tc.column_offset + i;
+                        found_table_name = tc.table_name;
+                        type = columnTypeToTypeId(cols[i].getType());
+                    }
+                }
+            }
+        }
+        if (!table_found) {
             throw BinderError("Unknown table or alias: " + expr.table_name);
         }
-    }
-
-    const auto& cols = current_context_.schema->getColumns();
-    int found_idx = -1;
-    for (size_t i = 0; i < cols.size(); ++i) {
-        if (cols[i].getName() == expr.column_name) {
-            if (found_idx != -1) {
-                throw BinderError("Ambiguous column: " + expr.column_name);
+    } else {
+        const auto& cols = current_context_.combined_schema->getColumns();
+        for (size_t i = 0; i < cols.size(); ++i) {
+            if (cols[i].getName() == expr.column_name) {
+                if (found_idx != -1) {
+                    throw BinderError("Ambiguous column: " + expr.column_name);
+                }
+                found_idx = i;
+                type = columnTypeToTypeId(cols[i].getType());
             }
-            found_idx = i;
         }
     }
 
@@ -254,9 +318,8 @@ std::unique_ptr<BoundExpression> Binder::bindColumnValue(const ast::ColumnValueE
         throw BinderError("Unknown column: " + expr.column_name);
     }
 
-    TypeId type = columnTypeToTypeId(cols[found_idx].getType());
     auto executor_expr = std::make_unique<hamdb::ColumnValueExpression>(found_idx);
-    return std::make_unique<BoundColumnRef>(std::move(executor_expr), type, current_context_.table_name, expr.column_name);
+    return std::make_unique<BoundColumnRef>(std::move(executor_expr), type, found_table_name, expr.column_name);
 }
 
 std::unique_ptr<BoundExpression> Binder::bindBinary(const ast::BinaryExpression& expr) {

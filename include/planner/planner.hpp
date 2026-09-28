@@ -16,6 +16,7 @@ public:
 private:
     CatalogManager* catalog_;
 
+    std::unique_ptr<LogicalPlanNode> planTableReference(binder::BoundTableReference* table_ref);
     std::unique_ptr<LogicalPlanNode> planSelect(binder::BoundSelectStatement* stmt);
     std::unique_ptr<LogicalPlanNode> planInsert(binder::BoundInsertStatement* stmt);
     std::unique_ptr<LogicalPlanNode> planUpdate(binder::BoundUpdateStatement* stmt);

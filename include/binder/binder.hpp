@@ -28,13 +28,19 @@ private:
     CatalogManager* catalog_;
     
     // Binding context for the current statement
-    struct Context {
+    struct TableContext {
         std::string table_name;
         std::string table_alias;
-        const Schema* schema{nullptr};
+        const Schema* schema;
+        size_t column_offset;
+    };
+    struct Context {
+        std::vector<TableContext> tables;
+        std::unique_ptr<Schema> combined_schema;
     };
     Context current_context_;
 
+    std::unique_ptr<BoundTableReference> bindTableReference(const ast::TableReference& ref, std::vector<Column>& combined_columns);
     std::unique_ptr<BoundSelectStatement> bindSelect(const ast::SelectStatement& stmt);
     std::unique_ptr<BoundInsertStatement> bindInsert(const ast::InsertStatement& stmt);
     std::unique_ptr<BoundUpdateStatement> bindUpdate(const ast::UpdateStatement& stmt);

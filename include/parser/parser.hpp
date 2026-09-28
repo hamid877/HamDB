@@ -51,6 +51,7 @@ private:
 public:
     // Statement parsing
     std::unique_ptr<ast::Statement> parseSelect();
+    std::unique_ptr<ast::TableReference> parseTableReference();
     std::unique_ptr<ast::Statement> parseInsert();
     std::unique_ptr<ast::Statement> parseUpdate();
     std::unique_ptr<ast::Statement> parseDelete();

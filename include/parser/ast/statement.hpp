@@ -8,6 +8,28 @@
 
 namespace hamdb::ast {
 
+
+class TableReference : public ASTNode {
+public:
+    virtual ~TableReference() = default;
+    virtual std::string toString() const = 0;
+};
+
+class BaseTableReference : public TableReference {
+public:
+    std::string table_name_;
+    std::string table_alias_;
+    std::string toString() const override;
+};
+
+class JoinTableReference : public TableReference {
+public:
+    std::unique_ptr<TableReference> left_;
+    std::unique_ptr<TableReference> right_;
+    std::unique_ptr<Expression> condition_;
+    std::string toString() const override;
+};
+
 class Statement : public ASTNode {
 public:
     virtual ~Statement() = default;
@@ -16,8 +38,7 @@ public:
 class SelectStatement : public Statement {
 public:
     std::vector<std::unique_ptr<Expression>> select_list;
-    std::string table_name;
-    std::string table_alias;
+    std::unique_ptr<TableReference> table;
     std::unique_ptr<Expression> where_clause;
     
     // Order By
@@ -31,7 +52,7 @@ public:
 
 class InsertStatement : public Statement {
 public:
-    std::string table_name;
+    std::string table_name_;
     std::vector<std::vector<std::unique_ptr<Expression>>> values;
 
     std::string toString() const override;
@@ -39,7 +60,7 @@ public:
 
 class UpdateStatement : public Statement {
 public:
-    std::string table_name;
+    std::string table_name_;
     std::vector<std::pair<std::string, std::unique_ptr<Expression>>> set_clauses;
     std::unique_ptr<Expression> where_clause;
 
@@ -48,7 +69,7 @@ public:
 
 class DeleteStatement : public Statement {
 public:
-    std::string table_name;
+    std::string table_name_;
     std::unique_ptr<Expression> where_clause;
 
     std::string toString() const override;

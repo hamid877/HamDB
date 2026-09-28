@@ -14,7 +14,7 @@ namespace hamdb::planner {
 class PlannerTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        test_db_ = "test_planner.hamdb";
+        test_db_ = std::filesystem::temp_directory_path() / ("test_planner_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".hamdb");
         if (std::filesystem::exists(test_db_)) {
             std::filesystem::remove(test_db_);
         }
@@ -53,7 +53,12 @@ protected:
 
 TEST_F(PlannerTest, PlanSelectWithFilterAndLimit) {
     auto stmt = std::make_unique<binder::BoundSelectStatement>();
-    stmt->table_name_ = "test_table";
+    auto base = std::make_unique<binder::BoundBaseTableReference>();
+    base->table_name_ = "test_table";
+    TableInfo* info;
+    (void)catalog_->getTable("test_table", info);
+    base->schema_ = &info->getSchema();
+    stmt->table_ = std::move(base);
     
     auto col_expr = std::make_unique<hamdb::ColumnValueExpression>(0);
     auto bound_col = std::make_unique<binder::BoundColumnRef>(std::move(col_expr), TypeId::Integer, "test_table", "id");

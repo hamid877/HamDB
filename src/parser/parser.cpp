@@ -188,6 +188,45 @@ std::unique_ptr<ast::Expression> Parser::parsePrimary() {
     error(current_token_, "Expected expression");
 }
 
+
+std::unique_ptr<ast::TableReference> Parser::parseTableReference() {
+    auto base = std::make_unique<ast::BaseTableReference>();
+    consume(TokenType::Identifier, "Expected table name");
+    base->table_name_ = previous_token_.lexeme;
+    if (match(TokenType::As)) {
+        consume(TokenType::Identifier, "Expected table alias");
+        base->table_alias_ = previous_token_.lexeme;
+    } else if (match(TokenType::Identifier)) {
+        base->table_alias_ = previous_token_.lexeme;
+    }
+    
+    std::unique_ptr<ast::TableReference> current = std::move(base);
+    while (match(TokenType::Inner) || match(TokenType::Join)) {
+        if (previous_token_.type == TokenType::Inner) {
+            consume(TokenType::Join, "Expected JOIN after INNER");
+        }
+        auto join = std::make_unique<ast::JoinTableReference>();
+        join->left_ = std::move(current);
+        
+        auto right_base = std::make_unique<ast::BaseTableReference>();
+        consume(TokenType::Identifier, "Expected table name in JOIN");
+        right_base->table_name_ = previous_token_.lexeme;
+        if (match(TokenType::As)) {
+            consume(TokenType::Identifier, "Expected table alias");
+            right_base->table_alias_ = previous_token_.lexeme;
+        } else if (match(TokenType::Identifier)) {
+            right_base->table_alias_ = previous_token_.lexeme;
+        }
+        join->right_ = std::move(right_base);
+        
+        if (match(TokenType::On)) {
+            join->condition_ = parseExpression();
+        }
+        current = std::move(join);
+    }
+    return current;
+}
+
 std::unique_ptr<ast::Statement> Parser::parseSelect() {
     auto stmt = std::make_unique<ast::SelectStatement>();
     
@@ -198,11 +237,7 @@ std::unique_ptr<ast::Statement> Parser::parseSelect() {
 
     // From
     if (match(TokenType::From)) {
-        consume(TokenType::Identifier, "Expected table name");
-        stmt->table_name = previous_token_.lexeme;
-        if (match(TokenType::Identifier)) {
-            stmt->table_alias = previous_token_.lexeme;
-        }
+        stmt->table = parseTableReference();
     }
 
     // Where
@@ -244,7 +279,7 @@ std::unique_ptr<ast::Statement> Parser::parseInsert() {
         // optional INTO
     }
     consume(TokenType::Identifier, "Expected table name");
-    stmt->table_name = previous_token_.lexeme;
+    stmt->table_name_ = previous_token_.lexeme;
     
     consume(TokenType::Values, "Expected VALUES clause");
     stmt->values = parseValuesList();
@@ -254,7 +289,7 @@ std::unique_ptr<ast::Statement> Parser::parseInsert() {
 std::unique_ptr<ast::Statement> Parser::parseUpdate() {
     auto stmt = std::make_unique<ast::UpdateStatement>();
     consume(TokenType::Identifier, "Expected table name");
-    stmt->table_name = previous_token_.lexeme;
+    stmt->table_name_ = previous_token_.lexeme;
     
     consume(TokenType::Set, "Expected SET clause");
     do {
@@ -276,7 +311,7 @@ std::unique_ptr<ast::Statement> Parser::parseDelete() {
         // optional FROM
     }
     consume(TokenType::Identifier, "Expected table name");
-    stmt->table_name = previous_token_.lexeme;
+    stmt->table_name_ = previous_token_.lexeme;
     
     if (match(TokenType::Where)) {
         stmt->where_clause = parseExpression();

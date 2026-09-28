@@ -5,6 +5,7 @@ set(PLANNER_SOURCES
     logical_index_scan.cpp
     explain_plan.cpp
     plan_formatter.cpp
+    nested_loop_join_plan.cpp
 )
 
 add_library(hamdb_planner STATIC ${PLANNER_SOURCES})

@@ -1,4 +1,5 @@
 #include "planner/physical_planner.hpp"
+#include "planner/nested_loop_join_plan.hpp"
 #include "planner/logical_index_scan.hpp"
 #include "executor/column_value_expression.hpp"
 #include <stdexcept>
@@ -131,6 +132,13 @@ std::unique_ptr<AbstractPlanNode> PhysicalPlanner::planNode(std::unique_ptr<Logi
             }
             physical_node = std::make_unique<IndexScanPlan>(
                 index_scan->getOutputSchema(), index_scan->table_name_, index_scan->table_alias_, index_scan->takePredicate(), limit, offset);
+            break;
+        }
+        
+        case LogicalPlanType::NESTED_LOOP_JOIN: {
+            auto* join_node = dynamic_cast<LogicalNestedLoopJoinNode*>(logical_node.get());
+            physical_node = std::make_unique<NestedLoopJoinPlan>(
+                join_node->getOutputSchema(), join_node->takePredicate());
             break;
         }
         default:

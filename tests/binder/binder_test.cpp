@@ -50,7 +50,9 @@ TEST_F(BinderTest, BindSelectAll) {
     
     auto* sel = dynamic_cast<binder::BoundSelectStatement*>(bound_stmt.get());
     ASSERT_NE(sel, nullptr);
-    ASSERT_EQ(sel->table_name_, "users");
+    auto base = dynamic_cast<hamdb::binder::BoundBaseTableReference*>(sel->table_.get());
+    ASSERT_TRUE(base != nullptr);
+    ASSERT_EQ(base->table_name_, "users");
     
     // '*' expanded to 3 columns
     ASSERT_EQ(sel->select_list_.size(), 3);
@@ -67,8 +69,10 @@ TEST_F(BinderTest, BindSelectWithAlias) {
     auto bound_stmt = binder.bind(*ast);
     auto* sel = dynamic_cast<binder::BoundSelectStatement*>(bound_stmt.get());
     
-    ASSERT_EQ(sel->table_name_, "users");
-    ASSERT_EQ(sel->table_alias_, "u");
+    auto base = dynamic_cast<hamdb::binder::BoundBaseTableReference*>(sel->table_.get());
+    ASSERT_TRUE(base != nullptr);
+    ASSERT_EQ(base->table_name_, "users");
+    ASSERT_EQ(base->table_alias_, "u");
     ASSERT_EQ(sel->select_list_.size(), 1);
     
     auto col_ref = dynamic_cast<binder::BoundColumnRef*>(sel->select_list_[0].get());

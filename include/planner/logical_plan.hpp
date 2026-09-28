@@ -18,7 +18,8 @@ enum class LogicalPlanType {
     INSERT,
     UPDATE,
     DELETE,
-    INDEX_SCAN
+    INDEX_SCAN,
+    NESTED_LOOP_JOIN
 };
 
 class LogicalPlanNode {

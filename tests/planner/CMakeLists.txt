@@ -22,3 +22,8 @@ add_executable(analyze_test analyze_test.cpp)
 target_include_directories(analyze_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(analyze_test PRIVATE GTest::gtest_main hamdb_shell hamdb_planner hamdb_binder hamdb_executor hamdb_transaction hamdb_wal hamdb_parser)
 add_test(NAME AnalyzeTest COMMAND analyze_test)
+
+add_executable(join_plan_test join_plan_test.cpp)
+target_include_directories(join_plan_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(join_plan_test PRIVATE GTest::gtest_main hamdb_planner hamdb_binder hamdb_parser)
+add_test(NAME JoinPlanTest COMMAND join_plan_test)

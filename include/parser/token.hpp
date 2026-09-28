@@ -14,7 +14,7 @@ enum class TokenType {
     // Keywords
     Select, Insert, Update, Delete, From, Where,
     And, Or, Not, Limit, Offset, Order, By, Asc, Desc,
-    Values, Into, Set, Create, Table, Explain, Analyze,
+    Values, Into, Set, Create, Table, Explain, Analyze, Join, Inner, On,
     Int, Boolean, Varchar, Primary, Key,
     Prepare, Execute, Deallocate, As,
 

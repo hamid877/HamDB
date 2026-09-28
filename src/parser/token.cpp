@@ -23,6 +23,9 @@ std::string_view tokenTypeToString(TokenType type) {
         case TokenType::Into: return "Into";
         case TokenType::Set: return "Set";
         case TokenType::Table: return "Table";
+        case TokenType::Join: return "Join";
+        case TokenType::Inner: return "Inner";
+        case TokenType::On: return "On";
         case TokenType::Explain: return "Explain";
         case TokenType::Analyze: return "Analyze";
         case TokenType::Int: return "Int";

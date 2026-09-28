@@ -3,6 +3,19 @@
 
 namespace hamdb::ast {
 
+
+std::string BaseTableReference::toString() const {
+    if (table_alias_.empty()) return table_name_;
+    return table_name_ + " AS " + table_alias_;
+}
+
+std::string JoinTableReference::toString() const {
+    std::ostringstream oss;
+    oss << left_->toString() << " JOIN " << right_->toString();
+    if (condition_) oss << " ON " << condition_->toString();
+    return oss.str();
+}
+
 std::string SelectStatement::toString() const {
     std::ostringstream oss;
     oss << "SELECT ";
@@ -10,8 +23,8 @@ std::string SelectStatement::toString() const {
         oss << select_list[i]->toString();
         if (i + 1 < select_list.size()) oss << ", ";
     }
-    if (!table_name.empty()) {
-        oss << " FROM " << table_name;
+    if (table) {
+        oss << " FROM " << table->toString();
     }
     if (where_clause) {
         oss << " WHERE " << where_clause->toString();
@@ -34,7 +47,7 @@ std::string SelectStatement::toString() const {
 
 std::string InsertStatement::toString() const {
     std::ostringstream oss;
-    oss << "INSERT INTO " << table_name << " VALUES ";
+    oss << "INSERT INTO " << table_name_ << " VALUES ";
     for (size_t i = 0; i < values.size(); ++i) {
         oss << "(";
         for (size_t j = 0; j < values[i].size(); ++j) {
@@ -49,7 +62,7 @@ std::string InsertStatement::toString() const {
 
 std::string UpdateStatement::toString() const {
     std::ostringstream oss;
-    oss << "UPDATE " << table_name << " SET ";
+    oss << "UPDATE " << table_name_ << " SET ";
     for (size_t i = 0; i < set_clauses.size(); ++i) {
         oss << set_clauses[i].first << " = " << set_clauses[i].second->toString();
         if (i + 1 < set_clauses.size()) oss << ", ";
@@ -62,7 +75,7 @@ std::string UpdateStatement::toString() const {
 
 std::string DeleteStatement::toString() const {
     std::ostringstream oss;
-    oss << "DELETE FROM " << table_name;
+    oss << "DELETE FROM " << table_name_;
     if (where_clause) {
         oss << " WHERE " << where_clause->toString();
     }

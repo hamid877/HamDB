@@ -1,4 +1,5 @@
 #include "planner/plan_formatter.hpp"
+#include "planner/nested_loop_join_plan.hpp"
 #include "planner/logical_index_scan.hpp"
 #include <sstream>
 
@@ -13,6 +14,10 @@ FormattedPlanNode PlanFormatter::buildFormattedTree(const LogicalPlanNode* plan)
             auto* p = static_cast<const SeqScanPlanNode*>(plan);
             node.name = "SEQ_SCAN";
             node.details = "table: " + p->getTableName();
+            break;
+        }
+        case LogicalPlanType::NESTED_LOOP_JOIN: {
+            node.name = "NESTED_LOOP_JOIN";
             break;
         }
         case LogicalPlanType::INDEX_SCAN: {
@@ -64,6 +69,10 @@ FormattedPlanNode PlanFormatter::buildFormattedTree(const AbstractPlanNode* plan
             auto* p = static_cast<const SeqScanPlan*>(plan);
             node.name = "SEQ_SCAN";
             node.details = "table: " + p->getTableName();
+            break;
+        }
+        case PhysicalPlanType::NESTED_LOOP_JOIN: {
+            node.name = "NESTED_LOOP_JOIN";
             break;
         }
         case PhysicalPlanType::INDEX_SCAN: {
