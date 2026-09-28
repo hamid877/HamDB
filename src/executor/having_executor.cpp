@@ -4,7 +4,7 @@ namespace hamdb::executor {
 
 HavingExecutor::HavingExecutor(
     ExecutorContext *context,
-    const HavingPlanNode *plan,
+    const planner::HavingPlan *plan,
     std::unique_ptr<AbstractExecutor> child)
     : plan_(plan),
       child_(std::move(child)) {
@@ -17,10 +17,10 @@ void HavingExecutor::init() {
 
 bool HavingExecutor::next(Tuple* tuple, RID* rid) {
     while (child_->next(tuple, rid)) {
-        if (!predicate_) {
+        if (!plan_->getPredicate()) {
             return true;
         }
-        Value val = predicate_->evaluate(*tuple, child_->outputSchema());
+        Value val = plan_->getPredicate()->evaluate(*tuple, child_->outputSchema());
         if (val.getType() != TypeId::Null && val.getAsBoolean()) {
             return true;
         }

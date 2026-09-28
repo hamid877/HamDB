@@ -178,7 +178,7 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
         case PhysicalPlanType::HAVING: {
             auto* having_plan = dynamic_cast<const planner::HavingPlan*>(plan.get());
             exec = std::make_unique<executor::HavingExecutor>(
-                exec_ctx, std::move(child_executors[0]), having_plan->getPredicate() ? having_plan->getPredicate().get() : nullptr);
+                exec_ctx, having_plan, std::move(child_executors[0]));
             break;
         }
         default:

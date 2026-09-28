@@ -48,7 +48,8 @@ TEST_F(HavingExecutorTest, FilterGroups) {
         std::make_unique<ConstantExpression>(Value(10))
     );
     
-    HavingExecutor executor(exec_ctx_.get(), std::move(child), predicate.get());
+    auto plan = std::make_unique<planner::HavingPlan>(*schema_, std::move(predicate));
+    HavingExecutor executor(exec_ctx_.get(), plan.get(), std::move(child));
     executor.init();
     
     Tuple tuple;

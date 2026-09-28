@@ -9,7 +9,7 @@ namespace hamdb::executor {
 class HavingExecutor : public AbstractExecutor {
 public:
     HavingExecutor(ExecutorContext *context,
-               const HavingPlanNode *plan,
+               const planner::HavingPlan *plan,
                std::unique_ptr<AbstractExecutor> child);
 
     void init() override;
@@ -17,9 +17,8 @@ public:
     const Schema& outputSchema() const override;
 
 private:
+    const planner::HavingPlan* plan_;
     std::unique_ptr<AbstractExecutor> child_;
-    const hamdb::Expression* predicate_;
-    ExecutorContext* context_;
 };
 
 } // namespace hamdb::executor
