@@ -2,8 +2,14 @@
 
 namespace hamdb::executor {
 
-HavingExecutor::HavingExecutor(ExecutorContext* context, std::unique_ptr<AbstractExecutor> child, const hamdb::Expression* predicate)
-    : child_(std::move(child)), predicate_(predicate), context_(context) {}
+HavingExecutor::HavingExecutor(
+    ExecutorContext *context,
+    const HavingPlanNode *plan,
+    std::unique_ptr<AbstractExecutor> child)
+    : plan_(plan),
+      child_(std::move(child)) {
+    (void)context;   // ExecutorContext reserved for future use.
+}
 
 void HavingExecutor::init() {
     child_->init();

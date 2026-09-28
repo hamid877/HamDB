@@ -8,7 +8,9 @@ namespace hamdb::executor {
 
 class HavingExecutor : public AbstractExecutor {
 public:
-    HavingExecutor(ExecutorContext* context, std::unique_ptr<AbstractExecutor> child, const hamdb::Expression* predicate);
+    HavingExecutor(ExecutorContext *context,
+               const HavingPlanNode *plan,
+               std::unique_ptr<AbstractExecutor> child);
 
     void init() override;
     bool next(Tuple* tuple, RID* rid) override;
