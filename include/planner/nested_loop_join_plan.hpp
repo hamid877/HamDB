@@ -14,6 +14,7 @@ public:
           
     const hamdb::Expression* getPredicate() const { return predicate_.get(); }
     std::unique_ptr<hamdb::Expression> takePredicate() { return std::move(predicate_); }
+    void setPredicate(std::unique_ptr<hamdb::Expression> expr) { predicate_ = std::move(expr); }
 private:
     std::unique_ptr<hamdb::Expression> predicate_;
     friend class PhysicalPlanner;

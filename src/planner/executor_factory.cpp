@@ -1,6 +1,8 @@
 #include "planner/executor_factory.hpp"
 #include "executor/nested_loop_join_executor.hpp"
+#include "executor/hash_join_executor.hpp"
 #include "planner/nested_loop_join_plan.hpp"
+#include "planner/hash_join_plan.hpp"
 #include "executor/seq_scan_executor.hpp"
 #include "executor/index_scan_executor.hpp"
 #include "executor/filter_executor.hpp"
@@ -145,6 +147,14 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
             auto* join_plan = dynamic_cast<const planner::NestedLoopJoinPlan*>(plan.get());
             exec = std::make_unique<NestedLoopJoinExecutor>(
                 std::move(child_executors[0]), std::move(child_executors[1]), const_cast<planner::NestedLoopJoinPlan*>(join_plan)->getPredicate() ? const_cast<planner::NestedLoopJoinPlan*>(join_plan)->getPredicate()->clone() : nullptr);
+            break;
+        }
+        case PhysicalPlanType::HASH_JOIN: {
+            auto* join_plan = dynamic_cast<const planner::HashJoinPlan*>(plan.get());
+            exec = std::make_unique<HashJoinExecutor>(
+                std::move(child_executors[0]), std::move(child_executors[1]), 
+                const_cast<planner::HashJoinPlan*>(join_plan)->getLeftKeyExpr() ? const_cast<planner::HashJoinPlan*>(join_plan)->getLeftKeyExpr()->clone() : nullptr,
+                const_cast<planner::HashJoinPlan*>(join_plan)->getRightKeyExpr() ? const_cast<planner::HashJoinPlan*>(join_plan)->getRightKeyExpr()->clone() : nullptr);
             break;
         }
         default:

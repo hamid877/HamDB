@@ -91,7 +91,7 @@ Every milestone must satisfy:
 | M4.5 | Update Executor | ✅ Complete |
 | M4.6 | Filter Executor | ✅ Complete |
 | M4.7 | Projection Executor | ✅ Complete |
-| M4.8 | Nested Loop Join Executor | ✅ Complete |
+| M8.1 | Nested Loop Join Executor | ✅ Complete |
 | M4.9 | Aggregation Executor | ✅ Complete |
 | M4.10 | Sort Executor | ✅ Complete |
 | M4.11 | Limit Executor | ✅ Complete |
@@ -637,7 +637,7 @@ feat(executor): implement sort executor (M4.10)
 
 ---
 
-## M4.8 — Nested Loop Join Executor
+## M8.1 — Nested Loop Join Executor
 
 **Status:** ✅ Complete
 
@@ -662,7 +662,7 @@ feat(executor): implement sort executor (M4.10)
 ### Git Commit
 
 ```text
-feat(executor): implement nested loop join executor (M4.8)
+feat(executor): implement nested loop join executor (M8.1)
 ```
 
 ---

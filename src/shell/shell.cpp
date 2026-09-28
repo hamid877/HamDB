@@ -12,6 +12,7 @@
 #include "planner/explain_plan.hpp"
 #include "planner/plan_formatter.hpp"
 #include "planner/nested_loop_join_plan.hpp"
+#include "planner/hash_join_plan.hpp"
 #include "shell/script_executor.hpp"
 #include "shell/meta_commands.hpp"
 
@@ -93,6 +94,14 @@ std::unique_ptr<planner::AbstractPlanNode> clonePhysicalPlan(const planner::Abst
                 node->getPredicate() ? node->getPredicate()->clone() : nullptr);
             break;
         }
+        case planner::PhysicalPlanType::HASH_JOIN: {
+            auto* node = static_cast<const planner::HashJoinPlan*>(plan);
+            cloned = std::make_unique<planner::HashJoinPlan>(
+                node->getOutputSchema(),
+                node->getLeftKeyExpr() ? node->getLeftKeyExpr()->clone() : nullptr,
+                node->getRightKeyExpr() ? node->getRightKeyExpr()->clone() : nullptr);
+            break;
+        }
         case planner::PhysicalPlanType::INDEX_SCAN: {
             auto* node = static_cast<const planner::IndexScanPlan*>(plan);
             cloned = std::make_unique<planner::IndexScanPlan>(
@@ -147,6 +156,12 @@ void bindPhysicalPlan(planner::AbstractPlanNode* plan, const std::vector<Value>&
                 case planner::PhysicalPlanType::NESTED_LOOP_JOIN: {
             auto* node = static_cast<planner::NestedLoopJoinPlan*>(plan);
             if (node->getPredicate()) node->getPredicate()->bindParameters(params);
+            break;
+        }
+        case planner::PhysicalPlanType::HASH_JOIN: {
+            auto* node = static_cast<planner::HashJoinPlan*>(plan);
+            if (node->getMutableLeftKeyExpr()) node->getMutableLeftKeyExpr()->bindParameters(params);
+            if (node->getMutableRightKeyExpr()) node->getMutableRightKeyExpr()->bindParameters(params);
             break;
         }
         case planner::PhysicalPlanType::INDEX_SCAN: {

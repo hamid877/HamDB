@@ -4,6 +4,8 @@
 #include "executor/comparison_expression.hpp"
 #include "executor/logical_expression.hpp"
 #include "planner/logical_index_scan.hpp"
+#include "planner/hash_join_plan.hpp"
+#include "planner/nested_loop_join_plan.hpp"
 
 namespace hamdb::optimizer {
 
@@ -101,7 +103,23 @@ std::unique_ptr<planner::LogicalPlanNode> ConstantFoldingRule::apply(std::unique
             }
             break;
         }
-        case planner::LogicalPlanType::NESTED_LOOP_JOIN:
+        case planner::LogicalPlanType::NESTED_LOOP_JOIN: {
+            auto* node = dynamic_cast<planner::LogicalNestedLoopJoinNode*>(plan.get());
+            if (node && node->getPredicate()) {
+                node->setPredicate(foldExpression(node->takePredicate()));
+            }
+            break;
+        }
+        case planner::LogicalPlanType::HASH_JOIN: {
+            auto* node = dynamic_cast<planner::LogicalHashJoinNode*>(plan.get());
+            if (node && node->getLeftKeyExpr()) {
+                node->setLeftKeyExpr(foldExpression(node->takeLeftKeyExpr()));
+            }
+            if (node && node->getRightKeyExpr()) {
+                node->setRightKeyExpr(foldExpression(node->takeRightKeyExpr()));
+            }
+            break;
+        }
         case planner::LogicalPlanType::INDEX_SCAN: {
             auto* node = dynamic_cast<planner::LogicalIndexScanNode*>(plan.get());
             if (node && node->getPredicate()) {

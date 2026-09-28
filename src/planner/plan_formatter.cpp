@@ -20,6 +20,10 @@ FormattedPlanNode PlanFormatter::buildFormattedTree(const LogicalPlanNode* plan)
             node.name = "NESTED_LOOP_JOIN";
             break;
         }
+        case LogicalPlanType::HASH_JOIN: {
+            node.name = "HASH_JOIN";
+            break;
+        }
         case LogicalPlanType::INDEX_SCAN: {
             auto* p = static_cast<const LogicalIndexScanNode*>(plan);
             node.name = "INDEX_SCAN";
@@ -73,6 +77,10 @@ FormattedPlanNode PlanFormatter::buildFormattedTree(const AbstractPlanNode* plan
         }
         case PhysicalPlanType::NESTED_LOOP_JOIN: {
             node.name = "NESTED_LOOP_JOIN";
+            break;
+        }
+        case PhysicalPlanType::HASH_JOIN: {
+            node.name = "HASH_JOIN";
             break;
         }
         case PhysicalPlanType::INDEX_SCAN: {

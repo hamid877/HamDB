@@ -1,7 +1,7 @@
 #include "executor/column_value_expression.hpp"
 #include "executor/comparison_expression.hpp"
 #include "executor/constant_expression.hpp"
-#include "executor/nested_loop_join_executor.hpp"
+#include "executor/hash_join_executor.hpp"
 #include "catalog/catalog_manager.hpp"
 #include "buffer/buffer_pool_manager.hpp"
 #include "storage/disk_manager.hpp"
@@ -62,13 +62,13 @@ namespace hamdb
             size_t idx_{0};
         };
 
-        class NestedLoopJoinExecutorTest : public ::testing::Test
+        class HashJoinExecutorTest : public ::testing::Test
         {
         protected:
             void SetUp() override
             {
                 std::string test_name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
-                test_db_ = std::filesystem::temp_directory_path() / (std::string("test_join_executor_") + test_name + ".hamdb");
+                test_db_ = std::filesystem::temp_directory_path() / (std::string("test_hash_join_executor_") + test_name + ".hamdb");
                 if (std::filesystem::exists(test_db_))
                 {
                     std::filesystem::remove(test_db_);
@@ -109,23 +109,33 @@ namespace hamdb
 
             std::unique_ptr<Schema> left_schema_;
             std::unique_ptr<Schema> right_schema_;
-            std::unique_ptr<NestedLoopJoinExecutor> join_;
+            std::unique_ptr<HashJoinExecutor> join_;
         };
 
-        TEST_F(NestedLoopJoinExecutorTest, CrossJoinNoPredicate)
+        TEST_F(HashJoinExecutorTest, InnerHashJoin)
         {
+            // Left tuples: 1, 2, 3, 2
             std::vector<Tuple> left_tuples;
-            left_tuples.emplace_back(makePayload("A"));
-            left_tuples.emplace_back(makePayload("B"));
+            left_tuples.emplace_back(makePayload(std::string(reinterpret_cast<const char*>(new int32_t(1)), 4)));
+            left_tuples.emplace_back(makePayload(std::string(reinterpret_cast<const char*>(new int32_t(2)), 4)));
+            left_tuples.emplace_back(makePayload(std::string(reinterpret_cast<const char*>(new int32_t(3)), 4)));
+            left_tuples.emplace_back(makePayload(std::string(reinterpret_cast<const char*>(new int32_t(2)), 4)));
 
+            // Right tuples: 2, 4, 2, 1
             std::vector<Tuple> right_tuples;
-            right_tuples.emplace_back(makePayload("1"));
-            right_tuples.emplace_back(makePayload("2"));
+            right_tuples.emplace_back(makePayload(std::string(reinterpret_cast<const char*>(new int32_t(2)), 4)));
+            right_tuples.emplace_back(makePayload(std::string(reinterpret_cast<const char*>(new int32_t(4)), 4)));
+            right_tuples.emplace_back(makePayload(std::string(reinterpret_cast<const char*>(new int32_t(2)), 4)));
+            right_tuples.emplace_back(makePayload(std::string(reinterpret_cast<const char*>(new int32_t(1)), 4)));
 
             auto left_child = std::make_unique<MockExecutor>(*left_schema_, left_tuples);
             auto right_child = std::make_unique<MockExecutor>(*right_schema_, right_tuples);
 
-            join_ = std::make_unique<NestedLoopJoinExecutor>(std::move(left_child), std::move(right_child), nullptr);
+            auto left_key = std::make_unique<ColumnValueExpression>(0); // left_col
+            auto right_key = std::make_unique<ColumnValueExpression>(0); // right_col
+
+            join_ = std::make_unique<HashJoinExecutor>(std::move(left_child), std::move(right_child),
+                                                       std::move(left_key), std::move(right_key));
             join_->init();
 
             EXPECT_EQ(join_->outputSchema().getColumnCount(), 2);
@@ -135,45 +145,19 @@ namespace hamdb
             Tuple tuple;
             RID rid;
 
-            ASSERT_TRUE(join_->next(&tuple, &rid));
-            EXPECT_EQ(tuple.size(), 2); // "A1"
-
-            ASSERT_TRUE(join_->next(&tuple, &rid));
-            EXPECT_EQ(tuple.size(), 2); // "A2"
-
-            ASSERT_TRUE(join_->next(&tuple, &rid));
-            EXPECT_EQ(tuple.size(), 2); // "B1"
-
-            ASSERT_TRUE(join_->next(&tuple, &rid));
-            EXPECT_EQ(tuple.size(), 2); // "B2"
-
-            EXPECT_FALSE(join_->next(&tuple, &rid));
-        }
-
-        TEST_F(NestedLoopJoinExecutorTest, InnerJoinWithPredicate)
-        {
-            std::vector<Tuple> left_tuples;
-            left_tuples.emplace_back(makePayload("A"));
-            left_tuples.emplace_back(makePayload("B"));
-
-            std::vector<Tuple> right_tuples;
-            right_tuples.emplace_back(makePayload("1"));
-            right_tuples.emplace_back(makePayload("2"));
-
-            auto left_child = std::make_unique<MockExecutor>(*left_schema_, left_tuples);
-            auto right_child = std::make_unique<MockExecutor>(*right_schema_, right_tuples);
-
-            auto false_predicate = std::make_unique<ConstantExpression>(Value(false));
-
-            join_ = std::make_unique<NestedLoopJoinExecutor>(std::move(left_child), std::move(right_child),
-                                                             std::move(false_predicate));
-            join_->init();
-
-            Tuple tuple;
-            RID rid;
-
-            // Everything is filtered out
-            EXPECT_FALSE(join_->next(&tuple, &rid));
+            int match_count = 0;
+            while (join_->next(&tuple, &rid)) {
+                match_count++;
+            }
+            
+            // matches:
+            // L:1, R:1 (1 match)
+            // L:2 (first), R:2 (first)
+            // L:2 (first), R:2 (second)
+            // L:2 (second), R:2 (first)
+            // L:2 (second), R:2 (second)
+            // Total matches: 5
+            EXPECT_EQ(match_count, 5);
         }
 
     } // namespace

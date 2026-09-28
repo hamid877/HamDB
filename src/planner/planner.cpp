@@ -1,5 +1,8 @@
 #include "planner/planner.hpp"
 #include "planner/nested_loop_join_plan.hpp"
+#include "planner/hash_join_plan.hpp"
+#include "executor/comparison_expression.hpp"
+#include "executor/column_value_expression.hpp"
 #include <stdexcept>
 
 namespace hamdb::planner {
@@ -50,6 +53,19 @@ std::unique_ptr<LogicalPlanNode> Planner::planTableReference(binder::BoundTableR
         std::unique_ptr<hamdb::Expression> condition = nullptr;
         if (join->condition_) {
             condition = join->condition_->takeExpr();
+        }
+        
+        if (condition) {
+            auto comp = dynamic_cast<const ComparisonExpression*>(condition.get());
+            if (comp && comp->getComparisonType() == ComparisonType::Equal) {
+                auto left_expr = comp->getChildren()[0]->clone();
+                auto right_expr = comp->getChildren()[1]->clone();
+                
+                auto hash_join = std::make_unique<LogicalHashJoinNode>(std::move(join_schema), std::move(left_expr), std::move(right_expr));
+                hash_join->addChild(std::move(left_node));
+                hash_join->addChild(std::move(right_node));
+                return hash_join;
+            }
         }
         
         auto join_node = std::make_unique<LogicalNestedLoopJoinNode>(std::move(join_schema), std::move(condition));

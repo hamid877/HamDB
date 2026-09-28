@@ -10,6 +10,7 @@ add_library(hamdb_executor STATIC
     filter_executor.cpp
     projection_executor.cpp
     nested_loop_join_executor.cpp
+    hash_join_executor.cpp
     aggregation_hash_table.cpp
     aggregation_executor.cpp
     sort_executor.cpp
