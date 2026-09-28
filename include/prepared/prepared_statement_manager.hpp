@@ -13,6 +13,7 @@ public:
     PreparedStatement* getStatement(const std::string& name) const;
     void removeStatement(const std::string& name);
     void clear();
+    [[nodiscard]] std::size_t getStatementCount() const { return statements_.size(); }
 
 private:
     std::unordered_map<std::string, std::unique_ptr<PreparedStatement>> statements_;

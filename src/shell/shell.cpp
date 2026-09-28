@@ -12,6 +12,7 @@
 #include "planner/explain_plan.hpp"
 #include "planner/plan_formatter.hpp"
 #include "shell/script_executor.hpp"
+#include "shell/meta_commands.hpp"
 
 #include <stdexcept>
 #include <sstream>
@@ -182,78 +183,7 @@ void Shell::initDB(const std::string& db_name) {
 }
 
 void Shell::executeMeta(const std::string& cmd, std::ostream& out) {
-    std::stringstream ss(cmd);
-    std::string token;
-    ss >> token;
-
-    if (token == ".help") {
-        out << ".help                  Show this message\n"
-            << ".exit                  Exit this program\n"
-            << ".quit                  Exit this program\n"
-            << ".tables                List names of tables\n"
-            << ".schema <table>        Show the CREATE TABLE statements\n"
-            << ".indexes <table>       Show indexes of a table\n";
-    } else if (token == ".tables") {
-        auto tables = catalog_->listTables();
-        for (const auto& t : tables) {
-            out << t << "\n";
-        }
-    } else if (token == ".schema") {
-        std::string table_name;
-        if (ss >> table_name) {
-            TableInfo* info = nullptr;
-            if (catalog_->getTable(table_name, info) == Status::Ok) {
-                out << "CREATE TABLE " << table_name << " (\n";
-                const auto& schema = info->getSchema();
-                for (size_t i = 0; i < schema.getColumnCount(); ++i) {
-                    const auto& col = schema.getColumn(i);
-                    out << "    " << col.getName() << " ";
-                    switch(col.getType()) {
-                        case ColumnType::Integer: out << "INTEGER"; break;
-                        case ColumnType::Boolean: out << "BOOLEAN"; break;
-                        case ColumnType::Varchar: out << "VARCHAR"; break;
-                        case ColumnType::Float: out << "FLOAT"; break;
-                    }
-                    if (i + 1 < schema.getColumnCount()) {
-                        out << ",";
-                    }
-                    out << "\n";
-                }
-                out << ");\n";
-            } else {
-                out << "Error: Table not found.\n";
-            }
-        } else {
-            out << "Usage: .schema <table>\n";
-        }
-    } else if (token == ".indexes") {
-        std::string table_name;
-        if (ss >> table_name) {
-            TableInfo* info = nullptr;
-            if (catalog_->getTable(table_name, info) == Status::Ok) {
-                if (info->getIndexRootPage() != kInvalidPageId) {
-                    out << "Index on " << table_name << " (Root Page: " << info->getIndexRootPage() << ")\n";
-                } else {
-                    out << "No indexes on " << table_name << "\n";
-                }
-            } else {
-                out << "Error: Table not found.\n";
-            }
-        } else {
-            out << "Usage: .indexes <table>\n";
-        }
-    } else if (token == ".read") {
-        std::string filepath;
-        if (ss >> filepath) {
-            ScriptExecutor::execute(filepath, *this, out);
-        } else {
-            out << "Usage: .read <filepath>\n";
-        }
-    } else if (token == ".exit" || token == ".quit") {
-        // Handled by repl
-    } else {
-        out << "Error: unknown command or invalid arguments:  " << cmd << "\n";
-    }
+    MetaCommands::execute(cmd, *this, out);
 }
 
 void Shell::executeSQL(const std::string& query, std::ostream& out) {

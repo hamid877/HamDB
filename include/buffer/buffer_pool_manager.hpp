@@ -124,6 +124,11 @@ namespace hamdb
          */
         [[nodiscard]] Status newPageGuard(PageId& out_page_id, WritePageGuard& out_guard);
 
+        /**
+         * @brief Get the configured size of the buffer pool.
+         */
+        [[nodiscard]] std::size_t getPoolSize() const { return pool_size_; }
+
     private:
         /**
          * @brief Finds an unused frame in the pool.

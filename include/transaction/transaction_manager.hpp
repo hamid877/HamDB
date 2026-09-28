@@ -50,6 +50,14 @@ namespace hamdb
          */
         [[nodiscard]] auto getTransaction(txn_id_t txn_id) const -> Transaction*;
 
+        /**
+         * @brief Get the number of currently active transactions.
+         */
+        [[nodiscard]] std::size_t getActiveTxnCount() const {
+            std::shared_lock lock(txn_map_mutex_);
+            return active_txns_.size();
+        }
+
     private:
         std::atomic<txn_id_t> next_txn_id_{0};
         mutable std::shared_mutex txn_map_mutex_;

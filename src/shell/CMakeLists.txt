@@ -1,6 +1,7 @@
 add_library(hamdb_shell STATIC
     table_printer.cpp
     shell.cpp
+    meta_commands.cpp
     repl.cpp
     script_executor.cpp
 )

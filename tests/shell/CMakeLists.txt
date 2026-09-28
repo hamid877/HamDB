@@ -1,5 +1,6 @@
 add_executable(shell_test
     shell_test.cpp
+    meta_command_test.cpp
     table_printer_test.cpp
     script_executor_test.cpp
 )

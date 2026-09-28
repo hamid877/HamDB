@@ -28,6 +28,12 @@ public:
     void executeSQL(const std::string& query, std::ostream& out);
     void executeMeta(const std::string& cmd, std::ostream& out);
 
+    CatalogManager* getCatalog() const { return catalog_.get(); }
+    BufferPoolManager* getBufferPoolManager() const { return bpm_.get(); }
+    DiskManager* getDiskManager() const { return disk_manager_.get(); }
+    TransactionManager* getTransactionManager() const { return txn_manager_.get(); }
+    PreparedStatementManager* getPreparedStatementManager() const { return prep_manager_.get(); }
+
 private:
     std::unique_ptr<DiskManager> disk_manager_;
     std::unique_ptr<BufferPoolManager> bpm_;

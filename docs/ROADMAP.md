@@ -135,10 +135,37 @@ Every milestone must satisfy:
 | M7.2 | EXPLAIN & EXPLAIN ANALYZE | ✅ Complete |
 | M7.3 | Prepared Statements & Parameter Binding | ✅ Complete |
 | M7.4 | CLI Client   | ✅ Complete |
+| M7.5 | CLI Utilities & Database Introspection | ✅ Complete |
 
 ---
 
 # Completed Milestones
+
+## M7.5 — CLI Utilities & Database Introspection
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Created `include/shell/meta_commands.hpp` and `src/shell/meta_commands.cpp`.
+* Implemented meta commands `.help`, `.tables`, `.schema <table>`, `.describe <table>`, `.indexes <table>`, `.stats`, `.quit`, and `.exit`.
+* Reused `TablePrinter` for reusable ASCII formatting.
+* Gathered metadata from `CatalogManager`, `BufferPoolManager`, `DiskManager`, `TransactionManager`, and `PreparedStatementManager` for `.stats`.
+* Integrated `MetaCommands` execution before SQL parsing in `Shell`.
+* Updated `CMakeLists.txt` and `app/hamdb.cpp`.
+* Wrote integration tests in `tests/shell/meta_command_test.cpp` verifying execution correctly using temporary database paths.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(shell): implement CLI utilities and database introspection (M7.5)
+```
 
 ## M7.4 — CLI Client & SQL Script Execution
 
