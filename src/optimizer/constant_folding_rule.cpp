@@ -6,6 +6,7 @@
 #include "planner/logical_index_scan.hpp"
 #include "planner/hash_join_plan.hpp"
 #include "planner/nested_loop_join_plan.hpp"
+#include "planner/aggregation_plan.hpp"
 
 namespace hamdb::optimizer {
 
@@ -187,6 +188,20 @@ std::unique_ptr<planner::LogicalPlanNode> ConstantFoldingRule::apply(std::unique
         case planner::LogicalPlanType::INSERT:
         case planner::LogicalPlanType::DELETE:
             break;
+        case planner::LogicalPlanType::AGGREGATION: {
+            auto* node = dynamic_cast<planner::LogicalAggregationNode*>(plan.get());
+            if (node) {
+                for (auto& expr : node->getMutableGroupBys()) {
+                    expr = foldExpression(std::move(expr));
+                }
+                for (auto& expr : node->getMutableAggregates()) {
+                    if (expr) {
+                        expr = foldExpression(std::move(expr));
+                    }
+                }
+            }
+            break;
+        }
     }
     return plan;
 }

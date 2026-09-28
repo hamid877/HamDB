@@ -41,6 +41,9 @@ public:
     std::unique_ptr<TableReference> table;
     std::unique_ptr<Expression> where_clause;
     
+    // Group By
+    std::vector<std::unique_ptr<Expression>> group_by;
+    
     // Order By
     std::vector<std::pair<std::unique_ptr<Expression>, bool>> order_by; // true for ASC, false for DESC
     

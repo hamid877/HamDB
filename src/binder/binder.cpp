@@ -89,6 +89,45 @@ std::unique_ptr<BoundSelectStatement> Binder::bindSelect(const ast::SelectStatem
         }
     }
 
+    // Process GROUP BY
+    for (const auto& group_expr : stmt.group_by) {
+        bound->group_bys_.push_back(bindExpression(*group_expr));
+    }
+
+    // Validate GROUP BY semantics
+    bool has_aggregate = false;
+    for (const auto& expr : bound->select_list_) {
+        if (expr->getBoundType() == BoundExpressionType::AGGREGATE) {
+            has_aggregate = true;
+            break;
+        }
+    }
+    
+    if (has_aggregate || !bound->group_bys_.empty()) {
+        for (const auto& expr : bound->select_list_) {
+            if (expr->getBoundType() == BoundExpressionType::AGGREGATE) continue;
+            
+            // It must be present in GROUP BY list
+            bool found_in_group_by = false;
+            for (const auto& gb : bound->group_bys_) {
+                // simple check for column ref equality, ideally checking actual expression equality
+                if (expr->getBoundType() == BoundExpressionType::COLUMN_REF &&
+                    gb->getBoundType() == BoundExpressionType::COLUMN_REF) {
+                    auto col1 = static_cast<const BoundColumnRef*>(expr.get());
+                    auto col2 = static_cast<const BoundColumnRef*>(gb.get());
+                    if (col1->getColumnName() == col2->getColumnName() &&
+                        col1->getTableName() == col2->getTableName()) {
+                        found_in_group_by = true;
+                        break;
+                    }
+                }
+            }
+            if (!found_in_group_by && expr->getBoundType() != BoundExpressionType::CONSTANT && expr->getBoundType() != BoundExpressionType::PARAMETER) {
+                throw BinderError("Selected column must be in GROUP BY clause or be an aggregate function");
+            }
+        }
+    }
+
     if (stmt.where_clause) {
         bound->where_clause_ = bindExpression(*stmt.where_clause);
         if (bound->where_clause_->getType() != TypeId::Boolean) {
@@ -234,6 +273,7 @@ std::unique_ptr<BoundExpression> Binder::bindExpression(const ast::Expression& e
     if (auto e = dynamic_cast<const ast::ColumnValueExpression*>(&expr)) return bindColumnValue(*e);
     if (auto e = dynamic_cast<const ast::BinaryExpression*>(&expr)) return bindBinary(*e);
     if (auto e = dynamic_cast<const ast::UnaryExpression*>(&expr)) return bindUnary(*e);
+    if (auto e = dynamic_cast<const ast::AggregateExpression*>(&expr)) return bindAggregate(*e);
     throw BinderError("Unknown expression type");
 }
 
@@ -269,6 +309,45 @@ std::unique_ptr<BoundExpression> Binder::bindConstant(const ast::ConstantExpress
     }
     auto executor_expr = std::make_unique<hamdb::ConstantExpression>(val);
     return std::make_unique<BoundConstant>(std::move(executor_expr), type);
+}
+
+std::unique_ptr<BoundExpression> Binder::bindAggregate(const ast::AggregateExpression& expr) {
+    std::unique_ptr<BoundExpression> child;
+    TypeId child_type = TypeId::Integer;
+    if (expr.child) {
+        child = bindExpression(*expr.child);
+        child_type = child->getType();
+    }
+    
+    hamdb::AggregateType agg_type;
+    TypeId result_type = TypeId::Integer;
+    
+    switch (expr.type) {
+        case ast::AggregateExpression::Type::CountStar:
+            agg_type = hamdb::AggregateType::CountStar;
+            break;
+        case ast::AggregateExpression::Type::Count:
+            agg_type = hamdb::AggregateType::Count;
+            break;
+        case ast::AggregateExpression::Type::Sum:
+            agg_type = hamdb::AggregateType::Sum;
+            result_type = child_type;
+            break;
+        case ast::AggregateExpression::Type::Min:
+            agg_type = hamdb::AggregateType::Min;
+            result_type = child_type;
+            break;
+        case ast::AggregateExpression::Type::Max:
+            agg_type = hamdb::AggregateType::Max;
+            result_type = child_type;
+            break;
+        case ast::AggregateExpression::Type::Avg:
+            agg_type = hamdb::AggregateType::Avg;
+            result_type = child_type;
+            break;
+    }
+    
+    return std::make_unique<BoundAggregate>(child ? child->takeExpr() : nullptr, result_type, agg_type);
 }
 
 std::unique_ptr<BoundExpression> Binder::bindColumnValue(const ast::ColumnValueExpression& expr) {

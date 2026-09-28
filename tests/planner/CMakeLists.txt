@@ -32,3 +32,8 @@ add_executable(hash_join_plan_test hash_join_plan_test.cpp)
 target_include_directories(hash_join_plan_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(hash_join_plan_test PRIVATE GTest::gtest_main hamdb_planner hamdb_binder hamdb_parser)
 add_test(NAME HashJoinPlanTest COMMAND hash_join_plan_test)
+
+add_executable(aggregation_plan_test aggregation_plan_test.cpp)
+target_include_directories(aggregation_plan_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(aggregation_plan_test PRIVATE GTest::gtest_main hamdb_planner hamdb_binder hamdb_parser)
+add_test(NAME AggregationPlanTest COMMAND aggregation_plan_test)

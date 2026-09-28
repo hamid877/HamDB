@@ -92,7 +92,8 @@ Every milestone must satisfy:
 | M4.6 | Filter Executor | ✅ Complete |
 | M4.7 | Projection Executor | ✅ Complete |
 | M8.1 | Nested Loop Join Executor | ✅ Complete |
-| M4.9 | Aggregation Executor | ✅ Complete |
+| M8.2 | Hash Join Executor | ✅ Complete |
+| M8.3 | Aggregation Executor | ✅ Complete |
 | M4.10 | Sort Executor | ✅ Complete |
 | M4.11 | Limit Executor | ✅ Complete |
 | M4.12 | Values Executor | ✅ Complete |
@@ -140,6 +141,58 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M8.3 — Aggregation Executor
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `AggregationExecutor` implementing the executor lifecycle (`init()`, `next()`, `outputSchema()`).
+* Support for `GROUP BY` using `AggregateKey` and `AggregateValue`.
+* Support for hash aggregation functions `COUNT(*)`, `COUNT(col)`, `SUM(col)`, `AVG(col)`, `MIN(col)`, and `MAX(col)`.
+* Unordered map for aggregate hash table state built during `init()`.
+* Iterating through the hash table and emitting one tuple per group in `next()`.
+* Planner and Binder updates for `LogicalAggregationNode` and `AggregationPlan`.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement aggregation executor (M8.3)
+```
+
+## M8.2 — Hash Join Executor
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `HashJoinExecutor` implementing the executor lifecycle (`init()`, `next()`, `outputSchema()`).
+* Hash table built from right child tuples during `init()`.
+* Probe phase performed continuously while scanning the left child in `next()`.
+* Support for duplicate join keys using vector buckets inside the hash table map.
+* Logical and physical planner support for equality predicates, compiling directly into `HashJoinPlan`.
+* Planners updated to compile non-equality predicates to `NestedLoopJoinPlan`.
+* Properly preserved and evaluated expressions for hashing and comparison.
+* Full integration into physical execution and optimizer rules.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement hash join executor (M8.2)
+```
 
 ## M7.5 — CLI Utilities & Database Introspection
 

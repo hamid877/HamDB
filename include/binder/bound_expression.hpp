@@ -8,6 +8,7 @@
 #include "executor/comparison_expression.hpp"
 #include "executor/logical_expression.hpp"
 #include "executor/parameter_expression.hpp"
+#include "executor/aggregation_hash_table.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -20,7 +21,8 @@ enum class BoundExpressionType {
     ARITHMETIC,
     COMPARISON,
     LOGICAL,
-    PARAMETER
+    PARAMETER,
+    AGGREGATE
 };
 
 class BoundExpression {
@@ -129,6 +131,21 @@ private:
     std::unique_ptr<hamdb::Expression> expr_;
     TypeId type_;
     size_t index_;
+};
+
+class BoundAggregate : public BoundExpression {
+public:
+    BoundAggregate(std::unique_ptr<hamdb::Expression> child, TypeId type, hamdb::AggregateType agg_type)
+        : child_(std::move(child)), type_(type), agg_type_(agg_type) {}
+
+    BoundExpressionType getBoundType() const override { return BoundExpressionType::AGGREGATE; }
+    TypeId getType() const override { return type_; }
+    const hamdb::Expression* getExpr() const override { return nullptr; } // Aggregates are special
+    std::unique_ptr<hamdb::Expression> takeExpr() override { return nullptr; }
+
+    std::unique_ptr<hamdb::Expression> child_;
+    TypeId type_;
+    hamdb::AggregateType agg_type_;
 };
 
 } // namespace hamdb::binder

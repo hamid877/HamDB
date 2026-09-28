@@ -46,4 +46,17 @@ std::string UnaryExpression::toString() const {
     return "(" + op_str + child->toString() + ")";
 }
 
+std::string AggregateExpression::toString() const {
+    std::string name;
+    switch (type) {
+        case Type::CountStar: return "COUNT(*)";
+        case Type::Count: name = "COUNT"; break;
+        case Type::Sum: name = "SUM"; break;
+        case Type::Min: name = "MIN"; break;
+        case Type::Max: name = "MAX"; break;
+        case Type::Avg: name = "AVG"; break;
+    }
+    return name + "(" + (child ? child->toString() : "") + ")";
+}
+
 } // namespace hamdb::ast

@@ -59,6 +59,17 @@ public:
     std::string toString() const override;
 };
 
+class AggregateExpression : public Expression {
+public:
+    enum class Type { CountStar, Count, Sum, Min, Max, Avg };
+    Type type;
+    std::unique_ptr<Expression> child;
+
+    AggregateExpression(Type type, std::unique_ptr<Expression> child = nullptr)
+        : type(type), child(std::move(child)) {}
+    std::string toString() const override;
+};
+
 class ParameterExpression : public Expression {
 public:
     std::string toString() const override { return "?"; }

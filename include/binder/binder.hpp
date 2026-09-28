@@ -51,6 +51,7 @@ private:
     std::unique_ptr<BoundExpression> bindParameter(const ast::ParameterExpression& expr);
     std::unique_ptr<BoundExpression> bindConstant(const ast::ConstantExpression& expr);
     std::unique_ptr<BoundExpression> bindColumnValue(const ast::ColumnValueExpression& expr);
+    std::unique_ptr<BoundExpression> bindAggregate(const ast::AggregateExpression& expr);
     std::unique_ptr<BoundExpression> bindBinary(const ast::BinaryExpression& expr);
     std::unique_ptr<BoundExpression> bindUnary(const ast::UnaryExpression& expr);
 

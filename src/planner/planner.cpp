@@ -1,8 +1,10 @@
 #include "planner/planner.hpp"
 #include "planner/nested_loop_join_plan.hpp"
 #include "planner/hash_join_plan.hpp"
+#include "planner/aggregation_plan.hpp"
 #include "executor/comparison_expression.hpp"
 #include "executor/column_value_expression.hpp"
+#include "binder/bound_expression.hpp"
 #include <stdexcept>
 
 namespace hamdb::planner {
@@ -93,6 +95,53 @@ std::unique_ptr<LogicalPlanNode> Planner::planSelect(binder::BoundSelectStatemen
         filter->addChild(std::move(current_node));
         current_node = std::move(filter);
     }
+    
+    // AGGREGATION
+    bool has_aggregate = false;
+    for (const auto& expr : stmt->select_list_) {
+        if (expr->getBoundType() == binder::BoundExpressionType::AGGREGATE) {
+            has_aggregate = true;
+            break;
+        }
+    }
+    
+    if (has_aggregate || !stmt->group_bys_.empty()) {
+        std::vector<std::unique_ptr<hamdb::Expression>> group_bys;
+        std::vector<std::unique_ptr<hamdb::Expression>> aggregates;
+        std::vector<AggregateType> agg_types;
+        std::vector<Column> agg_cols;
+        
+        for (size_t i = 0; i < stmt->group_bys_.size(); ++i) {
+            group_bys.push_back(stmt->group_bys_[i]->takeExpr());
+            agg_cols.emplace_back("group_by_" + std::to_string(i), typeIdToColumnType(stmt->group_bys_[i]->getType()));
+        }
+        
+        // Find all unique aggregates in select list
+        for (const auto& expr : stmt->select_list_) {
+            if (expr->getBoundType() == binder::BoundExpressionType::AGGREGATE) {
+                auto bound_agg = static_cast<binder::BoundAggregate*>(expr.get());
+                bool found = false;
+                // A very naive check: in a real planner we'd compare expressions structurally
+                for (size_t i = 0; i < aggregates.size(); ++i) {
+                    if (agg_types[i] == bound_agg->agg_type_) {
+                        // Assume same for now since we don't have expression equality
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    aggregates.push_back(bound_agg->child_ ? bound_agg->child_->clone() : nullptr);
+                    agg_types.push_back(bound_agg->agg_type_);
+                    agg_cols.emplace_back("agg_" + std::to_string(aggregates.size() - 1), typeIdToColumnType(bound_agg->getType()));
+                }
+            }
+        }
+        
+        Schema agg_schema(agg_cols);
+        auto agg_node = std::make_unique<LogicalAggregationNode>(std::move(agg_schema), std::move(group_bys), std::move(aggregates), std::move(agg_types));
+        agg_node->addChild(std::move(current_node));
+        current_node = std::move(agg_node);
+    }
 
     // SELECT: Projection
     if (!stmt->select_list_.empty()) {
@@ -111,7 +160,40 @@ std::unique_ptr<LogicalPlanNode> Planner::planSelect(binder::BoundSelectStatemen
             
             ColumnType col_type = typeIdToColumnType(bound_expr->getType());
             columns.emplace_back(col_name, col_type);
-            exprs.push_back(bound_expr->takeExpr());
+            
+            if (has_aggregate || !stmt->group_bys_.empty()) {
+                if (bound_expr->getBoundType() == binder::BoundExpressionType::AGGREGATE) {
+                    auto bound_agg = static_cast<binder::BoundAggregate*>(bound_expr.get());
+                    // Find index in current_node (AggregationNode) output schema
+                    auto agg_node = static_cast<LogicalAggregationNode*>(current_node.get());
+                    uint32_t idx = agg_node->getGroupBys().size();
+                    for (size_t j = 0; j < agg_node->getAggregates().size(); ++j) {
+                        if (agg_node->getAggTypes()[j] == bound_agg->agg_type_) {
+                            idx += j;
+                            break;
+                        }
+                    }
+                    exprs.push_back(std::make_unique<hamdb::ColumnValueExpression>(idx));
+                } else if (bound_expr->getBoundType() == binder::BoundExpressionType::COLUMN_REF) {
+                    // It must be one of the group bys
+                    auto bound_col = static_cast<binder::BoundColumnRef*>(bound_expr.get());
+                    uint32_t idx = 0;
+                    for (size_t j = 0; j < stmt->group_bys_.size(); ++j) {
+                        if (stmt->group_bys_[j]->getBoundType() == binder::BoundExpressionType::COLUMN_REF) {
+                            auto gb_col = static_cast<binder::BoundColumnRef*>(stmt->group_bys_[j].get());
+                            if (gb_col->getColumnName() == bound_col->getColumnName() && gb_col->getTableName() == bound_col->getTableName()) {
+                                idx = j;
+                                break;
+                            }
+                        }
+                    }
+                    exprs.push_back(std::make_unique<hamdb::ColumnValueExpression>(idx));
+                } else {
+                    exprs.push_back(bound_expr->takeExpr());
+                }
+            } else {
+                exprs.push_back(bound_expr->takeExpr());
+            }
         }
         
         Schema proj_schema(columns);

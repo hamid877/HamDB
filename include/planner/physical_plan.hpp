@@ -23,7 +23,8 @@ enum class PhysicalPlanType {
     DELETE,
     INDEX_SCAN,
     NESTED_LOOP_JOIN,
-    HASH_JOIN
+    HASH_JOIN,
+    AGGREGATION
 };
 
 class AbstractPlanNode {

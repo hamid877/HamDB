@@ -3,6 +3,7 @@
 #include "executor/hash_join_executor.hpp"
 #include "planner/nested_loop_join_plan.hpp"
 #include "planner/hash_join_plan.hpp"
+#include "planner/aggregation_plan.hpp"
 #include "executor/seq_scan_executor.hpp"
 #include "executor/index_scan_executor.hpp"
 #include "executor/filter_executor.hpp"
@@ -13,6 +14,7 @@
 #include "executor/insert_executor.hpp"
 #include "executor/update_executor.hpp"
 #include "executor/delete_executor.hpp"
+#include "executor/aggregation_executor.hpp"
 #include <stdexcept>
 #include <chrono>
 
@@ -155,6 +157,20 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
                 std::move(child_executors[0]), std::move(child_executors[1]), 
                 const_cast<planner::HashJoinPlan*>(join_plan)->getLeftKeyExpr() ? const_cast<planner::HashJoinPlan*>(join_plan)->getLeftKeyExpr()->clone() : nullptr,
                 const_cast<planner::HashJoinPlan*>(join_plan)->getRightKeyExpr() ? const_cast<planner::HashJoinPlan*>(join_plan)->getRightKeyExpr()->clone() : nullptr);
+            break;
+        }
+        case PhysicalPlanType::AGGREGATION: {
+            auto* agg_plan = dynamic_cast<const planner::AggregationPlan*>(plan.get());
+            std::vector<std::unique_ptr<hamdb::Expression>> group_bys;
+            std::vector<std::unique_ptr<hamdb::Expression>> aggregates;
+            for (const auto& gb : agg_plan->getGroupBys()) {
+                group_bys.push_back(gb->clone());
+            }
+            for (const auto& agg : agg_plan->getAggregates()) {
+                aggregates.push_back(agg ? agg->clone() : nullptr);
+            }
+            exec = std::make_unique<AggregationExecutor>(
+                std::move(child_executors[0]), std::move(group_bys), std::move(aggregates), agg_plan->getAggTypes(), agg_plan->getOutputSchema());
             break;
         }
         default:

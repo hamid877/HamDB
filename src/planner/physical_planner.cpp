@@ -1,6 +1,7 @@
 #include "planner/physical_planner.hpp"
 #include "planner/nested_loop_join_plan.hpp"
 #include "planner/hash_join_plan.hpp"
+#include "planner/aggregation_plan.hpp"
 #include "planner/logical_index_scan.hpp"
 #include "executor/column_value_expression.hpp"
 #include <stdexcept>
@@ -146,6 +147,20 @@ std::unique_ptr<AbstractPlanNode> PhysicalPlanner::planNode(std::unique_ptr<Logi
             auto* join_node = dynamic_cast<LogicalHashJoinNode*>(logical_node.get());
             physical_node = std::make_unique<HashJoinPlan>(
                 join_node->getOutputSchema(), join_node->takeLeftKeyExpr(), join_node->takeRightKeyExpr());
+            break;
+        }
+        case LogicalPlanType::AGGREGATION: {
+            auto* agg_node = dynamic_cast<LogicalAggregationNode*>(logical_node.get());
+            std::vector<std::unique_ptr<hamdb::Expression>> group_bys;
+            std::vector<std::unique_ptr<hamdb::Expression>> aggregates;
+            for (auto& expr : agg_node->getMutableGroupBys()) {
+                group_bys.push_back(std::move(expr));
+            }
+            for (auto& expr : agg_node->getMutableAggregates()) {
+                aggregates.push_back(std::move(expr));
+            }
+            physical_node = std::make_unique<AggregationPlan>(
+                agg_node->getOutputSchema(), std::move(group_bys), std::move(aggregates), agg_node->getAggTypes());
             break;
         }
         default:
