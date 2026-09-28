@@ -53,6 +53,8 @@ FormattedPlanNode PlanFormatter::buildFormattedTree(const LogicalPlanNode* plan)
             node.details = "table: " + p->getTableName();
             break;
         }
+        case LogicalPlanType::AGGREGATION: node.name = "AGGREGATION"; break;
+        case LogicalPlanType::HAVING: node.name = "HAVING"; break;
         default: node.name = "UNKNOWN"; break;
     }
 
@@ -112,6 +114,8 @@ FormattedPlanNode PlanFormatter::buildFormattedTree(const AbstractPlanNode* plan
             node.details = "table: " + p->getTableName();
             break;
         }
+        case PhysicalPlanType::AGGREGATION: node.name = "AGGREGATION"; break;
+        case PhysicalPlanType::HAVING: node.name = "HAVING"; break;
         default: node.name = "UNKNOWN"; break;
     }
 

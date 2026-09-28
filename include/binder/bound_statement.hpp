@@ -58,6 +58,7 @@ public:
     std::vector<std::unique_ptr<BoundExpression>> select_list_;
     std::unique_ptr<BoundExpression> where_clause_;
     std::vector<std::unique_ptr<BoundExpression>> group_bys_;
+    std::unique_ptr<BoundExpression> having_clause_;
     std::vector<std::pair<std::unique_ptr<BoundExpression>, bool>> order_by_;
     std::unique_ptr<BoundExpression> limit_;
     std::unique_ptr<BoundExpression> offset_;

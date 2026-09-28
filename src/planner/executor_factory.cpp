@@ -15,6 +15,8 @@
 #include "executor/update_executor.hpp"
 #include "executor/delete_executor.hpp"
 #include "executor/aggregation_executor.hpp"
+#include "executor/having_executor.hpp"
+#include "planner/having_plan.hpp"
 #include <stdexcept>
 #include <chrono>
 
@@ -171,6 +173,12 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
             }
             exec = std::make_unique<AggregationExecutor>(
                 std::move(child_executors[0]), std::move(group_bys), std::move(aggregates), agg_plan->getAggTypes(), agg_plan->getOutputSchema());
+            break;
+        }
+        case PhysicalPlanType::HAVING: {
+            auto* having_plan = dynamic_cast<const planner::HavingPlan*>(plan.get());
+            exec = std::make_unique<executor::HavingExecutor>(
+                exec_ctx, std::move(child_executors[0]), having_plan->getPredicate() ? having_plan->getPredicate().get() : nullptr);
             break;
         }
         default:

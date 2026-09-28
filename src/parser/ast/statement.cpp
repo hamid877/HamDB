@@ -29,6 +29,16 @@ std::string SelectStatement::toString() const {
     if (where_clause) {
         oss << " WHERE " << where_clause->toString();
     }
+    if (!group_by.empty()) {
+        oss << " GROUP BY ";
+        for (size_t i = 0; i < group_by.size(); ++i) {
+            oss << group_by[i]->toString();
+            if (i + 1 < group_by.size()) oss << ", ";
+        }
+    }
+    if (having_clause) {
+        oss << " HAVING " << having_clause->toString();
+    }
     if (!order_by.empty()) {
         oss << " ORDER BY ";
         for (size_t i = 0; i < order_by.size(); ++i) {

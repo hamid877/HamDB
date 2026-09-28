@@ -14,6 +14,7 @@
 #include "planner/nested_loop_join_plan.hpp"
 #include "planner/hash_join_plan.hpp"
 #include "planner/aggregation_plan.hpp"
+#include "planner/having_plan.hpp"
 #include "shell/script_executor.hpp"
 #include "shell/meta_commands.hpp"
 
@@ -124,6 +125,13 @@ std::unique_ptr<planner::AbstractPlanNode> clonePhysicalPlan(const planner::Abst
             cloned = std::make_unique<planner::AggregationPlan>(node->getOutputSchema(), std::move(group_bys), std::move(aggregates), node->getAggTypes());
             break;
         }
+        case planner::PhysicalPlanType::HAVING: {
+            auto* node = static_cast<const planner::HavingPlan*>(plan);
+            cloned = std::make_unique<planner::HavingPlan>(
+                node->getOutputSchema(),
+                node->getPredicate() ? node->getPredicate()->clone() : nullptr);
+            break;
+        }
     }
     for (const auto& child : plan->getChildren()) {
         cloned->addChild(clonePhysicalPlan(child.get()));
@@ -180,6 +188,11 @@ void bindPhysicalPlan(planner::AbstractPlanNode* plan, const std::vector<Value>&
         }
         case planner::PhysicalPlanType::INDEX_SCAN: {
             auto* node = static_cast<planner::IndexScanPlan*>(plan);
+            if (node->getPredicate()) node->getPredicate()->bindParameters(params);
+            break;
+        }
+        case planner::PhysicalPlanType::HAVING: {
+            auto* node = static_cast<planner::HavingPlan*>(plan);
             if (node->getPredicate()) node->getPredicate()->bindParameters(params);
             break;
         }

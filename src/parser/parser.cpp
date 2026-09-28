@@ -245,6 +245,19 @@ std::unique_ptr<ast::Statement> Parser::parseSelect() {
         stmt->where_clause = parseExpression();
     }
 
+    // Group By
+    if (match(TokenType::Group)) {
+        consume(TokenType::By, "Expected 'BY' after 'GROUP'");
+        do {
+            stmt->group_by.push_back(parseExpression());
+        } while (match(TokenType::Comma));
+    }
+
+    // Having
+    if (match(TokenType::Having)) {
+        stmt->having_clause = parseExpression();
+    }
+
     // Order By
     if (match(TokenType::Order)) {
         consume(TokenType::By, "Expected 'BY' after 'ORDER'");

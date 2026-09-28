@@ -8,6 +8,7 @@ set(PLANNER_SOURCES
     nested_loop_join_plan.cpp
     hash_join_plan.cpp
     aggregation_plan.cpp
+    having_plan.cpp
 )
 
 add_library(hamdb_planner STATIC ${PLANNER_SOURCES})

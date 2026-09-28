@@ -2,6 +2,7 @@
 #include "planner/nested_loop_join_plan.hpp"
 #include "planner/hash_join_plan.hpp"
 #include "planner/aggregation_plan.hpp"
+#include "planner/having_plan.hpp"
 #include "planner/logical_index_scan.hpp"
 #include "executor/column_value_expression.hpp"
 #include <stdexcept>
@@ -161,6 +162,12 @@ std::unique_ptr<AbstractPlanNode> PhysicalPlanner::planNode(std::unique_ptr<Logi
             }
             physical_node = std::make_unique<AggregationPlan>(
                 agg_node->getOutputSchema(), std::move(group_bys), std::move(aggregates), agg_node->getAggTypes());
+            break;
+        }
+        case LogicalPlanType::HAVING: {
+            auto* having_node = dynamic_cast<LogicalHavingNode*>(logical_node.get());
+            physical_node = std::make_unique<HavingPlan>(
+                having_node->getOutputSchema(), having_node->takePredicate());
             break;
         }
         default:

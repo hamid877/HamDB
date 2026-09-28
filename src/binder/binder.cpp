@@ -1,6 +1,7 @@
 #include "binder/binder.hpp"
 #include <algorithm>
 #include <cctype>
+#include <functional>
 
 namespace hamdb::binder {
 
@@ -132,6 +133,47 @@ std::unique_ptr<BoundSelectStatement> Binder::bindSelect(const ast::SelectStatem
         bound->where_clause_ = bindExpression(*stmt.where_clause);
         if (bound->where_clause_->getType() != TypeId::Boolean) {
             throw BinderError("WHERE clause must be of boolean type");
+        }
+    }
+
+    if (stmt.having_clause) {
+        std::function<void(const ast::Expression*, bool)> validateHaving = [&](const ast::Expression* expr, bool in_agg) {
+            if (!expr) return;
+            if (auto e = dynamic_cast<const ast::AggregateExpression*>(expr)) {
+                if (e->child) validateHaving(e->child.get(), true);
+                return;
+            }
+            if (auto e = dynamic_cast<const ast::ColumnValueExpression*>(expr)) {
+                if (in_agg) return;
+                bool found = false;
+                for (const auto& gb : stmt.group_by) {
+                    if (auto gb_col = dynamic_cast<const ast::ColumnValueExpression*>(gb.get())) {
+                        if (gb_col->column_name == e->column_name && gb_col->table_name == e->table_name) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    throw BinderError("Non-grouped/non-aggregate columns rejected in HAVING");
+                }
+                return;
+            }
+            if (auto e = dynamic_cast<const ast::BinaryExpression*>(expr)) {
+                validateHaving(e->left.get(), in_agg);
+                validateHaving(e->right.get(), in_agg);
+                return;
+            }
+            if (auto e = dynamic_cast<const ast::UnaryExpression*>(expr)) {
+                validateHaving(e->child.get(), in_agg);
+                return;
+            }
+        };
+        validateHaving(stmt.having_clause.get(), false);
+
+        bound->having_clause_ = bindExpression(*stmt.having_clause);
+        if (bound->having_clause_->getType() != TypeId::Boolean) {
+            throw BinderError("HAVING clause must be of boolean type");
         }
     }
 

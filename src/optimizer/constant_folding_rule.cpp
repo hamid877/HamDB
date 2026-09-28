@@ -7,6 +7,7 @@
 #include "planner/hash_join_plan.hpp"
 #include "planner/nested_loop_join_plan.hpp"
 #include "planner/aggregation_plan.hpp"
+#include "planner/having_plan.hpp"
 
 namespace hamdb::optimizer {
 
@@ -199,6 +200,13 @@ std::unique_ptr<planner::LogicalPlanNode> ConstantFoldingRule::apply(std::unique
                         expr = foldExpression(std::move(expr));
                     }
                 }
+            }
+            break;
+        }
+        case planner::LogicalPlanType::HAVING: {
+            auto* node = dynamic_cast<planner::LogicalHavingNode*>(plan.get());
+            if (node && node->getPredicate()) {
+                node->setPredicate(foldExpression(node->takePredicate()));
             }
             break;
         }

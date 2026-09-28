@@ -162,7 +162,9 @@ Token Lexer::identifierOrKeyword() {
         {"PREPARE", TokenType::Prepare},
         {"EXECUTE", TokenType::Execute},
         {"DEALLOCATE", TokenType::Deallocate},
-        {"AS", TokenType::As}
+        {"AS", TokenType::As},
+        {"GROUP", TokenType::Group},
+        {"HAVING", TokenType::Having}
     };
 
     auto it = keywords.find(upper_lexeme);

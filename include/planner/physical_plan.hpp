@@ -24,7 +24,8 @@ enum class PhysicalPlanType {
     INDEX_SCAN,
     NESTED_LOOP_JOIN,
     HASH_JOIN,
-    AGGREGATION
+    AGGREGATION,
+    HAVING
 };
 
 class AbstractPlanNode {

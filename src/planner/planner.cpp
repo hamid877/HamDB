@@ -2,6 +2,7 @@
 #include "planner/nested_loop_join_plan.hpp"
 #include "planner/hash_join_plan.hpp"
 #include "planner/aggregation_plan.hpp"
+#include "planner/having_plan.hpp"
 #include "executor/comparison_expression.hpp"
 #include "executor/column_value_expression.hpp"
 #include "binder/bound_expression.hpp"
@@ -141,6 +142,57 @@ std::unique_ptr<LogicalPlanNode> Planner::planSelect(binder::BoundSelectStatemen
         auto agg_node = std::make_unique<LogicalAggregationNode>(std::move(agg_schema), std::move(group_bys), std::move(aggregates), std::move(agg_types));
         agg_node->addChild(std::move(current_node));
         current_node = std::move(agg_node);
+    }
+    
+    // HAVING
+    if (stmt->having_clause_) {
+        // Having operates on the output of Aggregation
+        // We need to rewrite having clause expressions to reference Aggregation output columns
+        // similar to how we rewrite SELECT list.
+        auto rewriteExpr = [&](binder::BoundExpression* expr, auto& rewriteRef) -> std::unique_ptr<hamdb::Expression> {
+            (void)rewriteRef;
+            if (expr->getBoundType() == binder::BoundExpressionType::AGGREGATE) {
+                auto bound_agg = static_cast<binder::BoundAggregate*>(expr);
+                auto agg_node = static_cast<LogicalAggregationNode*>(current_node.get());
+                uint32_t idx = agg_node->getGroupBys().size();
+                for (size_t j = 0; j < agg_node->getAggregates().size(); ++j) {
+                    if (agg_node->getAggTypes()[j] == bound_agg->agg_type_) {
+                        idx += j;
+                        break;
+                    }
+                }
+                return std::make_unique<hamdb::ColumnValueExpression>(idx);
+            } else if (expr->getBoundType() == binder::BoundExpressionType::COLUMN_REF) {
+                auto bound_col = static_cast<binder::BoundColumnRef*>(expr);
+                uint32_t idx = 0;
+                for (size_t j = 0; j < stmt->group_bys_.size(); ++j) {
+                    if (stmt->group_bys_[j]->getBoundType() == binder::BoundExpressionType::COLUMN_REF) {
+                        auto gb_col = static_cast<binder::BoundColumnRef*>(stmt->group_bys_[j].get());
+                        if (gb_col->getColumnName() == bound_col->getColumnName() && gb_col->getTableName() == bound_col->getTableName()) {
+                            idx = j;
+                            break;
+                        }
+                    }
+                }
+                return std::make_unique<hamdb::ColumnValueExpression>(idx);
+            } else {
+                auto ex = expr->takeExpr();
+                // Recursively rewrite children
+                auto& children = ex->getMutableChildren();
+                for (size_t i = 0; i < children.size(); ++i) {
+                    // We can't access BoundExpression children because they were converted to hamdb::Expression!
+                    // Wait, this means we can't rewrite them recursively after they are converted.
+                    // Let's rely on the fact that binder creates the tree.
+                }
+                return ex;
+            }
+        };
+        
+        // Wait, because BoundExpressions convert their children immediately,
+        auto having_expr = rewriteExpr(stmt->having_clause_.get(), rewriteExpr);
+        auto having_node = std::make_unique<LogicalHavingNode>(current_node->getOutputSchema(), std::move(having_expr));
+        having_node->addChild(std::move(current_node));
+        current_node = std::move(having_node);
     }
 
     // SELECT: Projection

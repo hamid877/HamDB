@@ -37,6 +37,8 @@ std::string_view tokenTypeToString(TokenType type) {
         case TokenType::Execute: return "Execute";
         case TokenType::Deallocate: return "Deallocate";
         case TokenType::As: return "As";
+        case TokenType::Group: return "Group";
+        case TokenType::Having: return "Having";
         case TokenType::Identifier: return "Identifier";
         case TokenType::Integer: return "Integer";
         case TokenType::String: return "String";

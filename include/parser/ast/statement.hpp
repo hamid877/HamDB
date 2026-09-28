@@ -43,6 +43,7 @@ public:
     
     // Group By
     std::vector<std::unique_ptr<Expression>> group_by;
+    std::unique_ptr<Expression> having_clause;
     
     // Order By
     std::vector<std::pair<std::unique_ptr<Expression>, bool>> order_by; // true for ASC, false for DESC

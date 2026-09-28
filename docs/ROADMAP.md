@@ -16,7 +16,7 @@
 | Testing          | GoogleTest                  |
 | Platform         | Linux (Ubuntu / Linux Mint) |
 | Current Version  | v0.3.0-dev                  |
-| Overall Progress | **63%**                     |
+| Overall Progress | **64%**                     |
 
 ---
 
@@ -94,6 +94,7 @@ Every milestone must satisfy:
 | M8.1 | Nested Loop Join Executor | ✅ Complete |
 | M8.2 | Hash Join Executor | ✅ Complete |
 | M8.3 | Aggregation Executor | ✅ Complete |
+| M8.4 | Having Executor | ✅ Complete |
 | M4.10 | Sort Executor | ✅ Complete |
 | M4.11 | Limit Executor | ✅ Complete |
 | M4.12 | Values Executor | ✅ Complete |
@@ -141,6 +142,31 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M8.4 — Having Executor
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `HavingExecutor` implementing the executor lifecycle (`init()`, `next()`, `outputSchema()`).
+* Consume aggregated tuples from `AggregationExecutor` (or any child).
+* Evaluate HAVING predicate dynamically using the `Expression` system on emitted tuples.
+* Included physical and logical planner changes with `HavingPlan` and `LogicalHavingNode`.
+* Validation rules in `Binder` strictly permitting only `GROUP BY` column references and aggregate functions.
+* Added `having_plan_test` and `having_executor_test`.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement having executor (M8.4)
+```
 
 ## M8.3 — Aggregation Executor
 
