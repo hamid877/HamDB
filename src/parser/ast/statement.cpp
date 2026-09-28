@@ -95,4 +95,29 @@ std::string ExplainStatement::toString() const {
     return out;
 }
 
+std::string PrepareStatement::toString() const {
+    std::string out = "PREPARE " + name + " AS ";
+    if (query) {
+        out += query->toString();
+    }
+    return out;
+}
+
+std::string ExecuteStatement::toString() const {
+    std::string out = "EXECUTE " + name;
+    if (!parameters.empty()) {
+        out += "(";
+        for (size_t i = 0; i < parameters.size(); ++i) {
+            out += parameters[i]->toString();
+            if (i + 1 < parameters.size()) out += ", ";
+        }
+        out += ")";
+    }
+    return out;
+}
+
+std::string DeallocateStatement::toString() const {
+    return "DEALLOCATE " + name;
+}
+
 } // namespace hamdb::ast

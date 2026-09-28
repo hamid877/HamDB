@@ -22,6 +22,14 @@ namespace hamdb
         {
         }
 
+        [[nodiscard]] std::unique_ptr<Expression> clone() const override
+        {
+            if (tuple_source_) {
+                return std::make_unique<ColumnValueExpression>(col_idx_, *tuple_source_);
+            }
+            return std::make_unique<ColumnValueExpression>(col_idx_);
+        }
+
         [[nodiscard]] Value evaluate(const Tuple& tuple, const Schema& schema) const override;
         [[nodiscard]] uint32_t getColIdx() const { return col_idx_; }
 

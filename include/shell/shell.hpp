@@ -16,6 +16,7 @@
 #include "planner/physical_planner.hpp"
 #include "optimizer/rule_executor.hpp"
 #include "executor/executor_context.hpp"
+#include "prepared/prepared_statement_manager.hpp"
 
 namespace hamdb::shell {
 
@@ -39,6 +40,7 @@ private:
     std::unique_ptr<planner::Planner> planner_;
     std::unique_ptr<planner::PhysicalPlanner> physical_planner_;
     std::unique_ptr<optimizer::RuleExecutor> optimizer_;
+    std::unique_ptr<PreparedStatementManager> prep_manager_;
     
     void initDB(const std::string& db_name);
 };

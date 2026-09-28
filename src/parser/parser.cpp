@@ -55,6 +55,9 @@ std::unique_ptr<ast::Statement> Parser::parseStatement() {
     if (match(TokenType::Delete)) return parseDelete();
     if (match(TokenType::Values)) return parseValues();
     if (match(TokenType::Explain)) return parseExplain();
+    if (match(TokenType::Prepare)) return parsePrepare();
+    if (match(TokenType::Execute)) return parseExecute();
+    if (match(TokenType::Deallocate)) return parseDeallocate();
     
     error(current_token_, "Expected statement");
 }
@@ -164,6 +167,9 @@ std::unique_ptr<ast::Expression> Parser::parsePrimary() {
     }
     if (match(TokenType::Asterisk)) {
         return std::make_unique<ast::StarExpression>();
+    }
+    if (match(TokenType::QuestionMark)) {
+        return std::make_unique<ast::ParameterExpression>();
     }
     if (match(TokenType::Identifier)) {
         std::string name = previous_token_.lexeme;
@@ -304,6 +310,41 @@ std::unique_ptr<ast::Statement> Parser::parseExplain() {
         stmt->analyze = true;
     }
     stmt->statement = parseStatement();
+    return stmt;
+}
+
+std::unique_ptr<ast::Statement> Parser::parsePrepare() {
+    auto stmt = std::make_unique<ast::PrepareStatement>();
+    consume(TokenType::Identifier, "Expected prepared statement name");
+    stmt->name = previous_token_.lexeme;
+    consume(TokenType::As, "Expected AS after prepared statement name");
+    stmt->query = parseStatement();
+    return stmt;
+}
+
+std::unique_ptr<ast::Statement> Parser::parseExecute() {
+    auto stmt = std::make_unique<ast::ExecuteStatement>();
+    consume(TokenType::Identifier, "Expected prepared statement name");
+    stmt->name = previous_token_.lexeme;
+    
+    if (match(TokenType::LeftParen)) {
+        if (!check(TokenType::RightParen)) {
+            do {
+                stmt->parameters.push_back(parseExpression());
+            } while (match(TokenType::Comma));
+        }
+        consume(TokenType::RightParen, "Expected ')' after parameters");
+    }
+    return stmt;
+}
+
+std::unique_ptr<ast::Statement> Parser::parseDeallocate() {
+    auto stmt = std::make_unique<ast::DeallocateStatement>();
+    if (match(TokenType::Prepare)) {
+        // Optional PREPARE keyword (DEALLOCATE PREPARE name)
+    }
+    consume(TokenType::Identifier, "Expected prepared statement name");
+    stmt->name = previous_token_.lexeme;
     return stmt;
 }
 

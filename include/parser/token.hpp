@@ -16,6 +16,7 @@ enum class TokenType {
     And, Or, Not, Limit, Offset, Order, By, Asc, Desc,
     Values, Into, Set, Create, Table, Explain, Analyze,
     Int, Boolean, Varchar, Primary, Key,
+    Prepare, Execute, Deallocate, As,
 
     // Identifiers
     Identifier,
@@ -30,7 +31,7 @@ enum class TokenType {
     Equals, NotEquals, Less, LessEquals, Greater, GreaterEquals,
 
     // Delimiters
-    Comma, LeftParen, RightParen, Semicolon, Dot,
+    Comma, LeftParen, RightParen, Semicolon, Dot, QuestionMark,
 
     // Special
     Eof, Invalid

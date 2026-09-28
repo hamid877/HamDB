@@ -133,12 +133,37 @@ Every milestone must satisfy:
 | ---- | ------------ | ------ |
 | M7.1 | Interactive SQL REPL | ✅ Complete |
 | M7.2 | EXPLAIN & EXPLAIN ANALYZE | ✅ Complete |
-| M7.3 | Client-Server Protocol | ⬜      |
+| M7.3 | Prepared Statements & Parameter Binding | ✅ Complete |
 | M7.4 | CLI Client   | ⬜      |
 
 ---
 
 # Completed Milestones
+
+## M7.3 — Prepared Statements & Parameter Binding
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Implemented `PREPARE`, `EXECUTE`, and `DEALLOCATE` statements in parser.
+* Updated `Binder` to infer parameter types and bind parameter values.
+* Created `PreparedStatementManager` to store optimized physical plans.
+* Updated `Expression` hierarchy to support `clone()` and `bindParameters()`.
+* Integrated prepared statement cache and execution flow into `Shell`.
+* Implemented parameter substitution at execution time to skip planning/optimization.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(prepared): implement prepared statements and parameter binding (M7.3)
+```
 
 ## M7.2 — EXPLAIN & EXPLAIN ANALYZE
 

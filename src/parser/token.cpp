@@ -30,6 +30,10 @@ std::string_view tokenTypeToString(TokenType type) {
         case TokenType::Varchar: return "Varchar";
         case TokenType::Primary: return "Primary";
         case TokenType::Key: return "Key";
+        case TokenType::Prepare: return "Prepare";
+        case TokenType::Execute: return "Execute";
+        case TokenType::Deallocate: return "Deallocate";
+        case TokenType::As: return "As";
         case TokenType::Identifier: return "Identifier";
         case TokenType::Integer: return "Integer";
         case TokenType::String: return "String";
@@ -51,6 +55,7 @@ std::string_view tokenTypeToString(TokenType type) {
         case TokenType::RightParen: return "RightParen";
         case TokenType::Semicolon: return "Semicolon";
         case TokenType::Dot: return "Dot";
+        case TokenType::QuestionMark: return "QuestionMark";
         case TokenType::Eof: return "Eof";
         case TokenType::Invalid: return "Invalid";
         default: return "Unknown";

@@ -14,6 +14,8 @@ namespace hamdb
     public:
         virtual ~Expression() = default;
 
+        [[nodiscard]] virtual std::unique_ptr<Expression> clone() const = 0;
+
         [[nodiscard]] virtual Value evaluate(const Tuple& tuple, const Schema& schema) const = 0;
 
         [[nodiscard]] virtual Value evaluateJoin(const Tuple* left_tuple, const Schema* left_schema,
@@ -22,6 +24,15 @@ namespace hamdb
         {
             return evaluate(left_tuple ? *left_tuple : *right_tuple,
                             left_schema ? *left_schema : *right_schema);
+        }
+
+        virtual void bindParameters(const std::vector<Value>& params)
+        {
+            for (auto& child : children_) {
+                if (child) {
+                    child->bindParameters(params);
+                }
+            }
         }
 
         [[nodiscard]] const std::vector<std::unique_ptr<Expression>>& getChildren() const

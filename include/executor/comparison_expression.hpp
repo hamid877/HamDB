@@ -29,6 +29,12 @@ namespace hamdb
 
         [[nodiscard]] ComparisonType getComparisonType() const { return comp_type_; }
 
+        [[nodiscard]] std::unique_ptr<Expression> clone() const override
+        {
+            return std::make_unique<ComparisonExpression>(
+                comp_type_, children_[0]->clone(), children_[1]->clone());
+        }
+
         [[nodiscard]] Value evaluate(const Tuple& tuple, const Schema& schema) const override
         {
             return evaluateJoin(&tuple, &schema, nullptr, nullptr);

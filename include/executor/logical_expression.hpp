@@ -40,6 +40,16 @@ namespace hamdb
 
         [[nodiscard]] LogicalType getLogicType() const { return logic_type_; }
 
+        [[nodiscard]] std::unique_ptr<Expression> clone() const override
+        {
+            if (logic_type_ == LogicalType::Not)
+            {
+                return std::make_unique<LogicalExpression>(logic_type_, children_[0]->clone());
+            }
+            return std::make_unique<LogicalExpression>(
+                logic_type_, children_[0]->clone(), children_[1]->clone());
+        }
+
         [[nodiscard]] Value evaluate(const Tuple& tuple, const Schema& schema) const override
         {
             return evaluateJoin(&tuple, &schema, nullptr, nullptr);

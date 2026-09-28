@@ -10,6 +10,11 @@ namespace hamdb
     public:
         explicit ConstantExpression(Value value) : value_(std::move(value)) {}
 
+        [[nodiscard]] std::unique_ptr<Expression> clone() const override
+        {
+            return std::make_unique<ConstantExpression>(value_);
+        }
+
         [[nodiscard]] Value evaluate(const Tuple& /*tuple*/,
                                      const Schema& /*schema*/) const override
         {

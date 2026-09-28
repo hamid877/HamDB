@@ -90,7 +90,11 @@ std::unique_ptr<BoundInsertStatement> Binder::bindInsert(const ast::InsertStatem
         for (size_t i = 0; i < row.size(); ++i) {
             auto bound_expr = bindExpression(*row[i]);
             TypeId expected = columnTypeToTypeId(table_info->getSchema().getColumn(i).getType());
-            if (bound_expr->getType() != expected && bound_expr->getType() != TypeId::Null) {
+            if (bound_expr->getBoundType() == BoundExpressionType::PARAMETER) {
+                auto param = static_cast<BoundParameter*>(bound_expr.get());
+                param->setType(expected);
+                parameter_types_[param->getIndex()] = expected;
+            } else if (bound_expr->getType() != expected && bound_expr->getType() != TypeId::Null) {
                 throw BinderError("Type mismatch in INSERT statement");
             }
             bound_row.push_back(std::move(bound_expr));
@@ -119,7 +123,11 @@ std::unique_ptr<BoundUpdateStatement> Binder::bindUpdate(const ast::UpdateStatem
             if (cols[i].getName() == set_clause.first) {
                 found = true;
                 TypeId expected = columnTypeToTypeId(cols[i].getType());
-                if (bound_expr->getType() != expected && bound_expr->getType() != TypeId::Null) {
+                if (bound_expr->getBoundType() == BoundExpressionType::PARAMETER) {
+                    auto param = static_cast<BoundParameter*>(bound_expr.get());
+                    param->setType(expected);
+                    parameter_types_[param->getIndex()] = expected;
+                } else if (bound_expr->getType() != expected && bound_expr->getType() != TypeId::Null) {
                     throw BinderError("Type mismatch in UPDATE statement");
                 }
                 break;
@@ -177,11 +185,19 @@ std::unique_ptr<BoundValuesStatement> Binder::bindValues(const ast::ValuesStatem
 }
 
 std::unique_ptr<BoundExpression> Binder::bindExpression(const ast::Expression& expr) {
+    if (auto e = dynamic_cast<const ast::ParameterExpression*>(&expr)) return bindParameter(*e);
     if (auto e = dynamic_cast<const ast::ConstantExpression*>(&expr)) return bindConstant(*e);
     if (auto e = dynamic_cast<const ast::ColumnValueExpression*>(&expr)) return bindColumnValue(*e);
     if (auto e = dynamic_cast<const ast::BinaryExpression*>(&expr)) return bindBinary(*e);
     if (auto e = dynamic_cast<const ast::UnaryExpression*>(&expr)) return bindUnary(*e);
     throw BinderError("Unknown expression type");
+}
+
+std::unique_ptr<BoundExpression> Binder::bindParameter(const ast::ParameterExpression& /*expr*/) {
+    size_t index = parameter_types_.size();
+    parameter_types_.push_back(TypeId::Null); // Will be inferred
+    auto executor_expr = std::make_unique<hamdb::ParameterExpression>(index);
+    return std::make_unique<BoundParameter>(std::move(executor_expr), TypeId::Null, index);
 }
 
 std::unique_ptr<BoundExpression> Binder::bindConstant(const ast::ConstantExpression& expr) {
@@ -246,6 +262,17 @@ std::unique_ptr<BoundExpression> Binder::bindColumnValue(const ast::ColumnValueE
 std::unique_ptr<BoundExpression> Binder::bindBinary(const ast::BinaryExpression& expr) {
     auto left = bindExpression(*expr.left);
     auto right = bindExpression(*expr.right);
+
+    // Type inference for parameters
+    if (left->getBoundType() == BoundExpressionType::PARAMETER && right->getBoundType() != BoundExpressionType::PARAMETER) {
+        auto param = static_cast<BoundParameter*>(left.get());
+        param->setType(right->getType());
+        parameter_types_[param->getIndex()] = right->getType();
+    } else if (right->getBoundType() == BoundExpressionType::PARAMETER && left->getBoundType() != BoundExpressionType::PARAMETER) {
+        auto param = static_cast<BoundParameter*>(right.get());
+        param->setType(left->getType());
+        parameter_types_[param->getIndex()] = left->getType();
+    }
 
     // Basic type checking
     if (left->getType() != right->getType() && left->getType() != TypeId::Null && right->getType() != TypeId::Null) {

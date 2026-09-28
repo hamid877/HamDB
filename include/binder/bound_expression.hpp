@@ -7,6 +7,7 @@
 #include "executor/arithmetic_expression.hpp"
 #include "executor/comparison_expression.hpp"
 #include "executor/logical_expression.hpp"
+#include "executor/parameter_expression.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -18,7 +19,8 @@ enum class BoundExpressionType {
     COLUMN_REF,
     ARITHMETIC,
     COMPARISON,
-    LOGICAL
+    LOGICAL,
+    PARAMETER
 };
 
 class BoundExpression {
@@ -108,6 +110,25 @@ public:
 private:
     std::unique_ptr<hamdb::LogicalExpression> expr_;
     TypeId type_;
+};
+
+class BoundParameter : public BoundExpression {
+public:
+    BoundParameter(std::unique_ptr<hamdb::Expression> expr, TypeId type, size_t index)
+        : expr_(std::move(expr)), type_(type), index_(index) {}
+
+    BoundExpressionType getBoundType() const override { return BoundExpressionType::PARAMETER; }
+    TypeId getType() const override { return type_; }
+    void setType(TypeId type) { type_ = type; }
+    const hamdb::Expression* getExpr() const override { return expr_.get(); }
+    std::unique_ptr<hamdb::Expression> takeExpr() override { return std::move(expr_); }
+    
+    size_t getIndex() const { return index_; }
+
+private:
+    std::unique_ptr<hamdb::Expression> expr_;
+    TypeId type_;
+    size_t index_;
 };
 
 } // namespace hamdb::binder

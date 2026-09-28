@@ -155,7 +155,11 @@ Token Lexer::identifierOrKeyword() {
         {"KEY", TokenType::Key},
         {"NULL", TokenType::NullLiteral},
         {"TRUE", TokenType::BoolLiteral},
-        {"FALSE", TokenType::BoolLiteral}
+        {"FALSE", TokenType::BoolLiteral},
+        {"PREPARE", TokenType::Prepare},
+        {"EXECUTE", TokenType::Execute},
+        {"DEALLOCATE", TokenType::Deallocate},
+        {"AS", TokenType::As}
     };
 
     auto it = keywords.find(upper_lexeme);
@@ -229,6 +233,9 @@ Token Lexer::nextToken() {
             break;
         case '\'':
             t = string();
+            break;
+        case '?':
+            t = makeToken(TokenType::QuestionMark);
             break;
         default:
             t = makeErrorToken(std::string("Invalid character: ") + c);

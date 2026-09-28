@@ -69,4 +69,27 @@ public:
     std::string toString() const override;
 };
 
+class PrepareStatement : public Statement {
+public:
+    std::string name;
+    std::unique_ptr<Statement> query;
+
+    std::string toString() const override;
+};
+
+class ExecuteStatement : public Statement {
+public:
+    std::string name;
+    std::vector<std::unique_ptr<Expression>> parameters;
+
+    std::string toString() const override;
+};
+
+class DeallocateStatement : public Statement {
+public:
+    std::string name;
+
+    std::string toString() const override;
+};
+
 } // namespace hamdb::ast

@@ -18,6 +18,7 @@ target_link_libraries(hamdb_shell PUBLIC
     hamdb_planner
     hamdb_executor
     hamdb_optimizer
+    hamdb_prepared
 )
 
 target_include_directories(hamdb_shell PUBLIC

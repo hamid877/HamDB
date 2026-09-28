@@ -17,6 +17,136 @@
 
 namespace hamdb::shell {
 
+namespace {
+std::unique_ptr<planner::AbstractPlanNode> clonePhysicalPlan(const planner::AbstractPlanNode* plan) {
+    if (!plan) return nullptr;
+    std::unique_ptr<planner::AbstractPlanNode> cloned;
+    switch (plan->getType()) {
+        case planner::PhysicalPlanType::SEQ_SCAN: {
+            auto* node = static_cast<const planner::SeqScanPlan*>(plan);
+            cloned = std::make_unique<planner::SeqScanPlan>(
+                node->getOutputSchema(), node->getTableName(), node->getTableAlias(),
+                node->getPredicate() ? node->getPredicate()->clone() : nullptr,
+                node->getLimit(), node->getOffset());
+            break;
+        }
+        case planner::PhysicalPlanType::FILTER: {
+            auto* node = static_cast<const planner::FilterPlan*>(plan);
+            cloned = std::make_unique<planner::FilterPlan>(
+                node->getOutputSchema(), node->getPredicate() ? node->getPredicate()->clone() : nullptr);
+            break;
+        }
+        case planner::PhysicalPlanType::PROJECTION: {
+            auto* node = static_cast<const planner::ProjectionPlan*>(plan);
+            std::vector<std::unique_ptr<Expression>> exprs;
+            for (const auto& e : node->getExpressions()) exprs.push_back(e ? e->clone() : nullptr);
+            cloned = std::make_unique<planner::ProjectionPlan>(node->getOutputSchema(), std::move(exprs));
+            break;
+        }
+        case planner::PhysicalPlanType::SORT: {
+            auto* node = static_cast<const planner::SortPlan*>(plan);
+            std::vector<std::pair<OrderByType, std::unique_ptr<Expression>>> order_by;
+            for (const auto& p : node->getOrderBy()) order_by.emplace_back(p.first, p.second ? p.second->clone() : nullptr);
+            cloned = std::make_unique<planner::SortPlan>(node->getOutputSchema(), std::move(order_by));
+            break;
+        }
+        case planner::PhysicalPlanType::LIMIT: {
+            auto* node = static_cast<const planner::LimitPlan*>(plan);
+            cloned = std::make_unique<planner::LimitPlan>(node->getOutputSchema(), node->getLimit(), node->getOffset());
+            break;
+        }
+        case planner::PhysicalPlanType::VALUES: {
+            auto* node = static_cast<const planner::ValuesPlan*>(plan);
+            std::vector<std::vector<std::unique_ptr<Expression>>> values;
+            for (const auto& row : node->getValues()) {
+                std::vector<std::unique_ptr<Expression>> r;
+                for (const auto& e : row) r.push_back(e ? e->clone() : nullptr);
+                values.push_back(std::move(r));
+            }
+            cloned = std::make_unique<planner::ValuesPlan>(node->getOutputSchema(), std::move(values));
+            break;
+        }
+        case planner::PhysicalPlanType::INSERT: {
+            auto* node = static_cast<const planner::InsertPlan*>(plan);
+            cloned = std::make_unique<planner::InsertPlan>(node->getOutputSchema(), node->getTableName());
+            break;
+        }
+        case planner::PhysicalPlanType::UPDATE: {
+            auto* node = static_cast<const planner::UpdatePlan*>(plan);
+            std::vector<std::unique_ptr<Expression>> exprs;
+            for (const auto& e : node->getTargetExpressions()) exprs.push_back(e ? e->clone() : nullptr);
+            cloned = std::make_unique<planner::UpdatePlan>(node->getOutputSchema(), node->getTableName(), std::move(exprs));
+            break;
+        }
+        case planner::PhysicalPlanType::DELETE: {
+            auto* node = static_cast<const planner::DeletePlan*>(plan);
+            cloned = std::make_unique<planner::DeletePlan>(node->getOutputSchema(), node->getTableName());
+            break;
+        }
+        case planner::PhysicalPlanType::INDEX_SCAN: {
+            auto* node = static_cast<const planner::IndexScanPlan*>(plan);
+            cloned = std::make_unique<planner::IndexScanPlan>(
+                node->getOutputSchema(), node->getTableName(), node->getTableAlias(),
+                node->getPredicate() ? node->getPredicate()->clone() : nullptr,
+                node->getLimit(), node->getOffset());
+            break;
+        }
+    }
+    for (const auto& child : plan->getChildren()) {
+        cloned->addChild(clonePhysicalPlan(child.get()));
+    }
+    if (plan->getStats()) cloned->setStats(plan->getStats());
+    return cloned;
+}
+
+void bindPhysicalPlan(planner::AbstractPlanNode* plan, const std::vector<Value>& params) {
+    if (!plan) return;
+    switch (plan->getType()) {
+        case planner::PhysicalPlanType::SEQ_SCAN: {
+            auto* node = static_cast<planner::SeqScanPlan*>(plan);
+            if (node->getPredicate()) node->getPredicate()->bindParameters(params);
+            break;
+        }
+        case planner::PhysicalPlanType::FILTER: {
+            auto* node = static_cast<planner::FilterPlan*>(plan);
+            if (node->getPredicate()) node->getPredicate()->bindParameters(params);
+            break;
+        }
+        case planner::PhysicalPlanType::PROJECTION: {
+            auto* node = static_cast<planner::ProjectionPlan*>(plan);
+            for (auto& e : node->getExpressions()) if (e) e.get()->bindParameters(params);
+            break;
+        }
+        case planner::PhysicalPlanType::SORT: {
+            auto* node = static_cast<planner::SortPlan*>(plan);
+            for (auto& p : node->getOrderBy()) if (p.second) p.second.get()->bindParameters(params);
+            break;
+        }
+        case planner::PhysicalPlanType::VALUES: {
+            auto* node = static_cast<planner::ValuesPlan*>(plan);
+            for (auto& row : node->getValues()) {
+                for (auto& e : row) if (e) e.get()->bindParameters(params);
+            }
+            break;
+        }
+        case planner::PhysicalPlanType::UPDATE: {
+            auto* node = static_cast<planner::UpdatePlan*>(plan);
+            for (auto& e : node->getTargetExpressions()) if (e) e.get()->bindParameters(params);
+            break;
+        }
+        case planner::PhysicalPlanType::INDEX_SCAN: {
+            auto* node = static_cast<planner::IndexScanPlan*>(plan);
+            if (node->getPredicate()) node->getPredicate()->bindParameters(params);
+            break;
+        }
+        default: break;
+    }
+    for (auto& child : plan->getChildren()) {
+        bindPhysicalPlan(child.get(), params);
+    }
+}
+} // namespace
+
 Shell::Shell(const std::string& db_name) {
     initDB(db_name);
 }
@@ -47,6 +177,7 @@ void Shell::initDB(const std::string& db_name) {
     optimizer_->addRule(std::make_unique<optimizer::ConstantFoldingRule>());
     optimizer_->addRule(std::make_unique<optimizer::IndexScanRule>(catalog_.get()));
     optimizer_->addRule(std::make_unique<optimizer::SortLimitRule>());
+    prep_manager_ = std::make_unique<PreparedStatementManager>();
 }
 
 void Shell::executeMeta(const std::string& cmd, std::ostream& out) {
@@ -131,24 +262,95 @@ void Shell::executeSQL(const std::string& query, std::ostream& out) {
             inner_stmt = explain_stmt->statement.get();
         }
         
-        binder::Binder binder(catalog_.get());
-        auto bound_stmt = binder.bind(*inner_stmt);
+        if (auto* dealloc_stmt = dynamic_cast<ast::DeallocateStatement*>(inner_stmt)) {
+            prep_manager_->removeStatement(dealloc_stmt->name);
+            out << "Statement deallocated.\n";
+            return;
+        }
         
+        if (auto* prep_stmt = dynamic_cast<ast::PrepareStatement*>(inner_stmt)) {
+            binder::Binder binder(catalog_.get());
+            auto bound_stmt = binder.bind(*prep_stmt->query);
+            auto param_types = binder.getParameterTypes();
+            
+            auto logical_plan = planner_->plan(std::move(bound_stmt));
+            optimizer_->clearAppliedRules();
+            auto optimized_plan = optimizer_->optimize(std::move(logical_plan));
+            auto physical_plan = physical_planner_->plan(std::move(optimized_plan));
+            
+            auto prep = std::make_unique<PreparedStatement>(
+                prep_stmt->name, nullptr, std::move(physical_plan), param_types);
+            prep_manager_->addStatement(std::move(prep));
+            out << "Statement prepared.\n";
+            return;
+        }
+
         planner::ExplainPlan explain;
+        std::unique_ptr<planner::AbstractPlanNode> physical_plan;
         
-        auto logical_plan = planner_->plan(std::move(bound_stmt));
-        if (is_explain) {
-            explain.logical_plan = planner::PlanFormatter::renderTree(planner::PlanFormatter::buildFormattedTree(logical_plan.get()), false);
+        if (auto* exec_stmt = dynamic_cast<ast::ExecuteStatement*>(inner_stmt)) {
+            PreparedStatement* prepared = prep_manager_->getStatement(exec_stmt->name);
+            if (!prepared) {
+                out << "Error: Prepared statement not found: " << exec_stmt->name << "\n";
+                return;
+            }
+            if (prepared->getParameterTypes().size() != exec_stmt->parameters.size()) {
+                out << "Error: Parameter count mismatch for " << exec_stmt->name << "\n";
+                return;
+            }
+            
+            std::vector<Value> params;
+            for (size_t i = 0; i < exec_stmt->parameters.size(); ++i) {
+                binder::Binder binder(catalog_.get());
+                auto bound_expr = binder.bindExpression(*exec_stmt->parameters[i]);
+                auto exec_expr = bound_expr->takeExpr();
+                Value val = exec_expr->evaluate(Tuple{}, Schema(std::vector<Column>{}));
+                TypeId expected = prepared->getParameterTypes()[i];
+                if (val.getType() != expected && val.getType() != TypeId::Null) {
+                    out << "Error: Type mismatch for parameter\n";
+                    return;
+                }
+                params.push_back(val);
+            }
+            
+            physical_plan = clonePhysicalPlan(prepared->getPhysicalPlan());
+            bindPhysicalPlan(physical_plan.get(), params);
+            
+            if (is_explain) {
+                // EXPLAIN EXECUTE is not supported in details, just show physical plan
+                explain.physical_plan = planner::PlanFormatter::renderTree(planner::PlanFormatter::buildFormattedTree(physical_plan.get()), false);
+                explain.logical_plan = "(Optimized Logical Plan from cache)";
+                explain.optimized_plan = "(Optimized Logical Plan from cache)";
+                
+                std::ostringstream schema_out;
+                const auto& schema = physical_plan->getOutputSchema();
+                schema_out << "Schema(";
+                for (size_t i = 0; i < schema.getColumnCount(); ++i) {
+                    schema_out << schema.getColumn(i).getName();
+                    if (i + 1 < schema.getColumnCount()) schema_out << ", ";
+                }
+                schema_out << ")";
+                explain.output_schema = schema_out.str();
+            }
+        } else {
+            // Normal execution
+            binder::Binder binder(catalog_.get());
+            auto bound_stmt = binder.bind(*inner_stmt);
+            auto logical_plan = planner_->plan(std::move(bound_stmt));
+            if (is_explain) {
+                explain.logical_plan = planner::PlanFormatter::renderTree(planner::PlanFormatter::buildFormattedTree(logical_plan.get()), false);
+            }
+            
+            optimizer_->clearAppliedRules();
+            auto optimized_plan = optimizer_->optimize(std::move(logical_plan));
+            if (is_explain) {
+                explain.optimized_plan = planner::PlanFormatter::renderTree(planner::PlanFormatter::buildFormattedTree(optimized_plan.get()), false);
+                explain.optimizer_rules = optimizer_->getAppliedRules();
+            }
+            
+            physical_plan = physical_planner_->plan(std::move(optimized_plan));
         }
-        
-        optimizer_->clearAppliedRules();
-        auto optimized_plan = optimizer_->optimize(std::move(logical_plan));
-        if (is_explain) {
-            explain.optimized_plan = planner::PlanFormatter::renderTree(planner::PlanFormatter::buildFormattedTree(optimized_plan.get()), false);
-            explain.optimizer_rules = optimizer_->getAppliedRules();
-        }
-        
-        auto physical_plan = physical_planner_->plan(std::move(optimized_plan));
+
         
         planner::FormattedPlanNode formatted_phys;
         if (is_explain) {

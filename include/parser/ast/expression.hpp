@@ -59,4 +59,9 @@ public:
     std::string toString() const override;
 };
 
+class ParameterExpression : public Expression {
+public:
+    std::string toString() const override { return "?"; }
+};
+
 } // namespace hamdb::ast

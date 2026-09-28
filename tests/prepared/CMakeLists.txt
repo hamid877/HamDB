@@ -1,0 +1,11 @@
+add_executable(prepared_statement_test prepared_statement_test.cpp)
+target_link_libraries(prepared_statement_test PRIVATE gtest_main hamdb_core)
+add_test(NAME prepared_statement_test COMMAND prepared_statement_test)
+
+add_executable(parameter_binding_test parameter_binding_test.cpp)
+target_link_libraries(parameter_binding_test PRIVATE gtest_main hamdb_core)
+add_test(NAME parameter_binding_test COMMAND parameter_binding_test)
+
+add_executable(prepared_statement_manager_test prepared_statement_manager_test.cpp)
+target_link_libraries(prepared_statement_manager_test PRIVATE gtest_main hamdb_core)
+add_test(NAME prepared_statement_manager_test COMMAND prepared_statement_manager_test)

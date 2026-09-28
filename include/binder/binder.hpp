@@ -21,6 +21,8 @@ public:
     explicit Binder(CatalogManager* catalog) : catalog_(catalog) {}
 
     std::unique_ptr<BoundStatement> bind(const ast::Statement& stmt);
+    std::unique_ptr<BoundExpression> bindExpression(const ast::Expression& expr);
+    const std::vector<TypeId>& getParameterTypes() const { return parameter_types_; }
 
 private:
     CatalogManager* catalog_;
@@ -38,15 +40,17 @@ private:
     std::unique_ptr<BoundUpdateStatement> bindUpdate(const ast::UpdateStatement& stmt);
     std::unique_ptr<BoundDeleteStatement> bindDelete(const ast::DeleteStatement& stmt);
     std::unique_ptr<BoundValuesStatement> bindValues(const ast::ValuesStatement& stmt);
-
-    std::unique_ptr<BoundExpression> bindExpression(const ast::Expression& expr);
     
+    
+    std::unique_ptr<BoundExpression> bindParameter(const ast::ParameterExpression& expr);
     std::unique_ptr<BoundExpression> bindConstant(const ast::ConstantExpression& expr);
     std::unique_ptr<BoundExpression> bindColumnValue(const ast::ColumnValueExpression& expr);
     std::unique_ptr<BoundExpression> bindBinary(const ast::BinaryExpression& expr);
     std::unique_ptr<BoundExpression> bindUnary(const ast::UnaryExpression& expr);
 
     TypeId columnTypeToTypeId(ColumnType type);
+
+    std::vector<TypeId> parameter_types_;
 };
 
 } // namespace hamdb::binder
