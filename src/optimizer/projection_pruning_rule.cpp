@@ -2,6 +2,10 @@
 #include "executor/column_value_expression.hpp"
 #include "planner/logical_index_scan.hpp"
 #include "planner/order_by_plan.hpp"
+#include "planner/nested_loop_join_plan.hpp"
+#include "planner/hash_join_plan.hpp"
+#include "planner/aggregation_plan.hpp"
+#include "planner/having_plan.hpp"
 #include <vector>
 #include <algorithm>
 
@@ -86,6 +90,64 @@ std::unique_ptr<planner::LogicalPlanNode> ProjectionPruningRule::rewriteTopDown(
         for (auto& child : node->getChildren()) {
             child = rewriteTopDown(std::move(child), child_required);
         }
+        return node;
+    }
+    
+    if (type == planner::LogicalPlanType::HAVING) {
+        auto* having = dynamic_cast<planner::LogicalHavingNode*>(node.get());
+        std::unordered_set<uint32_t> child_required = required_cols;
+        collectColumns(having->getPredicate(), child_required);
+        
+        for (auto& child : node->getChildren()) {
+            child = rewriteTopDown(std::move(child), child_required);
+        }
+        return node;
+    }
+
+    if (type == planner::LogicalPlanType::AGGREGATION) {
+        auto* agg = dynamic_cast<planner::LogicalAggregationNode*>(node.get());
+        std::unordered_set<uint32_t> child_required;
+        for (const auto& expr : agg->getGroupBys()) {
+            collectColumns(expr.get(), child_required);
+        }
+        for (const auto& expr : agg->getAggregates()) {
+            collectColumns(expr.get(), child_required);
+        }
+        
+        for (auto& child : node->getChildren()) {
+            child = rewriteTopDown(std::move(child), child_required);
+        }
+        return node;
+    }
+
+    if (type == planner::LogicalPlanType::NESTED_LOOP_JOIN || type == planner::LogicalPlanType::HASH_JOIN) {
+        std::unordered_set<uint32_t> child_required = required_cols;
+        
+        if (type == planner::LogicalPlanType::NESTED_LOOP_JOIN) {
+            auto* join = dynamic_cast<planner::LogicalNestedLoopJoinNode*>(node.get());
+            collectColumns(join->getPredicate(), child_required);
+        } else {
+            auto* join = dynamic_cast<planner::LogicalHashJoinNode*>(node.get());
+            collectColumns(join->getLeftKeyExpr(), child_required);
+            collectColumns(join->getRightKeyExpr(), child_required);
+        }
+        
+        uint32_t left_cols = node->getChildren()[0]->getOutputSchema().getColumnCount();
+        
+        std::unordered_set<uint32_t> left_required;
+        std::unordered_set<uint32_t> right_required;
+        
+        for (uint32_t col : child_required) {
+            if (col < left_cols) {
+                left_required.insert(col);
+            } else {
+                right_required.insert(col - left_cols);
+            }
+        }
+        
+        node->getChildren()[0] = rewriteTopDown(std::move(node->getChildren()[0]), left_required);
+        node->getChildren()[1] = rewriteTopDown(std::move(node->getChildren()[1]), right_required);
+        
         return node;
     }
     

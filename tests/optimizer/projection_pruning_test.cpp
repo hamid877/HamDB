@@ -3,6 +3,8 @@
 #include "planner/physical_planner.hpp"
 #include "planner/planner.hpp"
 #include "planner/executor_factory.hpp"
+#include "planner/nested_loop_join_plan.hpp"
+#include "executor/comparison_expression.hpp"
 #include "catalog/catalog_manager.hpp"
 #include "buffer/buffer_pool_manager.hpp"
 #include "storage/disk_manager.hpp"
@@ -114,6 +116,65 @@ TEST_F(ProjectionPruningTest, PruneColumns) {
     ASSERT_EQ(optimized_seq->getOutputSchema().getColumnCount(), 2);
     EXPECT_EQ(optimized_seq->getOutputSchema().getColumn(0).getName(), "id");
     EXPECT_EQ(optimized_seq->getOutputSchema().getColumn(1).getName(), "val1");
+}
+
+TEST_F(ProjectionPruningTest, JoinPruningTest) {
+    TableInfo* table1;
+    (void)catalog_->getTable("test_table", table1);
+    
+    std::vector<Column> cols_t2 = {
+        Column("id2", ColumnType::Integer),
+        Column("val3", ColumnType::Integer),
+        Column("val4", ColumnType::Integer)
+    };
+    Schema schema_t2(cols_t2);
+    TableInfo* table2;
+    (void)catalog_->createTable("test_table2", schema_t2, table2);
+    
+    auto seq1 = std::make_unique<planner::SeqScanPlanNode>(table1->getSchema(), "test_table", "t1");
+    auto seq2 = std::make_unique<planner::SeqScanPlanNode>(table2->getSchema(), "test_table2", "t2");
+    
+    std::vector<Column> join_cols;
+    for (uint32_t i = 0; i < table1->getSchema().getColumnCount(); ++i) join_cols.push_back(table1->getSchema().getColumn(i));
+    for (uint32_t i = 0; i < table2->getSchema().getColumnCount(); ++i) join_cols.push_back(table2->getSchema().getColumn(i));
+    Schema join_schema(join_cols);
+    
+    auto join = std::make_unique<planner::LogicalNestedLoopJoinNode>(join_schema, std::make_unique<hamdb::ComparisonExpression>(
+        hamdb::ComparisonType::Equal,
+        std::make_unique<hamdb::ColumnValueExpression>(0), // t1.id (index 0)
+        std::make_unique<hamdb::ColumnValueExpression>(3)  // t2.id2 (index 3)
+    ));
+    join->addChild(std::move(seq1));
+    join->addChild(std::move(seq2));
+    
+    // Select t1.val2 (index 2) and t2.val4 (index 5)
+    std::vector<Column> proj_cols = { Column("val2", ColumnType::Integer), Column("val4", ColumnType::Integer) };
+    Schema proj_schema(proj_cols);
+    std::vector<std::unique_ptr<hamdb::Expression>> proj_exprs;
+    proj_exprs.push_back(std::make_unique<hamdb::ColumnValueExpression>(2));
+    proj_exprs.push_back(std::make_unique<hamdb::ColumnValueExpression>(5));
+    
+    auto proj = std::make_unique<planner::ProjectionPlanNode>(proj_schema, std::move(proj_exprs));
+    proj->addChild(std::move(join));
+    
+    std::unique_ptr<planner::LogicalPlanNode> root = std::move(proj);
+    auto optimized_root = rule_executor_->optimize(std::move(root));
+    
+    auto* optimized_proj = dynamic_cast<planner::ProjectionPlanNode*>(optimized_root.get());
+    auto* optimized_join = dynamic_cast<planner::LogicalNestedLoopJoinNode*>(optimized_proj->getChildren()[0].get());
+    
+    auto* opt_seq1 = dynamic_cast<planner::SeqScanPlanNode*>(optimized_join->getChildren()[0].get());
+    auto* opt_seq2 = dynamic_cast<planner::SeqScanPlanNode*>(optimized_join->getChildren()[1].get());
+    
+    // t1 needs id (0) for join, and val2 (2) for projection
+    ASSERT_EQ(opt_seq1->getOutputSchema().getColumnCount(), 2);
+    EXPECT_EQ(opt_seq1->getOutputSchema().getColumn(0).getName(), "id");
+    EXPECT_EQ(opt_seq1->getOutputSchema().getColumn(1).getName(), "val2");
+    
+    // t2 needs id2 (0 in its schema) for join, and val4 (2 in its schema) for projection
+    ASSERT_EQ(opt_seq2->getOutputSchema().getColumnCount(), 2);
+    EXPECT_EQ(opt_seq2->getOutputSchema().getColumn(0).getName(), "id2");
+    EXPECT_EQ(opt_seq2->getOutputSchema().getColumn(1).getName(), "val4");
 }
 
 TEST_F(ProjectionPruningTest, ExecutionResultsIdentical) {

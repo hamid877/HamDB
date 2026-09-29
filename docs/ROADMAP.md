@@ -149,10 +149,37 @@ Every milestone must satisfy:
 | ---- | ------------ | ------ |
 | M9.1 | Optimizer Infrastructure | ✅ Complete |
 | M9.2 | Filter/Predicate Pushdown | ✅ Complete |
+| M9.3 | Projection Pruning | ✅ Complete |
 
 ---
 
 # Completed Milestones
+
+## M9.3 — Projection Pruning
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Implemented semantic-preserving projection pruning by determining which columns are required by the final projection and all ancestor operators, and propagating those requirements toward child plans.
+* Correctly retain columns required by filters, join predicates, GROUP BY, aggregate expressions, HAVING, ORDER BY, and computed expressions.
+* Propagated requirements down through `HAVING`, `AGGREGATION`, and `JOIN` (`NESTED_LOOP_JOIN`, `HASH_JOIN`) nodes.
+* Added `JoinPruningTest` to verify that required columns are properly propagated to both sides of a join in `ProjectionPruningRule`.
+
+### Verification
+
+* Tests passing: **361 / 361** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(optimizer): implement join/aggregation projection pruning rule (M9.3)
+```
+
+---
 
 ## M9.2 — Filter/Predicate Pushdown
 
