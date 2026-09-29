@@ -148,10 +148,38 @@ Every milestone must satisfy:
 | ID   | Milestone    | Status |
 | ---- | ------------ | ------ |
 | M9.1 | Optimizer Infrastructure | ✅ Complete |
+| M9.2 | Filter/Predicate Pushdown | ✅ Complete |
 
 ---
 
 # Completed Milestones
+
+## M9.2 — Filter/Predicate Pushdown
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Implemented semantic-preserving filter pushdown rule into join children (Left and Right sides).
+* Recursively push filters through SeqScan and Hash/NestedLoop Joins.
+* Implemented splitting of AND conjuncts, dynamically shifting column dependencies when pushing to right join children.
+* Preserved all existing expression and plan node semantics without inventing new abstractions.
+* Added `PushdownFilterToJoinLeft`, `PushdownFilterToJoinRight`, and `ExecutionResultsIdenticalJoin` tests in `tests/optimizer/predicate_pushdown_test.cpp`.
+
+### Verification
+
+* Tests passing: **361 / 361** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(optimizer): implement join filter pushdown rule (M9.2)
+```
+
+---
 
 ## M9.1 — Optimizer Infrastructure
 

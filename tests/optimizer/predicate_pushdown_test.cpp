@@ -5,6 +5,8 @@
 #include "planner/executor_factory.hpp"
 #include "binder/bound_statement.hpp"
 #include "binder/bound_expression.hpp"
+#include "planner/nested_loop_join_plan.hpp"
+#include "executor/column_value_expression.hpp"
 #include "catalog/catalog_manager.hpp"
 #include "buffer/buffer_pool_manager.hpp"
 #include "storage/disk_manager.hpp"
@@ -157,6 +159,185 @@ TEST_F(PredicatePushdownTest, ExecutionResultsIdentical) {
     auto opt_seq = std::make_unique<planner::SeqScanPlanNode>(table_info->getSchema(), "test_table", "test_table");
     auto opt_filter = std::make_unique<planner::FilterPlanNode>(table_info->getSchema(), true_expr_factory());
     opt_filter->addChild(std::move(opt_seq));
+    
+    std::unique_ptr<planner::LogicalPlanNode> opt_root = std::move(opt_filter);
+    opt_root = rule_executor_->optimize(std::move(opt_root));
+    
+    auto opt_phys = physical_planner_->plan(std::move(opt_root));
+    auto opt_exec = planner::ExecutorFactory::createExecutor(&exec_ctx, std::move(opt_phys));
+    
+    opt_exec->init();
+    Tuple t_opt;
+    RID r_opt;
+    int opt_count = 0;
+    while(opt_exec->next(&t_opt, &r_opt)) {
+        opt_count++;
+    }
+    EXPECT_EQ(opt_count, 2);
+}
+TEST_F(PredicatePushdownTest, PushdownFilterToJoinLeft) {
+    TableInfo* table_info;
+    (void)catalog_->getTable("test_table", table_info);
+    
+    auto left_seq = std::make_unique<planner::SeqScanPlanNode>(table_info->getSchema(), "test_table", "test_table_L");
+    auto right_seq = std::make_unique<planner::SeqScanPlanNode>(table_info->getSchema(), "test_table", "test_table_R");
+    
+    std::vector<Column> joined_cols = table_info->getSchema().getColumns();
+    for (auto& col : table_info->getSchema().getColumns()) {
+        joined_cols.push_back(col);
+    }
+    Schema joined_schema(joined_cols);
+    
+    auto join = std::make_unique<planner::LogicalNestedLoopJoinNode>(joined_schema, std::make_unique<hamdb::ConstantExpression>(Value(true)));
+    join->addChild(std::move(left_seq));
+    join->addChild(std::move(right_seq));
+    
+    auto comp_expr = std::make_unique<hamdb::ComparisonExpression>(
+        hamdb::ComparisonType::Equal,
+        std::make_unique<hamdb::ColumnValueExpression>(0),
+        std::make_unique<hamdb::ConstantExpression>(Value(static_cast<int32_t>(5)))
+    );
+    
+    auto filter = std::make_unique<planner::FilterPlanNode>(joined_schema, std::move(comp_expr));
+    filter->addChild(std::move(join));
+    
+    std::unique_ptr<planner::LogicalPlanNode> root = std::move(filter);
+    auto optimized_root = rule_executor_->optimize(std::move(root));
+    
+    ASSERT_EQ(optimized_root->getType(), planner::LogicalPlanType::NESTED_LOOP_JOIN);
+    auto* opt_join = dynamic_cast<planner::LogicalNestedLoopJoinNode*>(optimized_root.get());
+    ASSERT_NE(opt_join, nullptr);
+    ASSERT_EQ(opt_join->getChildren().size(), 2);
+    
+    auto* left_child = opt_join->getChildren()[0].get();
+    ASSERT_EQ(left_child->getType(), planner::LogicalPlanType::SEQ_SCAN);
+    auto* left_seq_opt = dynamic_cast<planner::SeqScanPlanNode*>(left_child);
+    ASSERT_NE(left_seq_opt->getPredicate(), nullptr);
+}
+
+TEST_F(PredicatePushdownTest, PushdownFilterToJoinRight) {
+    TableInfo* table_info;
+    (void)catalog_->getTable("test_table", table_info);
+    
+    auto left_seq = std::make_unique<planner::SeqScanPlanNode>(table_info->getSchema(), "test_table", "test_table_L");
+    auto right_seq = std::make_unique<planner::SeqScanPlanNode>(table_info->getSchema(), "test_table", "test_table_R");
+    
+    std::vector<Column> joined_cols = table_info->getSchema().getColumns();
+    for (auto& col : table_info->getSchema().getColumns()) {
+        joined_cols.push_back(col);
+    }
+    Schema joined_schema(joined_cols);
+    
+    auto join = std::make_unique<planner::LogicalNestedLoopJoinNode>(joined_schema, std::make_unique<hamdb::ConstantExpression>(Value(true)));
+    join->addChild(std::move(left_seq));
+    join->addChild(std::move(right_seq));
+    
+    auto comp_expr = std::make_unique<hamdb::ComparisonExpression>(
+        hamdb::ComparisonType::Equal,
+        std::make_unique<hamdb::ColumnValueExpression>(2),
+        std::make_unique<hamdb::ConstantExpression>(Value(static_cast<int32_t>(5)))
+    );
+    
+    auto filter = std::make_unique<planner::FilterPlanNode>(joined_schema, std::move(comp_expr));
+    filter->addChild(std::move(join));
+    
+    std::unique_ptr<planner::LogicalPlanNode> root = std::move(filter);
+    auto optimized_root = rule_executor_->optimize(std::move(root));
+    
+    ASSERT_EQ(optimized_root->getType(), planner::LogicalPlanType::NESTED_LOOP_JOIN);
+    auto* opt_join = dynamic_cast<planner::LogicalNestedLoopJoinNode*>(optimized_root.get());
+    ASSERT_NE(opt_join, nullptr);
+    ASSERT_EQ(opt_join->getChildren().size(), 2);
+    
+    auto* right_child = opt_join->getChildren()[1].get();
+    ASSERT_EQ(right_child->getType(), planner::LogicalPlanType::SEQ_SCAN);
+    auto* right_seq_opt = dynamic_cast<planner::SeqScanPlanNode*>(right_child);
+    ASSERT_NE(right_seq_opt->getPredicate(), nullptr);
+    
+    auto* right_pred = right_seq_opt->getPredicate();
+    auto* right_comp = dynamic_cast<const hamdb::ComparisonExpression*>(right_pred);
+    ASSERT_NE(right_comp, nullptr);
+    auto* right_col = dynamic_cast<const hamdb::ColumnValueExpression*>(right_comp->getChildren()[0].get());
+    ASSERT_NE(right_col, nullptr);
+    EXPECT_EQ(right_col->getColIdx(), 0);
+}
+
+TEST_F(PredicatePushdownTest, ExecutionResultsIdenticalJoin) {
+    TableInfo* table_info;
+    (void)catalog_->getTable("test_table", table_info);
+    
+    auto txn = txn_manager_->begin();
+    ExecutorContext exec_ctx(txn, catalog_.get(), bpm_.get(), mvcc_manager_.get(), disk_manager_.get(), lock_manager_.get(), log_manager_.get());
+    
+    std::vector<std::byte> payload1(8, std::byte{0});
+    *reinterpret_cast<int32_t*>(payload1.data()) = 1;
+    *reinterpret_cast<int32_t*>(payload1.data() + 4) = 10;
+    
+    std::vector<std::byte> payload2(8, std::byte{0});
+    *reinterpret_cast<int32_t*>(payload2.data()) = 2;
+    *reinterpret_cast<int32_t*>(payload2.data() + 4) = 20;
+    
+    {
+        WritePageGuard guard;
+        (void)bpm_->fetchPageWrite(table_info->getHeapRootPage(), guard);
+        Page page(PageHeader(table_info->getHeapRootPage(), PageType::Table));
+        SlottedPage sp(page);
+        (void)sp.initialize();
+        std::memcpy(guard.pageMut().data().data(), page.data().data(), Page::kSize);
+        guard.markDirty();
+    }
+    (void)bpm_->flushPage(table_info->getHeapRootPage());
+    
+    TableHeap heap = *TableHeap::open(*disk_manager_, table_info->getHeapRootPage());
+    RID r1, r2;
+    (void)heap.insertTuple(Tuple(payload1), r1);
+    (void)heap.insertTuple(Tuple(payload2), r2);
+    txn_manager_->commit(txn);
+    
+    std::vector<Column> joined_cols = table_info->getSchema().getColumns();
+    for (auto& col : table_info->getSchema().getColumns()) {
+        joined_cols.push_back(col);
+    }
+    Schema joined_schema(joined_cols);
+    
+    auto expr_factory = []() {
+        return std::make_unique<hamdb::ComparisonExpression>(
+            hamdb::ComparisonType::Equal,
+            std::make_unique<hamdb::ColumnValueExpression>(2), // right.id
+            std::make_unique<hamdb::ConstantExpression>(Value(static_cast<int32_t>(2)))
+        );
+    };
+
+    // Unoptimized Plan
+    auto unopt_left = std::make_unique<planner::SeqScanPlanNode>(table_info->getSchema(), "test_table", "test_table_L");
+    auto unopt_right = std::make_unique<planner::SeqScanPlanNode>(table_info->getSchema(), "test_table", "test_table_R");
+    auto unopt_join = std::make_unique<planner::LogicalNestedLoopJoinNode>(joined_schema, std::make_unique<hamdb::ConstantExpression>(Value(true)));
+    unopt_join->addChild(std::move(unopt_left));
+    unopt_join->addChild(std::move(unopt_right));
+    
+    auto unopt_filter = std::make_unique<planner::FilterPlanNode>(joined_schema, expr_factory());
+    unopt_filter->addChild(std::move(unopt_join));
+    auto unopt_phys = physical_planner_->plan(std::move(unopt_filter));
+    auto unopt_exec = planner::ExecutorFactory::createExecutor(&exec_ctx, std::move(unopt_phys));
+    
+    unopt_exec->init();
+    Tuple t_unopt;
+    RID r_unopt;
+    int unopt_count = 0;
+    while(unopt_exec->next(&t_unopt, &r_unopt)) {
+        unopt_count++;
+    }
+    EXPECT_EQ(unopt_count, 2);
+    
+    // Optimized Plan
+    auto opt_left = std::make_unique<planner::SeqScanPlanNode>(table_info->getSchema(), "test_table", "test_table_L");
+    auto opt_right = std::make_unique<planner::SeqScanPlanNode>(table_info->getSchema(), "test_table", "test_table_R");
+    auto opt_join = std::make_unique<planner::LogicalNestedLoopJoinNode>(joined_schema, std::make_unique<hamdb::ConstantExpression>(Value(true)));
+    opt_join->addChild(std::move(opt_left));
+    opt_join->addChild(std::move(opt_right));
+    
+    auto opt_filter = std::make_unique<planner::FilterPlanNode>(joined_schema, expr_factory());
+    opt_filter->addChild(std::move(opt_join));
     
     std::unique_ptr<planner::LogicalPlanNode> opt_root = std::move(opt_filter);
     opt_root = rule_executor_->optimize(std::move(opt_root));
