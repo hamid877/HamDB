@@ -9,6 +9,7 @@ set(PLANNER_SOURCES
     hash_join_plan.cpp
     aggregation_plan.cpp
     having_plan.cpp
+    order_by_plan.cpp
 )
 
 add_library(hamdb_planner STATIC ${PLANNER_SOURCES})

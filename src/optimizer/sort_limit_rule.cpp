@@ -1,5 +1,6 @@
 #include "optimizer/sort_limit_rule.hpp"
 #include "planner/logical_plan.hpp"
+#include "planner/order_by_plan.hpp"
 #include "planner/logical_index_scan.hpp"
 #include "executor/column_value_expression.hpp"
 
@@ -57,6 +58,52 @@ std::unique_ptr<planner::LogicalPlanNode> SortLimitRule::apply(std::unique_ptr<p
 
         if (can_eliminate) {
             return std::move(sort_node->getChildren()[0]);
+        }
+    } else if (plan->getType() == planner::LogicalPlanType::ORDER_BY) {
+        auto* ob_node = static_cast<planner::LogicalOrderByNode*>(plan.get());
+        bool can_eliminate = false;
+
+        if (ob_node->getOrderBy().size() == 1) {
+            auto& order_pair = ob_node->getOrderBy()[0];
+            auto* sort_expr = dynamic_cast<ColumnValueExpression*>(order_pair.first.get());
+            bool is_asc = order_pair.second;
+
+            if (sort_expr && is_asc) {
+                uint32_t current_col_idx = sort_expr->getColIdx();
+                planner::LogicalPlanNode* current_node = ob_node->getChildren()[0].get();
+                bool match_found = false;
+
+                while (current_node) {
+                    if (current_node->getType() == planner::LogicalPlanType::PROJECTION) {
+                        auto* proj = static_cast<planner::ProjectionPlanNode*>(current_node);
+                        if (current_col_idx < proj->getExpressions().size()) {
+                            auto* proj_expr = dynamic_cast<ColumnValueExpression*>(proj->getExpressions()[current_col_idx].get());
+                            if (!proj_expr) break;
+                            current_col_idx = proj_expr->getColIdx();
+                            current_node = proj->getChildren()[0].get();
+                        } else {
+                            break;
+                        }
+                    } else if (current_node->getType() == planner::LogicalPlanType::FILTER) {
+                        current_node = current_node->getChildren()[0].get();
+                    } else if (current_node->getType() == planner::LogicalPlanType::INDEX_SCAN) {
+                        if (current_col_idx == 0) {
+                            match_found = true;
+                        }
+                        break;
+                    } else {
+                        break;
+                    }
+                }
+
+                if (match_found) {
+                    can_eliminate = true;
+                }
+            }
+        }
+
+        if (can_eliminate) {
+            return std::move(ob_node->getChildren()[0]);
         }
     } else if (plan->getType() == planner::LogicalPlanType::LIMIT) {
         auto* limit_node = static_cast<planner::LimitPlanNode*>(plan.get());

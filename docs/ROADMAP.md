@@ -95,6 +95,7 @@ Every milestone must satisfy:
 | M8.2 | Hash Join Executor | ✅ Complete |
 | M8.3 | Aggregation Executor | ✅ Complete |
 | M8.4 | Having Executor | ✅ Complete |
+| M8.5 | ORDER BY Executor | ✅ Complete |
 | M4.10 | Sort Executor | ✅ Complete |
 | M4.11 | Limit Executor | ✅ Complete |
 | M4.12 | Values Executor | ✅ Complete |
@@ -142,6 +143,33 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M8.5 — ORDER BY Executor
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* `OrderByExecutor` implementing the executor lifecycle (`init()`, `next()`, `outputSchema()`).
+* Support for one or multiple sort keys with `ASC`/`DESC` directions.
+* Materialize child tuples into an in-memory vector.
+* Evaluate ORDER BY expressions and stable-sort tuples lexicographically.
+* Integration with the planner, physical planner, and executor factory.
+* Validation rules for sort parameters in binder and optimizer.
+* Added `order_by_plan_test` and `order_by_executor_test`.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+* CI Hardening: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement ORDER BY executor (M8.5)
+```
 
 ## M8.4 — Having Executor
 

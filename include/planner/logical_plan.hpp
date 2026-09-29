@@ -13,6 +13,7 @@ enum class LogicalPlanType {
     FILTER,
     PROJECTION,
     SORT,
+    ORDER_BY,
     LIMIT,
     VALUES,
     INSERT,

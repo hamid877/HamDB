@@ -33,6 +33,7 @@ FormattedPlanNode PlanFormatter::buildFormattedTree(const LogicalPlanNode* plan)
         case LogicalPlanType::FILTER: node.name = "FILTER"; break;
         case LogicalPlanType::PROJECTION: node.name = "PROJECTION"; break;
         case LogicalPlanType::SORT: node.name = "SORT"; break;
+        case LogicalPlanType::ORDER_BY: node.name = "ORDER_BY"; break;
         case LogicalPlanType::LIMIT: node.name = "LIMIT"; break;
         case LogicalPlanType::VALUES: node.name = "VALUES"; break;
         case LogicalPlanType::INSERT: {
@@ -94,6 +95,7 @@ FormattedPlanNode PlanFormatter::buildFormattedTree(const AbstractPlanNode* plan
         case PhysicalPlanType::FILTER: node.name = "FILTER"; break;
         case PhysicalPlanType::PROJECTION: node.name = "PROJECTION"; break;
         case PhysicalPlanType::SORT: node.name = "SORT"; break;
+        case PhysicalPlanType::ORDER_BY: node.name = "ORDER_BY"; break;
         case PhysicalPlanType::LIMIT: node.name = "LIMIT"; break;
         case PhysicalPlanType::VALUES: node.name = "VALUES"; break;
         case PhysicalPlanType::INSERT: {

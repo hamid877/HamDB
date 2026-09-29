@@ -18,6 +18,7 @@ add_library(hamdb_executor STATIC
     values_executor.cpp
     execution_stats.cpp
     having_executor.cpp
+    order_by_executor.cpp
 )
 
 target_link_libraries(hamdb_executor PUBLIC

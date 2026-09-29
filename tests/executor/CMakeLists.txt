@@ -14,6 +14,7 @@ add_executable(hamdb_executor_test
     limit_executor_test.cpp
     values_executor_test.cpp
     having_executor_test.cpp
+    order_by_executor_test.cpp
 )
 
 target_link_libraries(hamdb_executor_test PRIVATE

@@ -16,7 +16,9 @@
 #include "executor/delete_executor.hpp"
 #include "executor/aggregation_executor.hpp"
 #include "executor/having_executor.hpp"
+#include "executor/order_by_executor.hpp"
 #include "planner/having_plan.hpp"
+#include "planner/order_by_plan.hpp"
 #include <stdexcept>
 #include <chrono>
 
@@ -93,6 +95,17 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
             auto* sort = dynamic_cast<SortPlan*>(plan.get());
             exec = std::make_unique<SortExecutor>(
                 std::move(child_executors[0]), std::move(sort->getOrderBy()));
+            break;
+        }
+        case PhysicalPlanType::ORDER_BY: {
+            auto* ob = dynamic_cast<OrderByPlan*>(plan.get());
+            // Need to clone the expressions in order_bys to pass to executor
+            std::vector<std::pair<hamdb::OrderByDirection, std::unique_ptr<hamdb::Expression>>> order_bys;
+            for (auto& pair : ob->getOrderBy()) {
+                order_bys.emplace_back(pair.first, pair.second->clone());
+            }
+            exec = std::make_unique<OrderByExecutor>(
+                std::move(child_executors[0]), std::move(order_bys));
             break;
         }
         case PhysicalPlanType::LIMIT: {

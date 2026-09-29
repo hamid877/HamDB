@@ -42,3 +42,8 @@ add_executable(having_plan_test having_plan_test.cpp)
 target_include_directories(having_plan_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(having_plan_test PRIVATE GTest::gtest_main hamdb_planner hamdb_binder hamdb_parser)
 add_test(NAME HavingPlanTest COMMAND having_plan_test)
+
+add_executable(order_by_plan_test order_by_plan_test.cpp)
+target_include_directories(order_by_plan_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(order_by_plan_test PRIVATE GTest::gtest_main hamdb_planner hamdb_binder hamdb_parser)
+add_test(NAME OrderByPlanTest COMMAND order_by_plan_test)

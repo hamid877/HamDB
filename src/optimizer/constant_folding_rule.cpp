@@ -8,6 +8,7 @@
 #include "planner/nested_loop_join_plan.hpp"
 #include "planner/aggregation_plan.hpp"
 #include "planner/having_plan.hpp"
+#include "planner/order_by_plan.hpp"
 
 namespace hamdb::optimizer {
 
@@ -147,6 +148,15 @@ std::unique_ptr<planner::LogicalPlanNode> ConstantFoldingRule::apply(std::unique
         }
         case planner::LogicalPlanType::SORT: {
             auto* node = dynamic_cast<planner::SortPlanNode*>(plan.get());
+            if (node) {
+                for (auto& pair : node->getMutableOrderBy()) {
+                    pair.first = foldExpression(std::move(pair.first));
+                }
+            }
+            break;
+        }
+        case planner::LogicalPlanType::ORDER_BY: {
+            auto* node = dynamic_cast<planner::LogicalOrderByNode*>(plan.get());
             if (node) {
                 for (auto& pair : node->getMutableOrderBy()) {
                     pair.first = foldExpression(std::move(pair.first));

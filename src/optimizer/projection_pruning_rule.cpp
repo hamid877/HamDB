@@ -1,6 +1,7 @@
 #include "optimizer/projection_pruning_rule.hpp"
 #include "executor/column_value_expression.hpp"
 #include "planner/logical_index_scan.hpp"
+#include "planner/order_by_plan.hpp"
 #include <vector>
 #include <algorithm>
 
@@ -92,6 +93,19 @@ std::unique_ptr<planner::LogicalPlanNode> ProjectionPruningRule::rewriteTopDown(
         auto* sort = dynamic_cast<planner::SortPlanNode*>(node.get());
         std::unordered_set<uint32_t> child_required = required_cols;
         for (const auto& pair : sort->getOrderBy()) {
+            collectColumns(pair.first.get(), child_required);
+        }
+        
+        for (auto& child : node->getChildren()) {
+            child = rewriteTopDown(std::move(child), child_required);
+        }
+        return node;
+    }
+
+    if (type == planner::LogicalPlanType::ORDER_BY) {
+        auto* ob = dynamic_cast<planner::LogicalOrderByNode*>(node.get());
+        std::unordered_set<uint32_t> child_required = required_cols;
+        for (const auto& pair : ob->getOrderBy()) {
             collectColumns(pair.first.get(), child_required);
         }
         

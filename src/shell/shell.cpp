@@ -15,6 +15,7 @@
 #include "planner/hash_join_plan.hpp"
 #include "planner/aggregation_plan.hpp"
 #include "planner/having_plan.hpp"
+#include "planner/order_by_plan.hpp"
 #include "shell/script_executor.hpp"
 #include "shell/meta_commands.hpp"
 
@@ -54,6 +55,13 @@ std::unique_ptr<planner::AbstractPlanNode> clonePhysicalPlan(const planner::Abst
             std::vector<std::pair<OrderByType, std::unique_ptr<Expression>>> order_by;
             for (const auto& p : node->getOrderBy()) order_by.emplace_back(p.first, p.second ? p.second->clone() : nullptr);
             cloned = std::make_unique<planner::SortPlan>(node->getOutputSchema(), std::move(order_by));
+            break;
+        }
+        case planner::PhysicalPlanType::ORDER_BY: {
+            auto* node = static_cast<const planner::OrderByPlan*>(plan);
+            std::vector<std::pair<OrderByDirection, std::unique_ptr<Expression>>> order_by;
+            for (const auto& p : node->getOrderBy()) order_by.emplace_back(p.first, p.second ? p.second->clone() : nullptr);
+            cloned = std::make_unique<planner::OrderByPlan>(node->getOutputSchema(), std::move(order_by));
             break;
         }
         case planner::PhysicalPlanType::LIMIT: {
@@ -160,6 +168,11 @@ void bindPhysicalPlan(planner::AbstractPlanNode* plan, const std::vector<Value>&
         }
         case planner::PhysicalPlanType::SORT: {
             auto* node = static_cast<planner::SortPlan*>(plan);
+            for (auto& p : node->getOrderBy()) if (p.second) p.second.get()->bindParameters(params);
+            break;
+        }
+        case planner::PhysicalPlanType::ORDER_BY: {
+            auto* node = static_cast<planner::OrderByPlan*>(plan);
             for (auto& p : node->getOrderBy()) if (p.second) p.second.get()->bindParameters(params);
             break;
         }

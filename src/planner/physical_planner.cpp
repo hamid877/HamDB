@@ -3,6 +3,7 @@
 #include "planner/hash_join_plan.hpp"
 #include "planner/aggregation_plan.hpp"
 #include "planner/having_plan.hpp"
+#include "planner/order_by_plan.hpp"
 #include "planner/logical_index_scan.hpp"
 #include "executor/column_value_expression.hpp"
 #include <stdexcept>
@@ -51,12 +52,23 @@ std::unique_ptr<AbstractPlanNode> PhysicalPlanner::planNode(std::unique_ptr<Logi
         case LogicalPlanType::SORT: {
             auto* sort = dynamic_cast<SortPlanNode*>(logical_node.get());
             std::vector<std::pair<hamdb::OrderByType, std::unique_ptr<hamdb::Expression>>> order_bys;
-            for (auto& pair : sort->order_by_) {
+            for (auto& pair : sort->getOrderBy()) {
                 hamdb::OrderByType type = pair.second ? hamdb::OrderByType::ASC : hamdb::OrderByType::DESC;
-                order_bys.emplace_back(type, std::move(pair.first));
+                order_bys.emplace_back(type, pair.first->clone());
             }
             physical_node = std::make_unique<SortPlan>(
                 sort->getOutputSchema(), std::move(order_bys));
+            break;
+        }
+        case LogicalPlanType::ORDER_BY: {
+            auto* ob = dynamic_cast<LogicalOrderByNode*>(logical_node.get());
+            std::vector<std::pair<hamdb::OrderByDirection, std::unique_ptr<hamdb::Expression>>> order_bys;
+            for (auto& pair : ob->getOrderBy()) {
+                hamdb::OrderByDirection type = pair.second ? hamdb::OrderByDirection::ASC : hamdb::OrderByDirection::DESC;
+                order_bys.emplace_back(type, pair.first->clone());
+            }
+            physical_node = std::make_unique<OrderByPlan>(
+                ob->getOutputSchema(), std::move(order_bys));
             break;
         }
         case LogicalPlanType::LIMIT: {

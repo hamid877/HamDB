@@ -3,6 +3,7 @@
 #include "planner/hash_join_plan.hpp"
 #include "planner/aggregation_plan.hpp"
 #include "planner/having_plan.hpp"
+#include "planner/order_by_plan.hpp"
 #include "executor/comparison_expression.hpp"
 #include "executor/column_value_expression.hpp"
 #include "binder/bound_expression.hpp"
@@ -254,16 +255,16 @@ std::unique_ptr<LogicalPlanNode> Planner::planSelect(binder::BoundSelectStatemen
         current_node = std::move(proj);
     }
 
-    // ORDER BY: Sort
+    // ORDER BY: OrderBy
     if (!stmt->order_by_.empty()) {
         std::vector<std::pair<std::unique_ptr<hamdb::Expression>, bool>> order_by_exprs;
         order_by_exprs.reserve(stmt->order_by_.size());
         for (auto& pair : stmt->order_by_) {
             order_by_exprs.emplace_back(pair.first->takeExpr(), pair.second);
         }
-        auto sort = std::make_unique<SortPlanNode>(current_node->getOutputSchema(), std::move(order_by_exprs));
-        sort->addChild(std::move(current_node));
-        current_node = std::move(sort);
+        auto order_by = std::make_unique<LogicalOrderByNode>(current_node->getOutputSchema(), std::move(order_by_exprs));
+        order_by->addChild(std::move(current_node));
+        current_node = std::move(order_by);
     }
 
     // LIMIT / OFFSET

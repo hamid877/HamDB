@@ -16,6 +16,7 @@ enum class PhysicalPlanType {
     FILTER,
     PROJECTION,
     SORT,
+    ORDER_BY,
     LIMIT,
     VALUES,
     INSERT,
