@@ -143,7 +143,45 @@ Every milestone must satisfy:
 
 ---
 
+## Phase 9 — Advanced Query Optimizer
+
+| ID   | Milestone    | Status |
+| ---- | ------------ | ------ |
+| M9.1 | Optimizer Infrastructure | ✅ Complete |
+
+---
+
 # Completed Milestones
+
+## M9.1 — Optimizer Infrastructure
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Created `IOptimizer` interface in `include/optimizer/optimizer.hpp` to decouple calling code from rule-application mechanisms.
+* Implemented `HamDBOptimizer` in `src/optimizer/optimizer.cpp`, wrapping `RuleExecutor` and encapsulating standard rule registrations.
+* Updated `include/shell/shell.hpp` and `src/shell/shell.cpp` to use `IOptimizer` instead of depending on `RuleExecutor` and individual rule headers.
+* Removed manual rule registration from `Shell`, moving responsibility to `HamDBOptimizer`.
+* Built comprehensive, standalone tests for the optimizer in `tests/optimizer/optimizer_test.cpp`.
+* Verified CI hardening standards: no global mutable state, deterministic tests, respectful of `[[nodiscard]]`, and Clang 18 + -Werror clean.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅ (361 CTest suites, 10/10 deterministic runs)
+* CI Hardening: ✅
+
+### Git Commit
+
+```text
+feat(optimizer): implement optimizer infrastructure (M9.1)
+```
+
+---
+
+
 
 ## M8.6 — LIMIT/OFFSET Executor
 

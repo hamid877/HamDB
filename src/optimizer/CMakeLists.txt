@@ -1,4 +1,5 @@
 add_library(hamdb_optimizer
+    optimizer.cpp
     predicate_pushdown_rule.cpp
     projection_pruning_rule.cpp
     constant_folding_rule.cpp

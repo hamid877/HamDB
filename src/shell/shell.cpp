@@ -4,11 +4,6 @@
 #include "binder/binder.hpp"
 #include "planner/executor_factory.hpp"
 #include "executor/column_value_expression.hpp"
-#include "optimizer/constant_folding_rule.hpp"
-#include "optimizer/predicate_pushdown_rule.hpp"
-#include "optimizer/projection_pruning_rule.hpp"
-#include "optimizer/index_scan_rule.hpp"
-#include "optimizer/sort_limit_rule.hpp"
 #include "planner/explain_plan.hpp"
 #include "planner/plan_formatter.hpp"
 #include "planner/nested_loop_join_plan.hpp"
@@ -241,12 +236,7 @@ void Shell::initDB(const std::string& db_name) {
     planner_ = std::make_unique<planner::Planner>(catalog_.get());
     physical_planner_ = std::make_unique<planner::PhysicalPlanner>(catalog_.get());
     
-    optimizer_ = std::make_unique<optimizer::RuleExecutor>();
-    optimizer_->addRule(std::make_unique<optimizer::PredicatePushdownRule>());
-    optimizer_->addRule(std::make_unique<optimizer::ProjectionPruningRule>());
-    optimizer_->addRule(std::make_unique<optimizer::ConstantFoldingRule>());
-    optimizer_->addRule(std::make_unique<optimizer::IndexScanRule>(catalog_.get()));
-    optimizer_->addRule(std::make_unique<optimizer::SortLimitRule>());
+    optimizer_ = std::make_unique<optimizer::HamDBOptimizer>(catalog_.get());
     prep_manager_ = std::make_unique<PreparedStatementManager>();
 }
 

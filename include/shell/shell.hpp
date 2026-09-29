@@ -14,7 +14,7 @@
 #include "wal/log_manager.hpp"
 #include "planner/planner.hpp"
 #include "planner/physical_planner.hpp"
-#include "optimizer/rule_executor.hpp"
+#include "optimizer/optimizer.hpp"
 #include "executor/executor_context.hpp"
 #include "prepared/prepared_statement_manager.hpp"
 
@@ -45,7 +45,7 @@ private:
     
     std::unique_ptr<planner::Planner> planner_;
     std::unique_ptr<planner::PhysicalPlanner> physical_planner_;
-    std::unique_ptr<optimizer::RuleExecutor> optimizer_;
+    std::unique_ptr<optimizer::IOptimizer> optimizer_;
     std::unique_ptr<PreparedStatementManager> prep_manager_;
     
     void initDB(const std::string& db_name);
