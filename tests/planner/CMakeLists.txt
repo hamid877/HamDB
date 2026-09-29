@@ -47,3 +47,8 @@ add_executable(order_by_plan_test order_by_plan_test.cpp)
 target_include_directories(order_by_plan_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(order_by_plan_test PRIVATE GTest::gtest_main hamdb_planner hamdb_binder hamdb_parser)
 add_test(NAME OrderByPlanTest COMMAND order_by_plan_test)
+
+add_executable(limit_plan_test limit_plan_test.cpp)
+target_include_directories(limit_plan_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(limit_plan_test PRIVATE GTest::gtest_main hamdb_planner hamdb_binder hamdb_parser)
+add_test(NAME LimitPlanTest COMMAND limit_plan_test)

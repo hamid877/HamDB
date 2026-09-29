@@ -16,7 +16,7 @@
 | Testing          | GoogleTest                  |
 | Platform         | Linux (Ubuntu / Linux Mint) |
 | Current Version  | v0.3.0-dev                  |
-| Overall Progress | **64%**                     |
+| Overall Progress | **66%**                     |
 
 ---
 
@@ -96,6 +96,7 @@ Every milestone must satisfy:
 | M8.3 | Aggregation Executor | ✅ Complete |
 | M8.4 | Having Executor | ✅ Complete |
 | M8.5 | ORDER BY Executor | ✅ Complete |
+| M8.6 | LIMIT/OFFSET Executor | ✅ Complete |
 | M4.10 | Sort Executor | ✅ Complete |
 | M4.11 | Limit Executor | ✅ Complete |
 | M4.12 | Values Executor | ✅ Complete |
@@ -143,6 +144,43 @@ Every milestone must satisfy:
 ---
 
 # Completed Milestones
+
+## M8.6 — LIMIT/OFFSET Executor
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Reused existing `LimitExecutor` (M4.11) — fully wired into `LogicalPlanType::LIMIT` / `PhysicalPlanType::LIMIT` / `ExecutorFactory`.
+* `init()` calls child `init()` then skips `OFFSET` tuples using the child iterator.
+* `next()` returns at most `LIMIT` tuples; returns `false` once the budget is exhausted.
+* `LIMIT 0` returns EOF immediately; `OFFSET` beyond child size returns EOF.
+* Child tuple order is always preserved (no reordering inside `LimitExecutor`).
+* Added `tests/planner/limit_plan_test.cpp` — 7 structural tests for `LimitPlanNode` and `LimitPlan`.
+* Added `tests/executor/limit_integration_test.cpp` — 14 integration tests verifying LIMIT/OFFSET after:
+  * `OrderByExecutor` (ascending, descending, with offset)
+  * Mock aggregation output via `ValuesExecutor`
+  * `HavingExecutor` (LIMIT 0 case included)
+  * `NestedLoopJoinExecutor` (cross join, offset-beyond-size EOF, order preservation)
+  * Re-init safety (double `init()` resets state correctly)
+  * Output schema passthrough
+* Both new test executables registered as CTest targets (`LimitPlanTest`, added to `ExecutorTest`).
+* CI hardening: unique temp DB paths, no shared global state, `[[nodiscard]]` respected, `-Werror` clean.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅ (360 CTest suites, 10/10 deterministic runs)
+* CI Hardening: ✅
+
+### Git Commit
+
+```text
+feat(executor): implement LIMIT/OFFSET executor (M8.6)
+```
+
+---
 
 ## M8.5 — ORDER BY Executor
 

@@ -12,6 +12,7 @@ add_executable(hamdb_executor_test
     aggregation_executor_test.cpp
     sort_executor_test.cpp
     limit_executor_test.cpp
+    limit_integration_test.cpp
     values_executor_test.cpp
     having_executor_test.cpp
     order_by_executor_test.cpp
