@@ -5,6 +5,7 @@ add_library(hamdb_optimizer
     constant_folding_rule.cpp
     index_scan_rule.cpp
     sort_limit_rule.cpp
+    join_selection_rule.cpp
     rule_executor.cpp
 )
 target_include_directories(hamdb_optimizer PUBLIC ${PROJECT_SOURCE_DIR}/include)

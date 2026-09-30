@@ -27,3 +27,9 @@ add_executable(optimizer_test optimizer_test.cpp)
 target_include_directories(optimizer_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(optimizer_test PRIVATE GTest::gtest_main hamdb_optimizer hamdb_planner hamdb_executor hamdb_transaction hamdb_wal hamdb_parser hamdb_catalog)
 add_test(NAME OptimizerTest COMMAND optimizer_test)
+
+add_executable(join_selection_test join_selection_test.cpp)
+target_include_directories(join_selection_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(join_selection_test PRIVATE GTest::gtest_main hamdb_optimizer hamdb_planner hamdb_executor hamdb_transaction hamdb_wal hamdb_parser hamdb_catalog)
+add_test(NAME JoinSelectionTest COMMAND join_selection_test)
+

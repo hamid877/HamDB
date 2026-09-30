@@ -151,10 +151,37 @@ Every milestone must satisfy:
 | M9.2 | Filter/Predicate Pushdown | ✅ Complete |
 | M9.3 | Projection Pruning | ✅ Complete |
 | M9.4 | Constant Folding (Advanced) | ✅ Complete |
+| M9.5 | Rule-Based Join Algorithm Selection | ✅ Complete |
 
 ---
 
 # Completed Milestones
+
+## M9.5 — Rule-Based Join Algorithm Selection
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Implemented `JoinSelectionRule` to transform `LogicalNestedLoopJoinNode` into `LogicalHashJoinNode` for supported equi-joins.
+* Preserved original join keys and predicates dynamically re-indexing column references for the right-side child.
+* Guaranteed fallback to `NestedLoopJoin` for non-equi joins or unsupported predicates.
+* Maintained existing NULL semantics and avoided creating new expression types.
+* Added `JoinSelectionTest` with structural execution tests and equivalence validation.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅ (10/10 deterministic runs)
+
+### Git Commit
+
+```text
+feat(optimizer): implement rule-based join algorithm selection (M9.5)
+```
+
+---
 
 ## M9.4 — Constant Folding (Advanced)
 
