@@ -1,6 +1,6 @@
 #pragma once
 
-#include "catalog/statistics_manager.hpp"
+#include "catalog/statistics.hpp"
 #include "executor/expression.hpp"
 #include <memory>
 #include <unordered_map>
@@ -11,10 +11,7 @@ namespace hamdb
     class CardinalityEstimator
     {
     public:
-        explicit CardinalityEstimator(StatisticsManager* stats_manager)
-            : stats_manager_(stats_manager)
-        {
-        }
+        CardinalityEstimator() = default;
 
         [[nodiscard]] double estimateSelectivity(const Expression* predicate,
                                                  const TableStatistics& stats,
@@ -25,9 +22,6 @@ namespace hamdb
                                                      const Schema& left_schema,
                                                      const TableStatistics& right_stats,
                                                      const Schema& right_schema) const;
-
-    private:
-        StatisticsManager* stats_manager_;
     };
 
 } // namespace hamdb

@@ -170,6 +170,7 @@ Every milestone must satisfy:
 * Implemented `CardinalityEstimator` to provide basic selectivity estimates for equality predicates, range predicates, and simple equi-joins using the collected statistics under uniformity and inclusion assumptions.
 * Kept the statistics and estimation completely separate from query execution correctness, ensuring query results are never altered.
 * Validated correctness via `StatisticsManagerTest` and `CardinalityEstimatorTest`.
+* Removed unused `stats_manager_` dependency from `CardinalityEstimator` to resolve build failure.
 
 ### Verification
 

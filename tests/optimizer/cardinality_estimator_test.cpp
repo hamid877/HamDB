@@ -8,18 +8,11 @@ using namespace hamdb;
 
 class CardinalityEstimatorTest : public ::testing::Test
 {
-protected:
-    void SetUp() override
-    {
-        stats_manager_ = std::make_unique<StatisticsManager>(nullptr, nullptr);
-    }
-    
-    std::unique_ptr<StatisticsManager> stats_manager_;
 };
 
 TEST_F(CardinalityEstimatorTest, EqualitySelectivity)
 {
-    CardinalityEstimator estimator(stats_manager_.get());
+    CardinalityEstimator estimator;
     
     TableStatistics stats;
     stats.row_count = 100;
@@ -39,7 +32,7 @@ TEST_F(CardinalityEstimatorTest, EqualitySelectivity)
 
 TEST_F(CardinalityEstimatorTest, RangeSelectivity)
 {
-    CardinalityEstimator estimator(stats_manager_.get());
+    CardinalityEstimator estimator;
     
     TableStatistics stats;
     stats.row_count = 100;
@@ -61,7 +54,7 @@ TEST_F(CardinalityEstimatorTest, RangeSelectivity)
 
 TEST_F(CardinalityEstimatorTest, JoinSelectivity)
 {
-    CardinalityEstimator estimator(stats_manager_.get());
+    CardinalityEstimator estimator;
     
     TableStatistics left_stats;
     ColumnStatistics left_col_stat;
