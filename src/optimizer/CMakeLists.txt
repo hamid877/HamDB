@@ -8,6 +8,7 @@ add_library(hamdb_optimizer
     join_selection_rule.cpp
     top_k_optimization_rule.cpp
     rule_executor.cpp
+    cardinality_estimator.cpp
 )
 target_include_directories(hamdb_optimizer PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(hamdb_optimizer PUBLIC hamdb_planner hamdb_executor)

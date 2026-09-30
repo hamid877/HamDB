@@ -2,6 +2,7 @@ add_library(hamdb_catalog STATIC
     schema.cpp
     table_info.cpp
     catalog_manager.cpp
+    statistics_manager.cpp
 )
 
 target_link_libraries(hamdb_catalog PUBLIC

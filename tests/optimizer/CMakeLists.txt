@@ -38,3 +38,7 @@ target_include_directories(top_k_optimization_test PRIVATE ${PROJECT_SOURCE_DIR}
 target_link_libraries(top_k_optimization_test PRIVATE GTest::gtest_main hamdb_optimizer hamdb_planner hamdb_executor hamdb_transaction hamdb_wal hamdb_parser hamdb_catalog)
 add_test(NAME TopKOptimizationTest COMMAND top_k_optimization_test)
 
+add_executable(cardinality_estimator_test cardinality_estimator_test.cpp)
+target_include_directories(cardinality_estimator_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(cardinality_estimator_test PRIVATE GTest::gtest_main hamdb_optimizer hamdb_planner hamdb_executor hamdb_transaction hamdb_wal hamdb_parser hamdb_catalog)
+add_test(NAME CardinalityEstimatorTest COMMAND cardinality_estimator_test)

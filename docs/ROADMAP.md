@@ -153,10 +153,37 @@ Every milestone must satisfy:
 | M9.4 | Constant Folding (Advanced) | ✅ Complete |
 | M9.5 | Rule-Based Join Algorithm Selection | ✅ Complete |
 | M9.6 | Top-K / ORDER BY + LIMIT Optimization | ✅ Complete |
+| M9.7 | Table/Column Statistics and Cardinality Estimation | ✅ Complete |
 
 ---
 
 # Completed Milestones
+
+## M9.7 — Table/Column Statistics and Cardinality Estimation
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Created `StatisticsManager` to gather, store, and manage table and column-level statistics.
+* Statistics tracked include table row count, column distinct value count, NULL count, and min/max bounds (for sortable types).
+* Implemented `CardinalityEstimator` to provide basic selectivity estimates for equality predicates, range predicates, and simple equi-joins using the collected statistics under uniformity and inclusion assumptions.
+* Kept the statistics and estimation completely separate from query execution correctness, ensuring query results are never altered.
+* Validated correctness via `StatisticsManagerTest` and `CardinalityEstimatorTest`.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅ (365/365 CTest suites)
+
+### Git Commit
+
+```text
+feat(catalog): implement table/column statistics and cardinality estimation (M9.7)
+```
+
+---
 
 ## M9.6 — Top-K / ORDER BY + LIMIT Optimization
 
