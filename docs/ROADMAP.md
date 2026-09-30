@@ -152,10 +152,39 @@ Every milestone must satisfy:
 | M9.3 | Projection Pruning | ✅ Complete |
 | M9.4 | Constant Folding (Advanced) | ✅ Complete |
 | M9.5 | Rule-Based Join Algorithm Selection | ✅ Complete |
+| M9.6 | Top-K / ORDER BY + LIMIT Optimization | ✅ Complete |
 
 ---
 
 # Completed Milestones
+
+## M9.6 — Top-K / ORDER BY + LIMIT Optimization
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Created `TopKPlan` and `TopKExecutor` to process a bounded top-K result using `std::priority_queue`.
+* Maintained $O(N \log K)$ processing complexity and $O(K)$ space.
+* Implemented `TopKOptimizationRule` to rewrite `Limit -> OrderBy -> child` to `TopK -> child`.
+* Supported multi-key ASC/DESC sorting and offset limits using overflow-safe arithmetic.
+* Integrated into `ExecutorFactory` and `HamDBOptimizer`.
+* Handled limits of 0 and limits greater than input size correctly.
+* Added `TopKOptimizationTest` to verify structural rewriting and execution equivalence with the unoptimized plan.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅ (363/363 CTest suites)
+
+### Git Commit
+
+```text
+feat(optimizer): implement top-k optimization rule (M9.6)
+```
+
+---
 
 ## M9.5 — Rule-Based Join Algorithm Selection
 

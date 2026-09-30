@@ -11,6 +11,7 @@
 #include "planner/aggregation_plan.hpp"
 #include "planner/having_plan.hpp"
 #include "planner/order_by_plan.hpp"
+#include "planner/top_k_plan.hpp"
 #include "shell/script_executor.hpp"
 #include "shell/meta_commands.hpp"
 
@@ -135,6 +136,13 @@ std::unique_ptr<planner::AbstractPlanNode> clonePhysicalPlan(const planner::Abst
                 node->getPredicate() ? node->getPredicate()->clone() : nullptr);
             break;
         }
+        case planner::PhysicalPlanType::TOP_K: {
+            auto* node = static_cast<const planner::TopKPlan*>(plan);
+            std::vector<std::pair<OrderByDirection, std::unique_ptr<Expression>>> order_bys;
+            for (const auto& p : node->getOrderBy()) order_bys.emplace_back(p.first, p.second ? p.second->clone() : nullptr);
+            cloned = std::make_unique<planner::TopKPlan>(node->getOutputSchema(), std::move(order_bys), node->getLimit(), node->getOffset());
+            break;
+        }
     }
     for (const auto& child : plan->getChildren()) {
         cloned->addChild(clonePhysicalPlan(child.get()));
@@ -202,6 +210,11 @@ void bindPhysicalPlan(planner::AbstractPlanNode* plan, const std::vector<Value>&
         case planner::PhysicalPlanType::HAVING: {
             auto* node = static_cast<planner::HavingPlan*>(plan);
             if (node->getPredicate()) node->getPredicate()->bindParameters(params);
+            break;
+        }
+        case planner::PhysicalPlanType::TOP_K: {
+            auto* node = static_cast<planner::TopKPlan*>(plan);
+            for (auto& p : node->getMutableOrderBy()) if (p.second) p.second.get()->bindParameters(params);
             break;
         }
         default: break;

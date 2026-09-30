@@ -9,6 +9,7 @@
 #include "planner/aggregation_plan.hpp"
 #include "planner/having_plan.hpp"
 #include "planner/order_by_plan.hpp"
+#include "planner/top_k_plan.hpp"
 
 namespace hamdb::optimizer {
 
@@ -313,6 +314,21 @@ std::unique_ptr<planner::LogicalPlanNode> ConstantFoldingRule::apply(
             auto* node = dynamic_cast<planner::LogicalHavingNode*>(plan.get());
             if (node && node->getPredicate()) {
                 node->setPredicate(foldExpression(node->takePredicate()));
+            }
+            break;
+        }
+        case planner::LogicalPlanType::TOP_K: {
+            auto* node = dynamic_cast<planner::LogicalTopKNode*>(plan.get());
+            if (node) {
+                if (node->getLimit()) {
+                    node->setLimit(foldExpression(node->takeLimit()));
+                }
+                if (node->getOffset()) {
+                    node->setOffset(foldExpression(node->takeOffset()));
+                }
+                for (auto& pair : node->getMutableOrderBy()) {
+                    pair.first = foldExpression(std::move(pair.first));
+                }
             }
             break;
         }

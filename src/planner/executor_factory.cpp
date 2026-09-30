@@ -17,8 +17,10 @@
 #include "executor/aggregation_executor.hpp"
 #include "executor/having_executor.hpp"
 #include "executor/order_by_executor.hpp"
+#include "executor/top_k_executor.hpp"
 #include "planner/having_plan.hpp"
 #include "planner/order_by_plan.hpp"
+#include "planner/top_k_plan.hpp"
 #include <stdexcept>
 #include <chrono>
 
@@ -192,6 +194,16 @@ std::unique_ptr<hamdb::AbstractExecutor> ExecutorFactory::createExecutor(
             auto* having_plan = dynamic_cast<const planner::HavingPlan*>(plan.get());
             exec = std::make_unique<executor::HavingExecutor>(
                 exec_ctx, having_plan, std::move(child_executors[0]));
+            break;
+        }
+        case PhysicalPlanType::TOP_K: {
+            auto* top_k_plan = dynamic_cast<const planner::TopKPlan*>(plan.get());
+            std::vector<std::pair<OrderByDirection, std::unique_ptr<hamdb::Expression>>> order_bys;
+            for (const auto& pair : top_k_plan->getOrderBy()) {
+                order_bys.emplace_back(pair.first, pair.second->clone());
+            }
+            exec = std::make_unique<TopKExecutor>(
+                std::move(child_executors[0]), std::move(order_bys), top_k_plan->getLimit(), top_k_plan->getOffset());
             break;
         }
         default:

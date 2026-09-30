@@ -5,6 +5,7 @@
 #include "planner/having_plan.hpp"
 #include "planner/order_by_plan.hpp"
 #include "planner/logical_index_scan.hpp"
+#include "planner/top_k_plan.hpp"
 #include "executor/column_value_expression.hpp"
 #include <stdexcept>
 
@@ -180,6 +181,27 @@ std::unique_ptr<AbstractPlanNode> PhysicalPlanner::planNode(std::unique_ptr<Logi
             auto* having_node = dynamic_cast<LogicalHavingNode*>(logical_node.get());
             physical_node = std::make_unique<HavingPlan>(
                 having_node->getOutputSchema(), having_node->takePredicate());
+            break;
+        }
+        case LogicalPlanType::TOP_K: {
+            auto* top_k_node = dynamic_cast<LogicalTopKNode*>(logical_node.get());
+            std::size_t limit = 0;
+            std::size_t offset = 0;
+            if (top_k_node->getLimit()) {
+                auto val = top_k_node->getLimit()->evaluate(Tuple{}, Schema(std::vector<Column>{}));
+                limit = val.getAsInteger();
+            }
+            if (top_k_node->getOffset()) {
+                auto val = top_k_node->getOffset()->evaluate(Tuple{}, Schema(std::vector<Column>{}));
+                offset = val.getAsInteger();
+            }
+            std::vector<std::pair<hamdb::OrderByDirection, std::unique_ptr<hamdb::Expression>>> order_bys;
+            for (auto& pair : top_k_node->getOrderBy()) {
+                hamdb::OrderByDirection type = pair.second ? hamdb::OrderByDirection::ASC : hamdb::OrderByDirection::DESC;
+                order_bys.emplace_back(type, pair.first->clone());
+            }
+            physical_node = std::make_unique<TopKPlan>(
+                top_k_node->getOutputSchema(), std::move(order_bys), limit, offset);
             break;
         }
         default:

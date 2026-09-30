@@ -5,6 +5,7 @@
 #include "optimizer/index_scan_rule.hpp"
 #include "optimizer/sort_limit_rule.hpp"
 #include "optimizer/join_selection_rule.hpp"
+#include "optimizer/top_k_optimization_rule.hpp"
 #include <memory>
 
 namespace hamdb::optimizer {
@@ -24,6 +25,7 @@ HamDBOptimizer::HamDBOptimizer(CatalogManager* catalog)
         rule_executor_.addRule(std::make_unique<IndexScanRule>(catalog));
     }
     rule_executor_.addRule(std::make_unique<JoinSelectionRule>());
+    rule_executor_.addRule(std::make_unique<TopKOptimizationRule>());
     rule_executor_.addRule(std::make_unique<SortLimitRule>());
 }
 

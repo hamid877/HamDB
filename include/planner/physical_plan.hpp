@@ -26,7 +26,8 @@ enum class PhysicalPlanType {
     NESTED_LOOP_JOIN,
     HASH_JOIN,
     AGGREGATION,
-    HAVING
+    HAVING,
+    TOP_K
 };
 
 class AbstractPlanNode {

@@ -6,6 +6,7 @@ add_library(hamdb_optimizer
     index_scan_rule.cpp
     sort_limit_rule.cpp
     join_selection_rule.cpp
+    top_k_optimization_rule.cpp
     rule_executor.cpp
 )
 target_include_directories(hamdb_optimizer PUBLIC ${PROJECT_SOURCE_DIR}/include)

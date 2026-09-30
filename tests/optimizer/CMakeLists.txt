@@ -33,3 +33,8 @@ target_include_directories(join_selection_test PRIVATE ${PROJECT_SOURCE_DIR}/inc
 target_link_libraries(join_selection_test PRIVATE GTest::gtest_main hamdb_optimizer hamdb_planner hamdb_executor hamdb_transaction hamdb_wal hamdb_parser hamdb_catalog)
 add_test(NAME JoinSelectionTest COMMAND join_selection_test)
 
+add_executable(top_k_optimization_test top_k_optimization_test.cpp)
+target_include_directories(top_k_optimization_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(top_k_optimization_test PRIVATE GTest::gtest_main hamdb_optimizer hamdb_planner hamdb_executor hamdb_transaction hamdb_wal hamdb_parser hamdb_catalog)
+add_test(NAME TopKOptimizationTest COMMAND top_k_optimization_test)
+
