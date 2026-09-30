@@ -17,7 +17,12 @@ namespace hamdb
 
         void SetUp() override
         {
-            std::filesystem::remove(db_path_);
+            auto unique =
+                std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+            db_path_ = std::filesystem::temp_directory_path() / ("bplus_tree_iter_test_" + unique + ".db");
+
+            std::error_code ec;
+            std::filesystem::remove(db_path_, ec);
             dm_ = std::make_unique<DiskManager>(db_path_);
             ASSERT_EQ(dm_->createDatabase(), Status::Ok);
             ASSERT_EQ(dm_->openDatabase(), Status::Ok);
@@ -28,7 +33,8 @@ namespace hamdb
         {
             bpm_.reset();
             dm_.reset();
-            std::filesystem::remove(db_path_);
+            std::error_code ec;
+            std::filesystem::remove(db_path_, ec);
         }
     };
 
