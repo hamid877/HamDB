@@ -150,10 +150,39 @@ Every milestone must satisfy:
 | M9.1 | Optimizer Infrastructure | ✅ Complete |
 | M9.2 | Filter/Predicate Pushdown | ✅ Complete |
 | M9.3 | Projection Pruning | ✅ Complete |
+| M9.4 | Constant Folding (Advanced) | ✅ Complete |
 
 ---
 
 # Completed Milestones
+
+## M9.4 — Constant Folding (Advanced)
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Rewrote `ConstantFoldingRule` to be recursively evaluating, semantic-preserving, and exception-safe.
+* Wrapped `evaluate()` calls in a `try-catch` block to gracefully handle runtime errors (e.g., division by zero) by folding to `NULL` rather than crashing the optimizer.
+* Fixed SQL 3-valued boolean logic for `AND`/`OR` to properly short-circuit with `NULL` constants (e.g., `false AND NULL` evaluates to `false`).
+* Ensured non-constant subexpressions are preserved and unaffected unless a valid fold can occur.
+* Added comprehensive query-level semantic equivalence tests and expression-level unit tests covering arithmetic, comparison, logic, exception safety, and NULL propagation.
+* Integrated without creating any new expression abstractions.
+
+### Verification
+
+* Tests passing: **361 / 361** (CTest)
+* Build: ✅
+* Lint: ✅
+* Test: ✅ (10/10 deterministic test loops)
+
+### Git Commit
+
+```text
+feat(optimizer): implement advanced constant folding rule (M9.4)
+```
+
+---
 
 ## M9.3 — Projection Pruning
 
