@@ -1,6 +1,8 @@
 add_library(hamdb_server
     server.cpp
     session.cpp
+    tcp_connection.cpp
+    tcp_listener.cpp
 )
 
 target_link_libraries(hamdb_server PUBLIC

@@ -16,7 +16,7 @@
 | Testing          | GoogleTest                  |
 | Platform         | Linux (Ubuntu / Linux Mint) |
 | Current Version  | v0.3.0-dev                  |
-| Overall Progress | **66%**                     |
+| Overall Progress | **67%**                     |
 
 ---
 
@@ -163,12 +163,40 @@ Every milestone must satisfy:
 | ID   | Milestone    | Status |
 | ---- | ------------ | ------ |
 | M10.1 | Server Architecture | ✅ Complete |
-| M10.2 | TCP Transport | ⬜ |
+| M10.2 | TCP Transport | ✅ Complete |
 | M10.3 | Wire Protocol | ⬜ |
 
 ---
 
 # Completed Milestones
+
+## M10.2 — TCP Transport
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Implemented `TcpConnection` encapsulating a client socket file descriptor, inheriting from the `Connection` interface.
+* Implemented `TcpListener` that binds, listens, and accepts incoming connections.
+* Read/write byte streams logic without framing or protocol encoding.
+* Kept TCP independent of SQL execution, sessions, and protocol encoding.
+* Clean RAII-based socket ownership and error handling in both connection and listener classes.
+* Graceful server shutdown.
+* Added localhost-focused transport tests in `tcp_transport_test.cpp`.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅ (All checks passed)
+
+### Git Commit
+
+```text
+feat(server): implement TCP listener and transport abstraction (M10.2)
+```
+
+---
 
 ## M10.1 — Server Architecture
 
