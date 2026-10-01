@@ -4,8 +4,10 @@
 
 namespace hamdb::server {
 
+constexpr size_t kMaxFrameSize = 16 * 1024 * 1024;
+
 /**
- * @brief TCP implementation of the Connection interface.
+ * @brief TCP implementation of the Connection interface with length-prefixed framing.
  */
 class TcpConnection : public Connection {
 public:
@@ -23,6 +25,7 @@ public:
 private:
     int fd_;
     bool is_closed_ = false;
+    std::string read_buffer_;
 };
 
 } // namespace hamdb::server

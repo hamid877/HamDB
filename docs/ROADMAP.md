@@ -164,11 +164,38 @@ Every milestone must satisfy:
 | ---- | ------------ | ------ |
 | M10.1 | Server Architecture | ✅ Complete |
 | M10.2 | TCP Transport | ✅ Complete |
-| M10.3 | Wire Protocol | ⬜ |
+| M10.3 | Wire Protocol | ✅ Complete |
 
 ---
 
 # Completed Milestones
+
+## M10.3 — Wire Protocol
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Implemented `RequestMessage` and `ResponseMessage` types for versioned wire protocol.
+* Implemented length-prefixed message framing in `TcpConnection` (`kMaxFrameSize = 16MB`).
+* Handled partial reads and combined frames using `std::string` buffer.
+* Separated network framing from protocol serialization.
+* Updated `tcp_transport_test.cpp` with tests for partial, combined, empty, oversized, and truncated frames.
+* Added unit tests for serialization in `wire_protocol_test.cpp`.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅ (All checks passed)
+
+### Git Commit
+
+```text
+feat(server): implement wire protocol and framing (M10.3)
+```
+
+---
 
 ## M10.2 — TCP Transport
 

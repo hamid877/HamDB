@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <cstring>
 
 using namespace hamdb::server;
 
@@ -35,44 +36,20 @@ TEST_F(TcpTransportTest, StartAndStopListener) {
     listener.stop();
 }
 
-TEST_F(TcpTransportTest, AcceptConnection) {
-    TcpListener listener("127.0.0.1", 15433);
+TEST_F(TcpTransportTest, SingleFrame) {
+    TcpListener listener("127.0.0.1", 15434);
     ASSERT_TRUE(listener.start());
     
     std::thread client_thread([this]() {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        int sock = connectToServer("127.0.0.1", 15433);
-        EXPECT_GE(sock, 0);
-        if (sock >= 0) ::close(sock);
-    });
-    
-    auto conn = listener.acceptConnection();
-    ASSERT_NE(conn, nullptr);
-    
-    client_thread.join();
-    listener.stop();
-}
-
-TEST_F(TcpTransportTest, SendAndReceive) {
-    TcpListener listener("127.0.0.1", 15434);
-    ASSERT_TRUE(listener.start());
-    
-    std::string test_msg = "Hello HamDB\n";
-    
-    std::thread client_thread([this, &test_msg]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
         int sock = connectToServer("127.0.0.1", 15434);
         ASSERT_GE(sock, 0);
         
-        ::send(sock, test_msg.data(), test_msg.size(), 0);
+        std::string payload = "Hello";
+        uint32_t len = htonl(payload.size());
+        ::send(sock, &len, 4, 0);
+        ::send(sock, payload.data(), payload.size(), 0);
         
-        char buffer[1024];
-        ssize_t bytes = ::recv(sock, buffer, sizeof(buffer), 0);
-        EXPECT_GT(bytes, 0);
-        if (bytes > 0) {
-            std::string resp(buffer, bytes);
-            EXPECT_EQ(resp, "OK\n");
-        }
         ::close(sock);
     });
     
@@ -80,16 +57,13 @@ TEST_F(TcpTransportTest, SendAndReceive) {
     ASSERT_NE(conn, nullptr);
     
     std::string received = conn->receive();
-    EXPECT_EQ(received, test_msg);
-    
-    conn->send("OK\n");
-    conn->close();
+    EXPECT_EQ(received, "Hello");
     
     client_thread.join();
     listener.stop();
 }
 
-TEST_F(TcpTransportTest, ClientDisconnect) {
+TEST_F(TcpTransportTest, PartialReads) {
     TcpListener listener("127.0.0.1", 15435);
     ASSERT_TRUE(listener.start());
     
@@ -97,14 +71,132 @@ TEST_F(TcpTransportTest, ClientDisconnect) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
         int sock = connectToServer("127.0.0.1", 15435);
         ASSERT_GE(sock, 0);
+        
+        std::string payload = "Partial";
+        uint32_t len = htonl(payload.size());
+        std::string frame;
+        frame.append(reinterpret_cast<char*>(&len), 4);
+        frame.append(payload);
+        
+        for (char c : frame) {
+            ::send(sock, &c, 1, 0);
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        }
         ::close(sock);
     });
     
     auto conn = listener.acceptConnection();
     ASSERT_NE(conn, nullptr);
     
-    std::string received = conn->receive();
-    EXPECT_EQ(received, "");
+    EXPECT_EQ(conn->receive(), "Partial");
+    
+    client_thread.join();
+    listener.stop();
+}
+
+TEST_F(TcpTransportTest, CombinedFrames) {
+    TcpListener listener("127.0.0.1", 15436);
+    ASSERT_TRUE(listener.start());
+    
+    std::thread client_thread([this]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        int sock = connectToServer("127.0.0.1", 15436);
+        ASSERT_GE(sock, 0);
+        
+        std::string payload1 = "Frame1";
+        std::string payload2 = "Frame2";
+        
+        std::string frames;
+        uint32_t len1 = htonl(payload1.size());
+        frames.append(reinterpret_cast<char*>(&len1), 4);
+        frames.append(payload1);
+        
+        uint32_t len2 = htonl(payload2.size());
+        frames.append(reinterpret_cast<char*>(&len2), 4);
+        frames.append(payload2);
+        
+        ::send(sock, frames.data(), frames.size(), 0);
+        ::close(sock);
+    });
+    
+    auto conn = listener.acceptConnection();
+    ASSERT_NE(conn, nullptr);
+    
+    EXPECT_EQ(conn->receive(), "Frame1");
+    EXPECT_EQ(conn->receive(), "Frame2");
+    
+    client_thread.join();
+    listener.stop();
+}
+
+TEST_F(TcpTransportTest, EmptyPayload) {
+    TcpListener listener("127.0.0.1", 15437);
+    ASSERT_TRUE(listener.start());
+    
+    std::thread client_thread([this]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        int sock = connectToServer("127.0.0.1", 15437);
+        ASSERT_GE(sock, 0);
+        
+        uint32_t len = 0;
+        ::send(sock, &len, 4, 0);
+        ::close(sock);
+    });
+    
+    auto conn = listener.acceptConnection();
+    ASSERT_NE(conn, nullptr);
+    
+    EXPECT_EQ(conn->receive(), "");
+    EXPECT_EQ(conn->receive(), "");
+    
+    client_thread.join();
+    listener.stop();
+}
+
+TEST_F(TcpTransportTest, OversizedFrame) {
+    TcpListener listener("127.0.0.1", 15438);
+    ASSERT_TRUE(listener.start());
+    
+    std::thread client_thread([this]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        int sock = connectToServer("127.0.0.1", 15438);
+        ASSERT_GE(sock, 0);
+        
+        uint32_t len = htonl(17 * 1024 * 1024);
+        ::send(sock, &len, 4, 0);
+        ::close(sock);
+    });
+    
+    auto conn = listener.acceptConnection();
+    ASSERT_NE(conn, nullptr);
+    
+    EXPECT_EQ(conn->receive(), "");
+    
+    client_thread.join();
+    listener.stop();
+}
+
+TEST_F(TcpTransportTest, TruncatedConnection) {
+    TcpListener listener("127.0.0.1", 15439);
+    ASSERT_TRUE(listener.start());
+    
+    std::thread client_thread([this]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        int sock = connectToServer("127.0.0.1", 15439);
+        ASSERT_GE(sock, 0);
+        
+        std::string payload = "Incomplete";
+        uint32_t len = htonl(payload.size());
+        
+        ::send(sock, &len, 4, 0);
+        ::send(sock, payload.data(), payload.size() / 2, 0);
+        ::close(sock);
+    });
+    
+    auto conn = listener.acceptConnection();
+    ASSERT_NE(conn, nullptr);
+    
+    EXPECT_EQ(conn->receive(), "");
     
     client_thread.join();
     listener.stop();
