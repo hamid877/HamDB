@@ -42,3 +42,8 @@ add_executable(cardinality_estimator_test cardinality_estimator_test.cpp)
 target_include_directories(cardinality_estimator_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(cardinality_estimator_test PRIVATE GTest::gtest_main hamdb_optimizer hamdb_planner hamdb_executor hamdb_transaction hamdb_wal hamdb_parser hamdb_catalog)
 add_test(NAME CardinalityEstimatorTest COMMAND cardinality_estimator_test)
+
+add_executable(cost_model_test cost_model_test.cpp)
+target_include_directories(cost_model_test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(cost_model_test PRIVATE GTest::gtest_main hamdb_optimizer hamdb_planner hamdb_executor hamdb_transaction hamdb_wal hamdb_parser hamdb_catalog)
+add_test(NAME CostModelTest COMMAND cost_model_test)

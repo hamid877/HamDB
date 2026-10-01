@@ -6,6 +6,7 @@
 #include "optimizer/sort_limit_rule.hpp"
 #include "optimizer/join_selection_rule.hpp"
 #include "optimizer/top_k_optimization_rule.hpp"
+#include "optimizer/cost_based_join_rule.hpp"
 #include <memory>
 
 namespace hamdb::optimizer {
@@ -24,7 +25,10 @@ HamDBOptimizer::HamDBOptimizer(CatalogManager* catalog)
     if (catalog != nullptr) {
         rule_executor_.addRule(std::make_unique<IndexScanRule>(catalog));
     }
+    // JoinSelectionRule: rule-based NLJ → HashJoin for equi-joins.
     rule_executor_.addRule(std::make_unique<JoinSelectionRule>());
+    // CostBasedJoinRule: cost-based reconsideration for any remaining NLJ.
+    rule_executor_.addRule(std::make_unique<CostBasedJoinRule>());
     rule_executor_.addRule(std::make_unique<TopKOptimizationRule>());
     rule_executor_.addRule(std::make_unique<SortLimitRule>());
 }

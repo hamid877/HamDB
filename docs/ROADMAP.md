@@ -154,10 +154,38 @@ Every milestone must satisfy:
 | M9.5 | Rule-Based Join Algorithm Selection | ✅ Complete |
 | M9.6 | Top-K / ORDER BY + LIMIT Optimization | ✅ Complete |
 | M9.7 | Table/Column Statistics and Cardinality Estimation | ✅ Complete |
+| M9.8 | Cost-Based Optimizer | ✅ Complete |
 
 ---
 
 # Completed Milestones
+
+## M9.8 — Cost-Based Optimizer
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Inspected existing optimizer infrastructure, statistics API, and executor nodes.
+* Added a recursive `CostModel` that estimates logical/physical plan cost using existing cardinality APIs.
+* Implemented cost modeling formulas: SeqScan (~input rows), Filter (~child cost + rows), NLJ (~left*right + child costs), HashJoin (~left+right + child costs), Sort (~N*log(N) + child cost), TopK (~N*log(K) + child cost).
+* Created `CostBasedJoinRule` to compare existing `NestedLoopJoin` and candidate `HashJoin` costs for equi-joins, picking the lower estimated cost.
+* Preserved strict separation between cardinality estimation and cost calculation.
+* Handled known execution boundaries (e.g. avoiding NLJ right column execution bugs) inside testing.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅ (All checks passed)
+
+### Git Commit
+
+```text
+feat(optimizer): implement cost-based join algorithm selection (M9.8)
+```
+
+---
 
 ## M9.7 — Table/Column Statistics and Cardinality Estimation
 
