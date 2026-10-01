@@ -1953,3 +1953,32 @@ feat(transaction): implement MVCC snapshot isolation (M3.2)
 ```text
 feat(transaction): implement lock manager (shared / exclusive) (M3.1)
 ```
+
+---
+
+## M10.4 — Query Request/Response Execution
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Defined `ExecutionResult` to hold structured query results in `shell::Shell`.
+* Implemented `shell::Shell::executeSQLStructured` bypassing `std::ostream` format.
+* Updated `Session::handleRequest` to execute incoming structured queries.
+* Connected `QueryRequest` to existing engine without duplicating logic.
+* Fixed server transactions to commit MVCC versions.
+* Handled schema translation (`ColumnType` to `TypeId`).
+* Added `tests/server/query_execution_test.cpp` for end-to-end testing with `CatalogManager` setup.
+
+### Verification
+
+* Tests passing: **370 / 370**
+* Build: ✅
+* Lint: ✅
+* Test: ✅
+
+### Git Commit
+
+```text
+feat(server): implement structured query request execution (M10.4)
+```

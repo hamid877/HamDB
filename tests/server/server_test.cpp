@@ -2,6 +2,7 @@
 #include "server/server.hpp"
 #include "server/session.hpp"
 #include "server/connection.hpp"
+#include "server/wire_protocol.hpp"
 
 #include <filesystem>
 #include <string>
@@ -68,16 +69,26 @@ TEST_F(ServerTest, SessionHandleRequest) {
     auto conn = std::make_shared<MockConnection>();
     auto session = srv->createSession(conn);
     
-    // Execute a meta command
-    session->handleRequest(".help");
+    // Execute a meta command via wire protocol
+    RequestMessage req;
+    req.version = 1;
+    req.type = MessageType::QueryRequest;
+    req.request_id = 1;
+    req.query = ".help";
     
-    // The output should contain help information
-    EXPECT_NE(conn->last_sent.find(".help"), std::string::npos);
-    EXPECT_NE(conn->last_sent.find(".tables"), std::string::npos);
+    session->handleRequest(WireProtocol::serializeRequest(req));
     
-    // Execute another command
-    session->handleRequest(".tables");
-    EXPECT_NE(conn->last_sent.find(""), std::string::npos);
+    ResponseMessage res = WireProtocol::deserializeResponse(conn->last_sent);
+    EXPECT_TRUE(res.success);
+    EXPECT_EQ(res.rows.size(), 1);
+    EXPECT_NE(res.rows[0][0].getAsVarchar().find(".help"), std::string::npos);
+    
+    req.request_id = 2;
+    req.query = ".tables";
+    session->handleRequest(WireProtocol::serializeRequest(req));
+    
+    ResponseMessage res2 = WireProtocol::deserializeResponse(conn->last_sent);
+    EXPECT_TRUE(res2.success);
 }
 
 TEST_F(ServerTest, ServerShutdown) {

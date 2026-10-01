@@ -466,11 +466,99 @@ void Shell::executeSQL(const std::string& query, std::ostream& out) {
             }
         }
         
+        mvcc_manager_->commit(txn);
         txn_manager_->commit(txn);
         
     } catch (const std::exception& e) {
         out << "Error: " << e.what() << "\n";
     }
+}
+
+ExecutionResult Shell::executeSQLStructured(const std::string& query) {
+    ExecutionResult result;
+    result.success = true;
+    try {
+        Parser parser(query);
+        auto stmt = parser.parseStatement();
+        if (!stmt) {
+            result.success = false;
+            result.error_message = "Empty query or parse error";
+            return result;
+        }
+
+        std::unique_ptr<planner::AbstractPlanNode> physical_plan;
+        if (auto* exec_stmt = dynamic_cast<ast::ExecuteStatement*>(stmt.get())) {
+            auto prepared = prep_manager_->getStatement(exec_stmt->name);
+            if (!prepared) {
+                result.success = false;
+                result.error_message = "Prepared statement '" + exec_stmt->name + "' not found";
+                return result;
+            }
+            if (prepared->getParameterTypes().size() != exec_stmt->parameters.size()) {
+                result.success = false;
+                result.error_message = "Parameter count mismatch for " + exec_stmt->name;
+                return result;
+            }
+            std::vector<Value> params;
+            for (size_t i = 0; i < exec_stmt->parameters.size(); ++i) {
+                binder::Binder binder(catalog_.get());
+                auto bound_expr = binder.bindExpression(*exec_stmt->parameters[i]);
+                auto exec_expr = bound_expr->takeExpr();
+                Value val = exec_expr->evaluate(Tuple{}, Schema(std::vector<Column>{}));
+                TypeId expected = prepared->getParameterTypes()[i];
+                if (val.getType() != expected && val.getType() != TypeId::Null) {
+                    result.success = false;
+                    result.error_message = "Type mismatch for parameter";
+                    return result;
+                }
+                params.push_back(val);
+            }
+            physical_plan = clonePhysicalPlan(prepared->getPhysicalPlan());
+            bindPhysicalPlan(physical_plan.get(), params);
+        } else {
+            binder::Binder binder(catalog_.get());
+            auto bound_stmt = binder.bind(*stmt);
+            auto logical_plan = planner_->plan(std::move(bound_stmt));
+            optimizer_->clearAppliedRules();
+            auto optimized_plan = optimizer_->optimize(std::move(logical_plan));
+            physical_plan = physical_planner_->plan(std::move(optimized_plan));
+        }
+
+        auto *txn = txn_manager_->begin();
+        ExecutorContext exec_ctx(txn, catalog_.get(), bpm_.get(), mvcc_manager_.get(), disk_manager_.get(), lock_manager_.get(), log_manager_.get());
+        auto exec = planner::ExecutorFactory::createExecutor(&exec_ctx, std::move(physical_plan));
+        exec->init();
+
+        const auto& schema = exec->outputSchema();
+        for (size_t i = 0; i < schema.getColumnCount(); ++i) {
+            server::ColumnMetadata col;
+            col.name = schema.getColumn(i).getName();
+            auto ct = schema.getColumn(i).getType();
+            if (ct == ColumnType::Integer) col.type = TypeId::Integer;
+            else if (ct == ColumnType::Boolean) col.type = TypeId::Boolean;
+            else if (ct == ColumnType::Varchar) col.type = TypeId::Varchar;
+            else col.type = TypeId::Null;
+            result.columns.push_back(col);
+        }
+
+        Tuple tuple;
+        RID rid;
+        while (exec->next(&tuple, &rid)) {
+            std::vector<Value> row;
+            for (size_t i = 0; i < schema.getColumnCount(); ++i) {
+                ColumnValueExpression col_expr(i);
+                Value val = col_expr.evaluate(tuple, schema);
+                row.push_back(val);
+            }
+            result.rows.push_back(std::move(row));
+        }
+        mvcc_manager_->commit(txn);
+        txn_manager_->commit(txn);
+    } catch (const std::exception& e) {
+        result.success = false;
+        result.error_message = e.what();
+    }
+    return result;
 }
 
 } // namespace hamdb::shell

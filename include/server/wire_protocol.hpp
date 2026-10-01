@@ -3,6 +3,8 @@
 #include <string>
 #include <cstdint>
 #include <stdexcept>
+#include <vector>
+#include "executor/value.hpp"
 
 namespace hamdb::server {
 
@@ -12,16 +14,26 @@ enum class MessageType : uint8_t {
     ErrorResponse = 3
 };
 
+struct ColumnMetadata {
+    std::string name;
+    TypeId type;
+};
+
 struct RequestMessage {
     uint8_t version = 1;
     MessageType type = MessageType::QueryRequest;
+    int32_t request_id = 0;
     std::string query;
 };
 
 struct ResponseMessage {
     uint8_t version = 1;
     MessageType type = MessageType::QueryResponse;
-    std::string data;
+    int32_t request_id = 0;
+    bool success = true;
+    std::string error_message;
+    std::vector<ColumnMetadata> columns;
+    std::vector<std::vector<Value>> rows;
 };
 
 class WireProtocol {

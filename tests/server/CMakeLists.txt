@@ -42,3 +42,18 @@ target_include_directories(wire_protocol_test PRIVATE
 )
 
 add_test(NAME wire_protocol_test COMMAND wire_protocol_test)
+
+add_executable(query_execution_test
+    query_execution_test.cpp
+)
+
+target_link_libraries(query_execution_test PRIVATE
+    GTest::gtest_main
+    hamdb_core
+)
+
+target_include_directories(query_execution_test PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+)
+
+add_test(NAME query_execution_test COMMAND query_execution_test)

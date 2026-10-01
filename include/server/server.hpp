@@ -50,6 +50,8 @@ public:
      */
     void shutdown();
 
+    shell::Shell* getEngine() { return engine_.get(); }
+
 private:
     std::unique_ptr<shell::Shell> engine_;
     std::vector<std::shared_ptr<Session>> sessions_;

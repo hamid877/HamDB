@@ -15,10 +15,20 @@
 #include "planner/planner.hpp"
 #include "planner/physical_planner.hpp"
 #include "optimizer/optimizer.hpp"
+#include "optimizer/optimizer.hpp"
 #include "executor/executor_context.hpp"
 #include "prepared/prepared_statement_manager.hpp"
+#include "server/wire_protocol.hpp"
+#include "executor/value.hpp"
 
 namespace hamdb::shell {
+
+struct ExecutionResult {
+    bool success = true;
+    std::string error_message;
+    std::vector<server::ColumnMetadata> columns;
+    std::vector<std::vector<Value>> rows;
+};
 
 class Shell {
 public:
@@ -26,6 +36,7 @@ public:
     ~Shell();
 
     void executeSQL(const std::string& query, std::ostream& out);
+    ExecutionResult executeSQLStructured(const std::string& query);
     void executeMeta(const std::string& cmd, std::ostream& out);
 
     CatalogManager* getCatalog() const { return catalog_.get(); }
