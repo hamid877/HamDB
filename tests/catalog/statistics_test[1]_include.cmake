@@ -1,0 +1,5 @@
+if(EXISTS "/home/hamid/Documents/project/HamDB/tests/catalog/statistics_test[1]_tests.cmake")
+  include("/home/hamid/Documents/project/HamDB/tests/catalog/statistics_test[1]_tests.cmake")
+else()
+  add_test(statistics_test_NOT_BUILT statistics_test_NOT_BUILT)
+endif()

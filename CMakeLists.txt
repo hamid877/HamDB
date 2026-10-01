@@ -46,6 +46,7 @@ add_subdirectory(src/planner)
 add_subdirectory(src/optimizer)
 add_subdirectory(src/shell)
 add_subdirectory(src/prepared)
+add_subdirectory(src/server)
 
 # ── hamdb_core convenience interface ──────────────────────────────────────────
 add_library(hamdb_core INTERFACE)
@@ -66,6 +67,7 @@ target_link_libraries(hamdb_core INTERFACE
     hamdb_optimizer
     hamdb_shell
     hamdb_prepared
+    hamdb_server
 )
 target_include_directories(hamdb_core INTERFACE
     ${PROJECT_SOURCE_DIR}/include
@@ -86,6 +88,7 @@ add_subdirectory(tests/planner)
 add_subdirectory(tests/optimizer)
 add_subdirectory(tests/shell)
 add_subdirectory(tests/prepared)
+add_subdirectory(tests/server)
 
 # ── Examples ──────────────────────────────────────────────────────────────────
 add_subdirectory(examples)

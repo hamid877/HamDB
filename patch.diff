@@ -1,0 +1,6 @@
+--- tests/server/server_test.cpp
++++ tests/server/server_test.cpp
+@@ -77,2 +77,3 @@
+     
++    std::cout << "LAST SENT: " << conn->last_sent << std::endl;
+     // The TablePrinter output would be sent to the connection.

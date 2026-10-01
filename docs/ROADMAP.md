@@ -158,7 +158,46 @@ Every milestone must satisfy:
 
 ---
 
+## Phase 10 — Client/Server and Wire Protocol
+
+| ID   | Milestone    | Status |
+| ---- | ------------ | ------ |
+| M10.1 | Server Architecture | ✅ Complete |
+| M10.2 | TCP Transport | ⬜ |
+| M10.3 | Wire Protocol | ⬜ |
+
+---
+
 # Completed Milestones
+
+## M10.1 — Server Architecture
+
+**Status:** ✅ Complete
+
+### Implemented
+
+* Created `hamdb_server` module inside `src/server` and `include/server`.
+* Introduced `Server`, `Connection`, and `Session` abstractions.
+* Implemented RAII shutdown and cleanup.
+* `Server` owns lifecycle and sessions and delegates to the existing engine (`shell::Shell`).
+* `Connection` acts as an interface representing client transport state.
+* `Session` handles per-client context and processes queries by passing them to the existing engine.
+* Added `server_test` unit tests to verify session management and query execution behavior.
+* Modified root and tests `CMakeLists.txt` appropriately to build the `hamdb_server` module.
+
+### Verification
+
+* Build: ✅
+* Lint: ✅
+* Test: ✅ (All checks passed)
+
+### Git Commit
+
+```text
+feat(server): implement server architecture (M10.1)
+```
+
+---
 
 ## M9.8 — Cost-Based Optimizer
 
